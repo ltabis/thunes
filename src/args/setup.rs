@@ -2,14 +2,23 @@
 // setup configuration for all arguments.
 
 use crate::args::arg;
+use crate::new::account;
+use crate::utils::helpers;
 
 pub fn setup_args() -> arg::Block {
-    let mut args = arg::Block::new("", "", true);
+    let mut args = arg::Block::new("", "", None, true);
 
     args.register_blocks_ref(vec![
         arg::Block::new(
+            "-h",
+            "--help",
+	    Some(helpers::display_help),
+            true,
+	),
+        arg::Block::new(
             "-n",
             "--new",
+	    Some(account::new_account),
             true,
         ).register_args(vec![
 	    arg::Arg {
@@ -20,6 +29,7 @@ pub fn setup_args() -> arg::Block {
             arg::Block::new(
 		"",
 		"",
+		Some(account::new_account), // TODO: change by the righ function.
 		false,
             ).register_args(vec![
 		arg::Arg {
@@ -34,6 +44,7 @@ pub fn setup_args() -> arg::Block {
 		arg::Block::new(
 		    "",
 		    "",
+		    Some(account::new_account), // TODO: change by the righ function.
 		    false,
 		).register_args(vec![
 		    arg::Arg {
