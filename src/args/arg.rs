@@ -3,6 +3,9 @@
 
 use std::vec::Vec;
 
+// Function pointer for all blocks.
+type ArgFun = Option<fn(&Vec<Arg>)>;
+
 pub struct Arg {
     pub value: String,
     pub required: bool,
@@ -13,16 +16,18 @@ pub struct Block {
     pub long: String,
     pub args: Vec<Arg>,
     pub blocks: Vec<Block>,
+    pub fun: ArgFun,
     pub required: bool,
 }
 
 impl Block {
-    pub fn new(short: &str, long: &str, required: bool) -> Block {
+    pub fn new(short: &str, long: &str, fun: ArgFun, required: bool) -> Block {
 	Block {
 	    short: String::from(&short[..]),
 	    long: String::from(&long[..]),
 	    args: Vec::new(),
 	    blocks: Vec::new(),
+	    fun,
 	    required
 	}
     }

@@ -18,6 +18,33 @@ pub fn check_args(args: &arg::Block) -> i32 {
 	    None => return -1,
 	};
 
+    // DEBUG
     println!("args matched with {}", args.blocks[command]);
     return command as i32;
+}
+
+pub fn fill_command(env: &mut env::Args, block: &mut arg::Block) {
+
+    for arg in &mut block.args {
+	arg.value = match env.next() {
+	    Some(val) => val,
+	    None => return,
+	}
+    }
+
+    for next in &mut block.blocks {
+	fill_command(env, next);
+    }
+}
+
+pub fn execute_blocks(block: &arg::Block) {
+
+    match block.fun {
+	Some(fun) => fun(&block.args),
+	None => ()
+    };
+
+    for next in &block.blocks {
+	execute_blocks(&next);
+    }
 }
