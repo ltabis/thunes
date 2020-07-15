@@ -13,43 +13,45 @@ pub fn setup_args() -> arg::Block {
             true,
         ).register_args(vec![
 	    arg::Arg {
-		value: String::from("account"),
+		value: String::new(),
 		required: true
 	    },
-	]),
-        arg::Block::new(
-            "",
-            "",
-            false,
-        ).register_args(vec![
-	    arg::Arg {
-		value: String::from("label"),
-		required: true
-	    },
-	    arg::Arg {
-		value: String::from("amount"),
-		required: true
-	    }
-	]),
-        arg::Block::new(
-            "",
-            "",
-            false,
-        ).register_args(vec![
-	    arg::Arg {
-		value: String::from("date"),
-		required: true
-	    },
-	    arg::Arg {
-		value: String::from("note"),
-		required: true
-	    }
+	]).register_blocks(vec![
+            arg::Block::new(
+		"",
+		"",
+		false,
+            ).register_args(vec![
+		arg::Arg {
+		    value: String::new(),
+		    required: true
+		},
+		arg::Arg {
+		    value: String::new(),
+		    required: true
+		}
+	    ]).register_blocks(vec![
+		arg::Block::new(
+		    "",
+		    "",
+		    false,
+		).register_args(vec![
+		    arg::Arg {
+			value: String::new(),
+			required: true
+		    },
+		    arg::Arg {
+			value: String::new(),
+			required: true
+		    }
+		]),
+	    ]),
 	]),
     ]);
 
     args.register_args_ref(vec![
 	arg::Arg {
-	    value: String::from("account"),
+	    value: String::new(),
 	    required: true
 	}
     ]);

@@ -4,19 +4,20 @@
 use crate::args::arg;
 use std::env;
 
-pub fn dispatch_args(args: &arg::Block) -> bool {
+pub fn check_args(args: &arg::Block) -> i32 {
 
     let command = match env::args().nth(1) {
 	Some(cmd) => cmd,
-	None => return false,
+	None => return -1,
     };
 
-    let block = &args.blocks[0];
+    let command = match args.blocks
+	.iter()
+	.position(|r| r.short == command || r.long == command) {
+	    Some(index) => index,
+	    None => return -1,
+	};
 
-    if block.short == command || block.long == command {
-	println!("args matched with {}", block);
-	return true;
-    }
-
-    false
+    println!("args matched with {}", args.blocks[command]);
+    return command as i32;
 }

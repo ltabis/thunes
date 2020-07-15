@@ -6,7 +6,7 @@ fn main() {
     // utils::helpers::help();
 
     let args = setup::setup_args();
-    if !dispatch::dispatch_args(&args) {
+    if dispatch::check_args(&args) == -1 {
 	eprintln!("Error: no argument recognized.");
 	utils::helpers::help();
 	std::process::exit(1);
