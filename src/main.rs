@@ -1,18 +1,12 @@
 // use accountscli::utils;
-use accountscli::args::arg;
+use accountscli::args::setup;
 
 fn main() {
     // utils::helpers::help();
 
-    let mut args = arg::Block::new("", "", true);
+    let args = setup::setup_args();
 
-    args.register_blocks(vec![
-	arg::Block::new(
-	    "-n",
-	    "--new",
-	    true,
-	)
-    ]);
-
-    println!("block1: {}", args.blocks[0]);
+    for arg in &args.blocks {
+	println!("block: {}", arg);
+    }
 }
