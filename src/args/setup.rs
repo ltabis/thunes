@@ -29,7 +29,7 @@ pub fn setup_args() -> arg::Block {
             arg::Block::new(
 		"",
 		"",
-		Some(account::new_account), // TODO: change by the righ function.
+		None, // TODO: change by the righ function.
 		false,
             ).register_args(vec![
 		arg::Arg {
@@ -44,7 +44,7 @@ pub fn setup_args() -> arg::Block {
 		arg::Block::new(
 		    "",
 		    "",
-		    Some(account::new_account), // TODO: change by the righ function.
+		    None, // TODO: change by the righ function.
 		    false,
 		).register_args(vec![
 		    arg::Arg {

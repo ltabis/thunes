@@ -1,9 +1,0 @@
-// account.rs
-// create a new account.
-
-pub fn new_account(args: &Vec<String>) {
-    println!("printing args =>");
-    for arg in args {
-	println!("   - {}", arg);
-    }
-}
