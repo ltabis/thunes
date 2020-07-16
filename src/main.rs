@@ -5,7 +5,7 @@ use accountscli::args::dispatch;
 use accountscli::accounts::record;
 
 fn main() {
-    let _book: record::Record = record::Record::new();
+    let book: record::Record = record::Record::new();
     let mut args = setup::setup_args();
     let index = dispatch::check_args(&args);
     if index == -1 {
@@ -19,4 +19,5 @@ fn main() {
     env_args.next(); // skip option.
     dispatch::fill_command(&mut env_args, &mut args.blocks[index as usize]);
     dispatch::execute_blocks(&args.blocks[index as usize]);
+    book.save_record();
 }

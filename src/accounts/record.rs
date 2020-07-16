@@ -1,29 +1,27 @@
 // record.rs
 // Record where the data will be parsed
 
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::Path;
-use crate::accounts::account;
 use serde_json;
-use serde_json::{Value};
+use serde::{Serialize, Deserialize};
+use std::fs::File;
+use std::path::Path;
+use std::io::prelude::*;
+use crate::accounts::account;
 
 const CONFIG_PATH: &str = "./config";
 const DEFAULT_STORAGE_PATH: &str = "./records.json";
 const DEFAULT_DB_CONFIG: &str = r#"
 {
-    "name": "John Doe",
-    "age": 43,
-    "phones": [
-       "+44 1234567",
-       "+44 2345678"
-    ]
+  "accounts": [],
+  "record_path": "./records.json"
 }"#;
 
 // -- All records
 
+#[derive(Serialize, Deserialize)]
 pub struct Record {
     pub accounts: Vec<account::Account>,
+    pub record_path: String,
 }
 
 // TODO: Cleanup all the unwraps.
@@ -31,15 +29,11 @@ pub struct Record {
 impl Record {
     pub fn new() -> Record {
 	let record_path = Record::get_config();
-	let v = Record::get_data_base(&record_path);
-	println!("value: {}", v);
 
-	Record {
-	    accounts: vec![]
-	}
+	return Record::get_data_base(&record_path);
     }
 
-    fn get_data_base(record_path: &String) -> Value {
+    fn get_data_base(record_path: &String) -> Record {
 
 	let mut record_content = String::new();
 
@@ -66,5 +60,10 @@ impl Record {
 	    file.read_to_string(&mut record_path).unwrap();
 	}
 	return record_path;
+    }
+
+    pub fn save_record(&self) {
+	let mut file = File::create(&self.record_path).unwrap();
+	file.write_all(serde_json::to_string(self).unwrap().as_bytes()).unwrap();
     }
 }
