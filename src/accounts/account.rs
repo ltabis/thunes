@@ -21,3 +21,9 @@ impl Account {
 	}
     }
 }
+
+impl std::fmt::Display for Account {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "name: {}", &self.name)
+    }
+}

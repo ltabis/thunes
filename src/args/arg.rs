@@ -2,9 +2,10 @@
 // A configurable argument struct.
 
 use std::vec::Vec;
+use crate::accounts::record;
 
 // Function pointer for all blocks.
-type ArgFun = Option<fn(&Vec<Arg>)>;
+type ArgFun = Option<fn(&mut record::Record, &Vec<Arg>)>;
 
 pub struct Arg {
     pub value: String,

@@ -2,6 +2,7 @@
 // Dispatch arguments into there specific functions.
 
 use crate::args::arg;
+use crate::accounts::record;
 use std::env;
 
 pub fn check_args(args: &arg::Block) -> i32 {
@@ -18,8 +19,6 @@ pub fn check_args(args: &arg::Block) -> i32 {
 	    None => return -1,
 	};
 
-    // DEBUG
-    println!("args matched with {}", args.blocks[command]);
     return command as i32;
 }
 
@@ -37,14 +36,14 @@ pub fn fill_command(env: &mut env::Args, block: &mut arg::Block) {
     }
 }
 
-pub fn execute_blocks(block: &arg::Block) {
+pub fn execute_blocks(rd: &mut record::Record, block: &arg::Block) {
 
     match block.fun {
-	Some(fun) => fun(&block.args),
+	Some(fun) => fun(rd, &block.args),
 	None => ()
     };
 
     for next in &block.blocks {
-	execute_blocks(&next);
+	execute_blocks(rd, &next);
     }
 }
