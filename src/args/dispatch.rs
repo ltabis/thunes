@@ -36,14 +36,14 @@ pub fn fill_command(env: &mut env::Args, block: &mut arg::Block) {
     }
 }
 
-pub fn execute_blocks(rd: &mut record::Record, block: &arg::Block) {
+pub fn execute_blocks(rd: &mut record::Record, block: &mut arg::Block) {
 
     match block.fun {
-	Some(fun) => fun(rd, &block.args),
+	Some(fun) => fun(rd, &mut block.args),
 	None => ()
     };
 
-    for next in &block.blocks {
-	execute_blocks(rd, &next);
+    for next in &mut block.blocks {
+	execute_blocks(rd, next);
     }
 }

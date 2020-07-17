@@ -6,7 +6,7 @@ use crate::args::arg;
 use crate::accounts::record;
 
 // Function pointer for a block.
-pub fn display_help(_rd: &mut record::Record, _args: &Vec<arg::Arg>) {
+pub fn display_help(_rd: &mut record::Record, _args: &mut Vec<arg::Arg>) {
     help();
 }
 

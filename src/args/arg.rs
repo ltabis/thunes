@@ -5,9 +5,10 @@ use std::vec::Vec;
 use crate::accounts::record;
 
 // Function pointer for all blocks.
-type ArgFun = Option<fn(&mut record::Record, &Vec<Arg>)>;
+type ArgFun = Option<fn(&mut record::Record, &mut Vec<Arg>)>;
 
 pub struct Arg {
+    pub label: String,
     pub value: String,
     pub required: bool,
 }
@@ -18,18 +19,16 @@ pub struct Block {
     pub args: Vec<Arg>,
     pub blocks: Vec<Block>,
     pub fun: ArgFun,
-    pub required: bool,
 }
 
 impl Block {
-    pub fn new(short: &str, long: &str, fun: ArgFun, required: bool) -> Block {
+    pub fn new(short: &str, long: &str, fun: ArgFun) -> Block {
 	Block {
 	    short: String::from(&short[..]),
 	    long: String::from(&long[..]),
 	    args: Vec::new(),
 	    blocks: Vec::new(),
 	    fun,
-	    required
 	}
     }
 
@@ -66,7 +65,7 @@ impl std::fmt::Display for Block {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 
 	let result: std::fmt::Result = if !self.short.is_empty() {
-            write!(f, "(short: {}, long: {}, required: {})\n", self.short, self.long, self.required)
+            write!(f, "(short: {}, long: {})\n", self.short, self.long)
 	} else {
 	    write!(f, "block is a subblock.\n")
 	};
