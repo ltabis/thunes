@@ -2,39 +2,19 @@
 // create a new account.
 
 use crate::args::arg::Arg;
-use crate::accounts::account::Account;
-use crate::accounts::entry::Entry;
+use crate::accounts::account::{Account, account_exists};
+use crate::accounts::entry::{Entry, entry_exists};
 use crate::accounts::record;
 use std::vec::Vec;
 use chrono::Utc;
 
 pub fn new_item(rd: &mut record::Record, args: &mut Vec<Arg>) {
 
-    match args.iter()
-	.position(|arg| arg.value.is_empty()) {
-	    Some(index) => args.truncate(index),
-	    None => (),
-	}
-
     if args.len() == 1 {
 	new_account(rd, args);
     } else if args.len() > 1 {
 	new_entry(rd, args);
     }
-}
-
-fn account_exists(rd: &record::Record, args: &Vec<Arg>) -> bool {
-    rd.accounts
-	.iter()
-	.find(|&account| account.name == args[0].value)
-	.is_some()
-}
-
-fn entry_exists(ac: &Account, args: &Vec<Arg>) -> bool {
-    ac.entries
-	.iter()
-	.find(|&entry| entry.label == args[1].value)
-	.is_some()
 }
 
 fn new_account(rd: &mut record::Record, args: &Vec<Arg>) {

@@ -4,6 +4,7 @@
 use crate::args::arg;
 use crate::new::account;
 use crate::utils::helpers;
+use crate::list::items;
 
 pub fn setup_args() -> arg::Block {
     let mut args = arg::Block::new("", "", None);
@@ -45,15 +46,18 @@ pub fn setup_args() -> arg::Block {
 		required: false
 	    }
 	]),
+	arg::Block::new(
+            "-l",
+            "--list",
+	    Some(items::list_items),
+        ).register_args(vec![
+	    arg::Arg {
+		label: "account".to_string(),
+		value: String::new(),
+		required: false
+	    },
+	]),
     ]);
-
-    // args.register_args_ref(vec![
-    // 	arg::Arg {
-    // 	    label: "account".to_string(),
-    // 	    value: String::new(),
-    // 	    required: true
-    // 	}
-    // ]);
 
     args
 }

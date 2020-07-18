@@ -38,6 +38,12 @@ pub fn fill_command(env: &mut env::Args, block: &mut arg::Block) {
 
 pub fn execute_blocks(rd: &mut record::Record, block: &mut arg::Block) {
 
+    match block.args.iter()
+        .position(|arg| arg.value.is_empty()) {
+            Some(index) => block.args.truncate(index),
+            None => (),
+        }
+
     match block.fun {
 	Some(fun) => fun(rd, &mut block.args),
 	None => ()
