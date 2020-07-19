@@ -5,7 +5,10 @@ use accountscli::args::dispatch;
 use accountscli::accounts::record;
 
 fn main() {
-    let mut rd: record::Record = record::Record::new();
+    let mut rd: record::Record = match record::Record::new() {
+	Ok(r) => r,
+	Err(e) => { eprintln!("{}", e); std::process::exit(1); },
+    };
     
     let mut args = setup::setup_args();
     let index = dispatch::check_args(&args);
@@ -20,5 +23,9 @@ fn main() {
     env_args.next(); // skip option.
     dispatch::fill_command(&mut env_args, &mut args.blocks[index as usize]);
     dispatch::execute_blocks(&mut rd, &mut args.blocks[index as usize]);
-    rd.save_record();
+
+    match rd.save_record() {
+	Ok(()) => (),
+	Err(e) => { eprintln!("{}", e); std::process::exit(1); },
+    };
 }
