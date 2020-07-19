@@ -2,9 +2,9 @@
 // setup configuration for all arguments.
 
 use crate::args::arg;
-use crate::new::account;
+use crate::new;
 use crate::utils::helpers;
-use crate::list::items;
+use crate::list;
 
 pub fn setup_args() -> arg::Block {
     let mut args = arg::Block::new("", "", None);
@@ -18,7 +18,7 @@ pub fn setup_args() -> arg::Block {
         arg::Block::new(
             "-n",
             "--new",
-	    Some(account::new_item),
+	    Some(new::items::new_item),
         ).register_args(vec![
 	    arg::Arg {
 		label: "account".to_string(),
@@ -49,7 +49,7 @@ pub fn setup_args() -> arg::Block {
 	arg::Block::new(
             "-l",
             "--list",
-	    Some(items::list_items),
+	    Some(list::items::list_items),
         ).register_args(vec![
 	    arg::Arg {
 		label: "account".to_string(),
