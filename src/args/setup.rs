@@ -5,6 +5,7 @@ use crate::args::arg;
 use crate::new;
 use crate::utils::helpers;
 use crate::list;
+use crate::remove;
 
 pub fn setup_args() -> arg::Block {
     let mut args = arg::Block::new("", "", None);
@@ -53,6 +54,22 @@ pub fn setup_args() -> arg::Block {
         ).register_args(vec![
 	    arg::Arg {
 		label: "account".to_string(),
+		value: String::new(),
+		required: false
+	    },
+	]),
+	arg::Block::new(
+            "-r",
+            "--remove",
+	    Some(remove::items::remove_item),
+        ).register_args(vec![
+	    arg::Arg {
+		label: "account".to_string(),
+		value: String::new(),
+		required: true
+	    },
+	    arg::Arg {
+		label: "entry".to_string(),
 		value: String::new(),
 		required: false
 	    },

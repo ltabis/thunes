@@ -3,4 +3,5 @@ pub mod new;
 pub mod args;
 pub mod list;
 pub mod utils;
+pub mod remove;
 pub mod accounts;
