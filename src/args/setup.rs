@@ -7,6 +7,7 @@ use crate::utils::helpers;
 use crate::list;
 use crate::remove;
 use crate::balance;
+use crate::currency;
 
 pub fn setup_args() -> arg::Block {
     let mut args = arg::Block::new("", "", None);
@@ -87,6 +88,22 @@ pub fn setup_args() -> arg::Block {
 	    },
 	    arg::Arg {
 		label: "balance".to_string(),
+		value: String::new(),
+		required: false
+	    },
+	]),
+	arg::Block::new(
+            "-c",
+            "--currency",
+	    Some(currency::show::currency),
+        ).register_args(vec![
+	    arg::Arg {
+		label: "account".to_string(),
+		value: String::new(),
+		required: true
+	    },
+	    arg::Arg {
+		label: "currency".to_string(),
 		value: String::new(),
 		required: false
 	    },

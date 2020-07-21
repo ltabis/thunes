@@ -13,6 +13,7 @@ use std::vec::Vec;
 pub struct Account {
     pub name:  String,
     pub balance: f64,
+    pub currency: String,
     pub entries: Vec<entry::Entry>
 }
 
@@ -21,6 +22,7 @@ impl Account {
 	Account {
 	    name: name,
 	    balance: 0.0,
+	    currency: String::from("$"),
 	    entries: vec![entry]
 	}
     }

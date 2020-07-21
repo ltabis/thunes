@@ -28,6 +28,7 @@ fn new_account(rd: &mut record::Record, args: &Vec<Arg>) {
     rd.accounts.push(Account {
 	name: String::from(&args[0].value),
 	balance: 0.0,
+	currency: String::from("$"),
 	entries: Vec::new(),
     });
 
