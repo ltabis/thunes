@@ -12,6 +12,7 @@ use std::vec::Vec;
 #[derive(Serialize, Deserialize)]
 pub struct Account {
     pub name:  String,
+    pub balance: f64,
     pub entries: Vec<entry::Entry>
 }
 
@@ -19,6 +20,7 @@ impl Account {
     pub fn new(name: String, entry: entry::Entry) -> Account {
 	Account {
 	    name: name,
+	    balance: 0.0,
 	    entries: vec![entry]
 	}
     }
@@ -31,6 +33,10 @@ impl std::fmt::Display for Account {
 }
 
 pub fn account_exists(rd: &Record, args: &Vec<Arg>) -> bool {
+    if args.len() == 0 {
+	return false;
+    }
+
     rd.accounts
         .iter()
         .find(|&account| account.name == args[0].value)
