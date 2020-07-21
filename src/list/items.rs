@@ -29,7 +29,7 @@ fn list_entries(rd: &mut Record, args: &mut Vec<Arg>) {
 
     if !account_exists(&rd, args) {
 	// TODO: encapsulated error messages.
-	eprintln!("The account \"{}\" doesn't exists.", args[0].value);
+	eprintln!("The account '{}' doesn't exists.", args[0].value);
 	return;
     }
     
@@ -44,7 +44,7 @@ fn list_entries(rd: &mut Record, args: &mut Vec<Arg>) {
 
     if ac.entries.len() == 0 {
 	// TODO: encapsulated error messages.
-	eprintln!("No entries available for the \"{}\" account.", ac.name);
+	eprintln!("No entries available for the '{}' account.", ac.name);
 	return;
     }
 

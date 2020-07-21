@@ -21,7 +21,7 @@ fn new_account(rd: &mut record::Record, args: &Vec<Arg>) {
 
     if account_exists(&rd, args) {
 	// TODO: encapsulated error messages.
-	eprintln!("Account {} already exists.", args[0].value);
+	eprintln!("Account '{}' already exists.", args[0].value);
 	return;
     }
     
@@ -31,14 +31,14 @@ fn new_account(rd: &mut record::Record, args: &Vec<Arg>) {
 	entries: Vec::new(),
     });
 
-    println!("Account {} created.", args[0].value);
+    println!("Account '{}' created.", args[0].value);
 }
 
 fn new_entry(rd: &mut record::Record, args: &Vec<Arg>) {
 
     if !account_exists(&rd, args) {
 	// TODO: encapsulated error messages.
-	eprintln!("The {} account doesn't exists.", args[0].value);
+	eprintln!("Account '{}' doesn't exists.", args[0].value);
 	return;
     }
 
@@ -57,7 +57,7 @@ fn new_entry(rd: &mut record::Record, args: &Vec<Arg>) {
 
     if entry_exists(ac, args) {
 	// TODO: encapsulated error messages.
-	eprintln!("The {} entry already exists.", args[1].value);
+	eprintln!("The '{}' entry already exists.", args[1].value);
 	return;
     }
 
@@ -84,5 +84,5 @@ fn new_entry(rd: &mut record::Record, args: &Vec<Arg>) {
 	note,
     });
 
-    println!("New entry {} created.", args[1].value);
+    println!("New entry '{}' created.", args[1].value);
 }
