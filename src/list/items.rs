@@ -49,7 +49,7 @@ fn list_entries(rd: &mut Record, args: &mut Vec<Arg>) {
     }
 
     for entry in &ac.entries {
-	table.add_row(row![entry.label, entry.amount, entry.date, entry.note]);
+	table.add_row(row![entry.label, format!("{} {}", entry.amount, ac.currency), entry.date, entry.note]);
     }
 
     table.printstd();
