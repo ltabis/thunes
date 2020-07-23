@@ -4,13 +4,14 @@
 use crate::args::arg::Arg;
 use crate::accounts::record::Record;
 use crate::accounts::account::{Account, account_exists};
+use colored::*;
 
 pub fn balance(rd: &mut Record, args: &mut Vec<Arg>) {
 
     if !account_exists(&rd, args) {
         // TODO: encapsulated error messages.
 	if args.len() > 0 {
-            eprintln!("The '{}' account does not exists.", args[0].value);
+            eprintln!("The '{}' account does not exists.", args[0].value.yellow());
 	} else {
             eprintln!("You didn't specified any account.");
 	}
@@ -30,7 +31,7 @@ pub fn balance(rd: &mut Record, args: &mut Vec<Arg>) {
 }
 
 fn show_balance(account: &Account) {
-    println!("'{}' balance: {}.", account.name, account.balance);
+    println!("'{}' balance: {}.", account.name.yellow(), account.balance.to_string().green());
 }
 
 fn set_balance(account: &mut Account, balance: &String) {
@@ -40,5 +41,5 @@ fn set_balance(account: &mut Account, balance: &String) {
         Err(_) => { eprintln!("Please specify a valid amount."); return; },
     };
 
-    println!("'{}' balance set to {}.", account.name, account.balance);
+    println!("'{}' balance set to {}.", account.name.yellow(), account.balance.to_string().green());
 }

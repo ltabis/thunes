@@ -5,6 +5,7 @@ use crate::accounts::account::{Account, account_exists};
 use crate::accounts::record::Record;
 use crate::args::arg::Arg;
 use std::vec::Vec;
+use colored::*;
 
 pub fn list_items(rd: &mut Record, args: &mut Vec<Arg>) {
 
@@ -29,7 +30,7 @@ fn list_entries(rd: &mut Record, args: &mut Vec<Arg>) {
 
     if !account_exists(&rd, args) {
 	// TODO: encapsulated error messages.
-	eprintln!("The account '{}' doesn't exists.", args[0].value);
+	eprintln!("The account '{}' doesn't exists.", args[0].value.yellow());
 	return;
     }
     
@@ -44,7 +45,7 @@ fn list_entries(rd: &mut Record, args: &mut Vec<Arg>) {
 
     if ac.entries.len() == 0 {
 	// TODO: encapsulated error messages.
-	eprintln!("No entries available for the '{}' account.", ac.name);
+	eprintln!("No entries available for the '{}' account.", ac.name.yellow());
 	return;
     }
 

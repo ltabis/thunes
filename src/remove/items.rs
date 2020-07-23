@@ -5,12 +5,13 @@ use crate::args::arg::Arg;
 use crate::accounts::record::Record;
 use crate::accounts::account::account_exists;
 use crate::accounts::entry::entry_exists;
+use colored::*;
 
 pub fn remove_item(rd: &mut Record, args: &mut Vec<Arg>) {
 
     if !account_exists(&rd, args) {
         // TODO: encapsulated error messages.
-        eprintln!("The '{}' account does not exists.", args[0].value);
+        eprintln!("The '{}' account does not exists.", args[0].value.yellow());
         return;
     }
 
@@ -30,7 +31,7 @@ fn remove_account(rd: &mut Record, args: &Vec<Arg>) {
 
     rd.accounts.remove(index);
 
-    println!("Account '{}' removed.", args[0].value);
+    println!("Account '{}' removed.", args[0].value.yellow());
 }
 
 fn remove_entry(rd: &mut Record, args: &Vec<Arg>) {
@@ -42,7 +43,7 @@ fn remove_entry(rd: &mut Record, args: &Vec<Arg>) {
 
     if !entry_exists(&rd.accounts[a_index], args) {
         // TODO: encapsulated error messages.
-        eprintln!("The '{}' entry in '{}' does not exists.", args[1].value, args[0].value);
+        eprintln!("The '{}' entry in '{}' does not exists.", args[1].value.cyan(), args[0].value.yellow());
         return;
     }
 
@@ -54,5 +55,5 @@ fn remove_entry(rd: &mut Record, args: &Vec<Arg>) {
 
     rd.accounts[a_index].entries.remove(e_index);
 
-    println!("Entry '{}' removed from '{}'.", args[1].value, args[0].value);
+    println!("Entry '{}' removed from '{}'.", args[1].value.cyan(), args[0].value.yellow());
 }

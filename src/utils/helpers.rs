@@ -16,11 +16,12 @@ pub fn help() {
 	     [--list | -l [<account>]]
              [--remove | -r [<account> [<label>]]]
              [--balance | -b [<account> [<new-balance>]]]
-	     TODO [--set-currency <currency> [<account>]]
+	     [--currency | -c <currency> [<account>]]
 
 new          creates a new account or entry.
 list         list all accounts or entries in an account.
 remove       removes an account or entry.
 balance      set or show balance of an account.
+currency     set or show currency of an account.
 ");
 }

@@ -7,6 +7,7 @@ use crate::accounts::entry::{Entry, entry_exists};
 use crate::accounts::record;
 use std::vec::Vec;
 use chrono::Utc;
+use colored::*;
 
 pub fn new_item(rd: &mut record::Record, args: &mut Vec<Arg>) {
 
@@ -21,7 +22,7 @@ fn new_account(rd: &mut record::Record, args: &Vec<Arg>) {
 
     if account_exists(&rd, args) {
 	// TODO: encapsulated error messages.
-	eprintln!("Account '{}' already exists.", args[0].value);
+	eprintln!("Account '{}' already exists.", args[0].value.yellow());
 	return;
     }
     
@@ -32,14 +33,14 @@ fn new_account(rd: &mut record::Record, args: &Vec<Arg>) {
 	entries: Vec::new(),
     });
 
-    println!("Account '{}' created.", args[0].value);
+    println!("Account '{}' created.", args[0].value.yellow());
 }
 
 fn new_entry(rd: &mut record::Record, args: &Vec<Arg>) {
 
     if !account_exists(&rd, args) {
 	// TODO: encapsulated error messages.
-	eprintln!("Account '{}' doesn't exists.", args[0].value);
+	eprintln!("Account '{}' doesn't exists.", args[0].value.yellow());
 	return;
     }
 
@@ -58,7 +59,7 @@ fn new_entry(rd: &mut record::Record, args: &Vec<Arg>) {
 
     if entry_exists(ac, args) {
 	// TODO: encapsulated error messages.
-	eprintln!("The '{}' entry already exists.", args[1].value);
+	eprintln!("The '{}' entry already exists.", args[1].value.cyan());
 	return;
     }
 
@@ -85,5 +86,5 @@ fn new_entry(rd: &mut record::Record, args: &Vec<Arg>) {
 	note,
     });
 
-    println!("New entry '{}' created.", args[1].value);
+    println!("New entry '{}' created.", args[1].value.cyan());
 }
