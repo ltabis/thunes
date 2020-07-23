@@ -4,6 +4,7 @@
 use crate::accounts::account::{Account, account_exists};
 use crate::accounts::record::Record;
 use crate::args::arg::Arg;
+
 use std::vec::Vec;
 use colored::*;
 
@@ -34,8 +35,7 @@ fn list_entries(rd: &mut Record, args: &mut Vec<Arg>) {
 	return;
     }
     
-    let mut table = table!(["Label", "Amount", "Date", "Note"]);
-
+    let mut table = table!([bFy->"Label", bFy->"Amount", bFy->"Date", bFy->"Note"]);
     // FIXME: That's some shitty code.
     let index = rd.accounts
         .iter()
@@ -50,7 +50,7 @@ fn list_entries(rd: &mut Record, args: &mut Vec<Arg>) {
     }
 
     for entry in &ac.entries {
-	table.add_row(row![entry.label, format!("{} {}", entry.amount, ac.currency), entry.date, entry.note]);
+	table.add_row(row![Fc->entry.label, format!("{} {}", entry.amount.to_string().green(), ac.currency.blue()), entry.date, entry.note]);
     }
 
     table.printstd();
