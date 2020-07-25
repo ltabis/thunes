@@ -6,9 +6,16 @@ use crate::accounts::account::Account;
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize)]
+pub enum EntryType {
+    Withdrawal,
+    Deposit,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct Entry {
     pub label: String,
     pub amount: f64,
+    pub entry_type: EntryType,
     pub date: String, // TODO: check if format available.
     pub note: String
 }

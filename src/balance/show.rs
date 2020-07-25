@@ -30,8 +30,14 @@ pub fn balance(rd: &mut Record, args: &mut Vec<Arg>) {
     }
 }
 
-fn show_balance(account: &Account) {
-    println!("'{}' balance: {}.", account.name.yellow(), account.balance.to_string().green());
+pub fn show_balance(ac: &Account) {
+    let amount = if ac.balance < 0.0 {
+	ac.balance.to_string().red()
+    } else {
+	ac.balance.to_string().green()
+    };
+
+    println!("'{}' balance: {}{}.", ac.name.yellow(), amount, ac.currency.blue());
 }
 
 fn set_balance(account: &mut Account, balance: &String) {

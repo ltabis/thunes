@@ -3,7 +3,7 @@
 
 use crate::args::arg::Arg;
 use crate::accounts::account::{Account, account_exists};
-use crate::accounts::entry::{Entry, entry_exists};
+use crate::accounts::entry::{Entry, EntryType, entry_exists};
 use crate::accounts::record;
 use std::vec::Vec;
 use chrono::Utc;
@@ -48,6 +48,10 @@ fn new_entry(rd: &mut record::Record, args: &Vec<Arg>) {
 	// TODO: encapsulated error messages.
 	eprintln!("Please specify an amount.");
 	return;
+    } else if args.len() == 3 {
+	// TODO: encapsulated error messages.
+	eprintln!("Please specify if the entry is a widthdrawl or an income ('-' or '+').");
+	return;
     }
 
     // FIXME: That's some shitty code.
@@ -68,13 +72,21 @@ fn new_entry(rd: &mut record::Record, args: &Vec<Arg>) {
 	Ok(v) => v,
 	Err(_) => { eprintln!("Please specify a valid amount."); return; },
     };
-    let date = if args.len() >= 4 {
-	String::from(&args[3].value)
+    let entry_type: EntryType = match args[3].value {
+	_ if args[3].value == "+" => { ac.balance += amount; EntryType::Deposit },
+	_ if args[3].value == "-" => { ac.balance -= amount; EntryType::Withdrawal },
+	_ => {
+	    eprintln!("Please specify if the entry is a widthdrawl or an income using '-' or '+'.");
+            return;
+	},
+    };	
+    let date = if args.len() >= 5 {
+	String::from(&args[4].value)
     } else {
 	String::from(Utc::now().format("%a %b %e %T %Y").to_string())
     };
-    let note = if args.len() == 5 {
-	String::from(&args[4].value)
+    let note = if args.len() >= 6 {
+	String::from(&args[5].value)
     } else {
 	String::new()
     };
@@ -82,6 +94,7 @@ fn new_entry(rd: &mut record::Record, args: &Vec<Arg>) {
     ac.entries.push(Entry {
 	label,
 	amount,
+	entry_type,
 	date,
 	note,
     });

@@ -2,6 +2,8 @@
 // Listing of items from the record.
 
 use crate::accounts::account::{Account, account_exists};
+use crate::accounts::entry::EntryType;
+use crate::balance::show::show_balance;
 use crate::accounts::record::Record;
 use crate::args::arg::Arg;
 
@@ -49,9 +51,16 @@ fn list_entries(rd: &mut Record, args: &mut Vec<Arg>) {
 	return;
     }
 
+    let mut amount: colored::ColoredString;
+
     for entry in &ac.entries {
-	table.add_row(row![Fc->entry.label, format!("{} {}", entry.amount.to_string().green(), ac.currency.blue()), entry.date, entry.note]);
+	 amount = match entry.entry_type {
+	    EntryType::Withdrawal => ("- ".to_string() + &entry.amount.to_string()).red(),
+	    EntryType::Deposit => ("+ ".to_string() + &entry.amount.to_string()).green(),
+	};
+	table.add_row(row![Fc->entry.label, format!("{} {}", amount, ac.currency.blue()), entry.date, entry.note]);
     }
 
     table.printstd();
+    show_balance(ac);
 }
