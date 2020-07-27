@@ -4,7 +4,7 @@
 use crate::args::arg::Arg;
 use crate::accounts::record::Record;
 use crate::accounts::account::account_exists;
-use crate::accounts::entry::entry_exists;
+use crate::accounts::entry::{EntryType, entry_exists};
 use colored::*;
 
 pub fn remove_item(rd: &mut Record, args: &mut Vec<Arg>) {
@@ -53,7 +53,11 @@ fn remove_entry(rd: &mut Record, args: &Vec<Arg>) {
         .position(|ac| ac.label == args[1].value)
         .unwrap();
 
-    rd.accounts[a_index].entries.remove(e_index);
+    match rd.accounts[a_index].entries[e_index].entry_type {
+	EntryType::Deposit => rd.accounts[a_index].balance -= rd.accounts[a_index].entries[e_index].amount,
+	EntryType::Withdrawal => rd.accounts[a_index].balance += rd.accounts[a_index].entries[e_index].amount,
+    }
 
+    rd.accounts[a_index].entries.remove(e_index);
     println!("Entry '{}' removed from '{}'.", args[1].value.cyan(), args[0].value.yellow());
 }
