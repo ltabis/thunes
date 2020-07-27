@@ -39,6 +39,11 @@ pub fn setup_args() -> arg::Block {
 		required: false
 	    },
 	    arg::Arg {
+		label: "entry type".to_string(),
+		value: String::new(),
+		required: false
+	    },
+	    arg::Arg {
 		label: "date".to_string(),
 		value: String::new(),
 		required: false
