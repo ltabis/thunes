@@ -1,6 +1,6 @@
 [package]
 name = "accountscli"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["ltabis <tab.rysak70@gmail.com>"]
 edition = "2018"
 
