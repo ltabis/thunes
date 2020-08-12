@@ -14,12 +14,14 @@ pub fn help() {
     println!("usage: accounts-cli
 	     [--new | -n <account> [<label> <amount> [<date> <note>]]]
 	     [--list | -l [<account>]]
+	     [--rename | -re <account> <new-name>]
              [--remove | -r [<account> [<label>]]]
              [--balance | -b [<account> [<new-balance>]]]
 	     [--currency | -c <currency> [<account>]]
 
 new          creates a new account or entry.
 list         list all accounts or entries in an account.
+rename       renames an account.
 remove       removes an account or entry.
 balance      set or show balance of an account.
 currency     set or show currency of an account.

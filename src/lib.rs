@@ -4,6 +4,7 @@ pub mod args;
 pub mod list;
 pub mod utils;
 pub mod remove;
+pub mod rename;
 pub mod balance;
 pub mod currency;
 pub mod accounts;

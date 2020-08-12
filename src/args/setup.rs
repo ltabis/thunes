@@ -5,6 +5,7 @@ use crate::args::arg;
 use crate::new;
 use crate::utils::helpers;
 use crate::list;
+use crate::rename;
 use crate::remove;
 use crate::balance;
 use crate::currency;
@@ -109,6 +110,22 @@ pub fn setup_args() -> arg::Block {
 	    },
 	    arg::Arg {
 		label: "currency".to_string(),
+		value: String::new(),
+		required: false
+	    },
+	]),
+	arg::Block::new(
+            "-re",
+            "--rename",
+	    Some(rename::account::rename_account),
+        ).register_args(vec![
+	    arg::Arg {
+		label: "account".to_string(),
+		value: String::new(),
+		required: true
+	    },
+	    arg::Arg {
+		label: "new_name".to_string(),
 		value: String::new(),
 		required: false
 	    },
