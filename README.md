@@ -53,22 +53,37 @@ $ accounts-cli --list my-account
 'my-account' balance: 79$.
 ```
 
-
 You can **add**, **list**, **remove** you accounts and entries, and check your **balance**.
 
-use ``accounts-cli --help`` to get more informations.
+use ``accounts-cli --help`` to get more commands.
 
 ## How to compile
 
+Download the repository.
+
 ```shell
+$ git clone https://github.com/ltabis/accounts-cli.git
+```
+
+Compile a binary.
+
+```shell
+$ cd accounts-cli/
 $ cargo build --release
 ```
 
+Then move the generated binary inside ``target/release/accounts-cli`` into a folder where your ``PATH`` variable points to. (i. e. /home/ltabis/.bin)
+
+> You can also directly download binaries [here](https://github.com/ltabis/accounts-cli/releases).
+
 ## Dependencies
+
+- Rust
+
+## Crates
 
 - prettytable-rs
 - serde_json
 - colored
 - chrono
 - serde
-
