@@ -95,9 +95,7 @@ impl std::fmt::Display for Operation {
         write!(
             f,
             "{},{},{},{},{}\n",
-            item.date
-                .format(TIME_FORMAT)
-                .expect("formatting should be valid"),
+            item.date.format(TIME_FORMAT).expect("time format is valid"),
             self.as_str(),
             item.ammount,
             item.description,

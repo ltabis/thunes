@@ -24,9 +24,115 @@ impl From<operations::Error> for CommandError {
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    accounts: String,
+    /// Path to the account files. If not specified, the program will search the current directory.
+    #[arg(short, long)]
+    accounts: Option<String>,
+    /// Command to execute on the files.
     #[command(subcommand)]
     command: Commands,
+}
+
+impl Cli {
+    fn execute(self) -> Result<(), CommandError> {
+        let account_path = self.accounts.unwrap_or(".".to_string());
+        let account_path = &account_path;
+
+        match self.command {
+            Commands::New { name } => Commands::new_account(account_path, &name),
+            Commands::Income {
+                account,
+                ammount,
+                description,
+                tags,
+            } => Commands::write_operation(
+                account_path,
+                &account,
+                Operation::Income(Item {
+                    date: time::OffsetDateTime::now_utc().date(),
+                    ammount: ammount,
+                    description: description.to_string(),
+                    tags: tags.clone(),
+                }),
+            ),
+            Commands::Spend {
+                account,
+                ammount,
+                description,
+                tags,
+            } => Commands::write_operation(
+                account_path,
+                &account,
+                Operation::Spending(Item {
+                    date: time::OffsetDateTime::now_utc().date(),
+                    ammount: ammount,
+                    description: description,
+                    tags,
+                }),
+            ),
+            Commands::Balance { account } => Commands::balance(account_path, account.as_ref()),
+            Commands::List {
+                account: _account,
+                start: _start,
+                end: _end,
+                chart: _chart,
+            } => {
+                // let start = time::Date::parse(&start, TIME_FORMAT)
+                //     .map_err(|_| "[start] argument must be a date")
+                //     .unwrap();
+                // let end = time::Date::parse(&end, TIME_FORMAT)
+                //     .map_err(|_| "[end] argument must be a date")
+                //     .unwrap();
+
+                // enum Parser {
+                //     SearchStart,
+                //     ComputeBalance,
+                //     End,
+                // }
+
+                // let mut parser = Parser::SearchStart;
+                // let mut operations = vec![];
+
+                // for line in
+                //     std::fs::read_to_string(std::path::PathBuf::from_iter([account_path, &name]))
+                //         .unwrap()
+                //         .lines()
+                // {
+                //     match parser {
+                //         Parser::SearchStart => {
+                //             let op = Operation::from_str(line).unwrap();
+                //             if op.date() == start {
+                //                 operations.push(op);
+                //                 parser = Parser::ComputeBalance;
+                //             }
+                //         }
+                //         Parser::ComputeBalance => {
+                //             let op = Operation::from_str(line).unwrap();
+                //             if op.date() == end {
+                //                 parser = Parser::End;
+                //             }
+                //             operations.push(op);
+                //         }
+                //         Parser::End => {
+                //             break;
+                //         }
+                //     }
+                // }
+
+                // let balance: f64 = operations.iter().map(|op| op.ammount()).sum();
+                // println!("balance between {start} and {end}: {balance:.2} EUR");
+
+                // if chart {
+                //     build_chart(&operations);
+                // }
+
+                Ok(())
+            }
+            Commands::Accounts => {
+                Commands::accounts(account_path);
+                Ok(())
+            }
+        }
+    }
 }
 
 #[derive(Subcommand)]
@@ -38,8 +144,8 @@ enum Commands {
     },
     /// Add a spending operation.
     Spend {
-        #[arg(short, long, value_name = "ACCOUNT NAME")]
-        name: String,
+        #[arg(short, long, value_name = "ACCOUNT-NAME")]
+        account: String,
         #[arg(short, long, value_name = "AMMOUNT")]
         ammount: f64,
         #[arg(short, long, value_name = "DESCRIPTION")]
@@ -51,8 +157,8 @@ enum Commands {
     },
     /// Add an income operation.
     Income {
-        #[arg(short, long, value_name = "ACCOUNT NAME")]
-        name: String,
+        #[arg(short, long, value_name = "ACCOUNT-NAME")]
+        account: String,
         #[arg(short, long, value_name = "AMMOUNT")]
         ammount: f64,
         #[arg(short, long, value_name = "DESCRIPTION")]
@@ -64,17 +170,17 @@ enum Commands {
     },
     /// Display the balance of a specific account or all accounts if the --name option is not specified.
     Balance {
-        #[arg(short, long, value_name = "ACCOUNT NAME")]
-        name: Option<String>,
+        #[arg(short, long, value_name = "ACCOUNT-NAME")]
+        account: Option<String>,
     },
     /// List the transaction ammount between two dates.
     List {
         // TODO: set optional.
-        #[arg(short, long, value_name = "ACCOUNT NAME")]
-        name: String,
-        #[arg(short, long, value_name = "START DATE")]
+        #[arg(short, long, value_name = "ACCOUNT-NAME")]
+        account: String,
+        #[arg(short, long, value_name = "START-DATE")]
         start: String,
-        #[arg(short, long, value_name = "END DATE")]
+        #[arg(short, long, value_name = "END-DATE")]
         end: String,
         #[arg(short, long)]
         chart: bool,
@@ -85,13 +191,6 @@ enum Commands {
 }
 
 impl Commands {
-    fn new(account_path: &str, name: &str) -> Result<(), CommandError> {
-        std::fs::File::create(std::path::PathBuf::from_iter([account_path, &name])).map_or_else(
-            |error| Err(CommandError::CreateAccount(name.to_string(), error)),
-            |_| Ok(()),
-        )
-    }
-
     fn parse_tags(
         s: &str,
     ) -> Result<std::collections::HashSet<String>, Box<dyn std::error::Error + Send + Sync + 'static>>
@@ -111,6 +210,13 @@ impl Commands {
                 }
             })
             .collect()
+    }
+
+    fn new_account(account_path: &str, name: &str) -> Result<(), CommandError> {
+        std::fs::File::create(std::path::PathBuf::from_iter([account_path, &name])).map_or_else(
+            |error| Err(CommandError::CreateAccount(name.to_string(), error)),
+            |_| Ok(()),
+        )
     }
 
     fn write_operation(
@@ -171,107 +277,9 @@ impl Commands {
             }
         }
     }
-
-    fn execute(self, account_path: &str) -> Result<(), CommandError> {
-        match self {
-            Commands::New { name } => Self::new(account_path, &name),
-            Commands::Income {
-                name,
-                ammount,
-                description,
-                tags,
-            } => Self::write_operation(
-                account_path,
-                &name,
-                Operation::Income(Item {
-                    date: time::OffsetDateTime::now_utc().date(),
-                    ammount: ammount,
-                    description: description.to_string(),
-                    tags: tags.clone(),
-                }),
-            ),
-            Commands::Spend {
-                name,
-                ammount,
-                description,
-                tags,
-            } => Self::write_operation(
-                account_path,
-                &name,
-                Operation::Spending(Item {
-                    date: time::OffsetDateTime::now_utc().date(),
-                    ammount: ammount,
-                    description: description,
-                    tags,
-                }),
-            ),
-            Commands::Balance { name } => Self::balance(account_path, name.as_ref()),
-            Commands::List {
-                name: _name,
-                start: _start,
-                end: _end,
-                chart: _chart,
-            } => {
-                // let start = time::Date::parse(&start, TIME_FORMAT)
-                //     .map_err(|_| "[start] argument must be a date")
-                //     .unwrap();
-                // let end = time::Date::parse(&end, TIME_FORMAT)
-                //     .map_err(|_| "[end] argument must be a date")
-                //     .unwrap();
-
-                // enum Parser {
-                //     SearchStart,
-                //     ComputeBalance,
-                //     End,
-                // }
-
-                // let mut parser = Parser::SearchStart;
-                // let mut operations = vec![];
-
-                // for line in
-                //     std::fs::read_to_string(std::path::PathBuf::from_iter([account_path, &name]))
-                //         .unwrap()
-                //         .lines()
-                // {
-                //     match parser {
-                //         Parser::SearchStart => {
-                //             let op = Operation::from_str(line).unwrap();
-                //             if op.date() == start {
-                //                 operations.push(op);
-                //                 parser = Parser::ComputeBalance;
-                //             }
-                //         }
-                //         Parser::ComputeBalance => {
-                //             let op = Operation::from_str(line).unwrap();
-                //             if op.date() == end {
-                //                 parser = Parser::End;
-                //             }
-                //             operations.push(op);
-                //         }
-                //         Parser::End => {
-                //             break;
-                //         }
-                //     }
-                // }
-
-                // let balance: f64 = operations.iter().map(|op| op.ammount()).sum();
-                // println!("balance between {start} and {end}: {balance:.2} EUR");
-
-                // if chart {
-                //     build_chart(&operations);
-                // }
-
-                Ok(())
-            }
-            Commands::Accounts => {
-                Self::accounts(account_path);
-                Ok(())
-            }
-        }
-    }
 }
 
 fn main() -> Result<(), CommandError> {
     let cli = Cli::parse();
-    cli.command.execute(&cli.accounts)
+    cli.execute()
 }
