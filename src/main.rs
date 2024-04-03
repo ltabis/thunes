@@ -1,12 +1,24 @@
 mod charts;
-mod errors;
 mod operations;
 
-use errors::CommandError;
 use operations::{Item, Operation};
 
 use clap::{Parser, Subcommand};
 use std::{io::Write, str::FromStr};
+
+#[derive(Debug)]
+pub enum CommandError {
+    CreateAccount(String, std::io::Error),
+    OpenAccount(String, std::io::Error),
+    WriteToAccount(String, std::io::Error),
+    Operation(operations::Error),
+}
+
+impl From<operations::Error> for CommandError {
+    fn from(value: operations::Error) -> Self {
+        Self::Operation(value)
+    }
+}
 
 /// Program to record and analyze financial data.
 #[derive(Parser)]
@@ -123,7 +135,7 @@ impl Commands {
                 .map_err(|error| CommandError::OpenAccount(name.to_string(), error))?
                 .lines()
             {
-                match Operation::from_str(line).unwrap() {
+                match Operation::from_str(line)? {
                     Operation::Income(i) => balance += i.ammount,
                     Operation::Spending(i) => balance -= i.ammount,
                 }
