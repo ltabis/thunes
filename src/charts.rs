@@ -1,12 +1,12 @@
-use crate::operations::Operation;
+use crate::transaction::Transaction;
 
-fn build_chart(operations: &[Operation]) {
+fn build_chart(transaction: &[Transaction]) {
     // Define chart related sizes.
-    let width = 50 * operations.len() as isize;
+    let width = 50 * transaction.len() as isize;
     let height = 600;
     let (top, right, bottom, left) = (90, 40, 50, 60);
 
-    let smallest_ammount = operations.iter().fold(0.0, |state, op| {
+    let smallest_ammount = transaction.iter().fold(0.0, |state, op| {
         if op.ammount() < state {
             op.ammount()
         } else {
@@ -14,7 +14,7 @@ fn build_chart(operations: &[Operation]) {
         }
     });
 
-    let biggest_ammount = operations.iter().fold(0.0, |state, op| {
+    let biggest_ammount = transaction.iter().fold(0.0, |state, op| {
         if op.ammount() > state {
             op.ammount()
         } else {
@@ -24,7 +24,7 @@ fn build_chart(operations: &[Operation]) {
 
     let mut data = Vec::<(String, f32)>::default();
 
-    for op in operations {
+    for op in transaction {
         match data.last_mut() {
             Some((date, ammount)) if *date == op.date().to_string() => {
                 *ammount += op.ammount() as f32;
