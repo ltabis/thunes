@@ -3,14 +3,17 @@ mod charts;
 mod transaction;
 
 use account::Account;
+use clap::{Parser, Subcommand};
 use transaction::{Item, Transaction};
 
-use clap::{Parser, Subcommand};
+const TIME_FORMAT: &[time::format_description::FormatItem<'_>] =
+    time_macros::format_description!("[year]-[month]-[day]");
 
 #[derive(Debug)]
 pub enum CommandError {
     Account(String, account::Error),
     Operation(transaction::Error),
+    InvalidDate(time::error::Parse),
 }
 
 impl From<transaction::Error> for CommandError {
@@ -70,17 +73,23 @@ impl Cli {
             ),
             Commands::Balance { account } => Commands::balance(accounts_path, account.as_ref()),
             Commands::List {
-                account: _account,
-                start: _start,
-                end: _end,
+                account,
+                start,
+                end,
                 chart: _chart,
             } => {
-                // let start = time::Date::parse(&start, TIME_FORMAT)
-                //     .map_err(|_| "[start] argument must be a date")
-                //     .unwrap();
-                // let end = time::Date::parse(&end, TIME_FORMAT)
-                //     .map_err(|_| "[end] argument must be a date")
-                //     .unwrap();
+                let start =
+                    time::Date::parse(&start, TIME_FORMAT).map_err(CommandError::InvalidDate)?;
+                let end =
+                    time::Date::parse(&end, TIME_FORMAT).map_err(CommandError::InvalidDate)?;
+
+                let account =
+                    Account::from_file(std::path::PathBuf::from_iter([accounts_path, &account]))
+                        .map_err(|error| CommandError::Account(account.to_string(), error))?;
+
+                account
+                    .transactions_between(&start, &end)
+                    .map_err(|error| CommandError::Account(account.name().to_string(), error))?;
 
                 // enum Parser {
                 //     SearchStart,

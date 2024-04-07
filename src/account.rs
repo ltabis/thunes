@@ -6,6 +6,7 @@ use crate::transaction::Transaction;
 pub enum Error {
     Io(std::io::Error),
     Serde(serde_json::Error),
+    InvalidDateRange,
 }
 
 impl From<std::io::Error> for Error {
@@ -93,6 +94,24 @@ impl Account {
         }
 
         balance
+    }
+
+    pub fn transactions_between(
+        &self,
+        start: &time::Date,
+        end: &time::Date,
+    ) -> Result<&[Transaction], Error> {
+        let start = self
+            .data
+            .transactions
+            .iter()
+            .position(|t| &t.date() == start);
+        let end = self.data.transactions.iter().position(|t| &t.date() == end);
+
+        match (start, end) {
+            (Some(start), Some(end)) if start < end => Ok(&self.data.transactions[start..end]),
+            _ => Err(Error::InvalidDateRange),
+        }
     }
 }
 
