@@ -199,16 +199,18 @@ impl Commands {
 
     fn list_accounts_paths(accounts_path: &str) -> Vec<std::path::PathBuf> {
         std::fs::read_dir(accounts_path)
-            .expect("database must be a directory")
-            .filter_map(|entry| {
-                let account = entry.expect("entry must be valid").path();
-                if account.is_file() {
-                    Some(account)
-                } else {
-                    None
-                }
+            .map(|dir| {
+                dir.filter_map(|entry| {
+                    let account = entry.expect("entry must be valid").path();
+                    if account.is_file() {
+                        Some(account)
+                    } else {
+                        None
+                    }
+                })
+                .collect()
             })
-            .collect()
+            .unwrap_or_default()
     }
 
     fn new_account(accounts_path: &str, name: &str) -> Result<(), CommandError> {
