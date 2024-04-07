@@ -9,9 +9,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Debug)]
 pub enum CommandError {
-    CreateAccount(String, std::io::Error),
-    OpenAccount(String, std::io::Error),
-    WriteToAccount(String, transaction::Error),
+    Account(String, account::Error),
     Operation(transaction::Error),
 }
 
@@ -50,7 +48,7 @@ impl Cli {
                 &account,
                 Transaction::Income(Item {
                     date: time::OffsetDateTime::now_utc().date(),
-                    ammount: ammount,
+                    ammount,
                     description: description.to_string(),
                     tags: tags.clone(),
                 }),
@@ -65,8 +63,8 @@ impl Cli {
                 &account,
                 Transaction::Spending(Item {
                     date: time::OffsetDateTime::now_utc().date(),
-                    ammount: ammount,
-                    description: description,
+                    ammount,
+                    description,
                     tags,
                 }),
             ),
@@ -215,9 +213,8 @@ impl Commands {
 
     fn new_account(accounts_path: &str, name: &str) -> Result<(), CommandError> {
         // TODO: check if the account does not already exists.
-        Account::open(std::path::PathBuf::from_iter([accounts_path, &name])).unwrap();
-
-        Ok(())
+        Account::open(std::path::PathBuf::from_iter([accounts_path, &name]))
+            .map_err(|error| CommandError::Account(name.to_string(), error))
     }
 
     fn write_transaction(
@@ -225,19 +222,19 @@ impl Commands {
         name: &str,
         transaction: Transaction,
     ) -> Result<(), CommandError> {
-        let mut account =
-            Account::from_file(std::path::PathBuf::from_iter([accounts_path, name])).unwrap();
-
-        account.push_transaction(transaction).write().unwrap();
-
-        Ok(())
+        Account::from_file(std::path::PathBuf::from_iter([accounts_path, name]))
+            .map_err(|error| CommandError::Account(name.to_string(), error))?
+            .push_transaction(transaction)
+            .write()
+            .map_err(|error| CommandError::Account(name.to_string(), error))
+            .map(|_| ())
     }
 
     fn balance(accounts_path: &str, name: Option<&String>) -> Result<(), CommandError> {
         if let Some(account) = name {
             let account =
                 Account::from_file(std::path::PathBuf::from_iter([accounts_path, account]))
-                    .unwrap();
+                    .map_err(|error| CommandError::Account(account.to_string(), error))?;
 
             println!(
                 "Balance for '{}': {:.2} EUR",
@@ -248,15 +245,19 @@ impl Commands {
             let mut total = 0.0;
 
             for path in Self::list_accounts_paths(accounts_path) {
-                let account = Account::from_file(std::path::PathBuf::from_iter([
+                match Account::from_file(std::path::PathBuf::from_iter([
                     accounts_path,
                     &path.to_string_lossy(),
-                ]))
-                .unwrap();
-
-                let balance = account.balance();
-                println!("{}: {:.2} EUR", account.name(), balance);
-                total += balance;
+                ])) {
+                    Ok(account) => {
+                        let balance = account.balance();
+                        println!("{}: {:.2} EUR", account.name(), balance);
+                        total += balance;
+                    }
+                    Err(error) => {
+                        println!("failed to open {path:?}: {error:?}");
+                    }
+                }
             }
 
             println!("\nTotal: {total:.2} EUR");
