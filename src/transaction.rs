@@ -21,38 +21,20 @@ pub struct Item {
 
 /// Type of operations on an account.
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-#[serde(tag = "operation", rename_all = "kebab-case")]
+#[serde(tag = "operation")]
 pub enum Transaction {
     /// Add currency to an account.
+    #[serde(rename = "i")]
     Income(Item),
     /// Substract currency from an account.
+    #[serde(rename = "s")]
     Spending(Item),
 }
 
 impl Transaction {
-    pub fn from_json(json: &str) -> Result<Self, Error> {
-        serde_json::from_str(json).map_err(Error::Serialize)
-    }
-
-    // TODO: impl de/serialize from multiple data types.
-    // TODO: use bincode ?
-    pub fn write_to_json<H>(&self, writter: H) -> Result<(), Error>
-    where
-        H: std::io::Write,
-    {
-        serde_json::to_writer(writter, self).map_err(Error::Serialize)
-    }
-
-    pub fn as_str(&self) -> &str {
+    pub fn date(&self) -> &time::Date {
         match self {
-            Self::Income(_) => "i",
-            Self::Spending(_) => "s",
-        }
-    }
-
-    pub fn date(&self) -> time::Date {
-        match self {
-            Self::Income(item) | Self::Spending(item) => item.date,
+            Self::Income(item) | Self::Spending(item) => &item.date,
         }
     }
 

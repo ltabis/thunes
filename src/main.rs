@@ -76,65 +76,8 @@ impl Cli {
                 account,
                 start,
                 end,
-                chart: _chart,
-            } => {
-                let start =
-                    time::Date::parse(&start, TIME_FORMAT).map_err(CommandError::InvalidDate)?;
-                let end =
-                    time::Date::parse(&end, TIME_FORMAT).map_err(CommandError::InvalidDate)?;
-
-                let account =
-                    Account::from_file(std::path::PathBuf::from_iter([accounts_path, &account]))
-                        .map_err(|error| CommandError::Account(account.to_string(), error))?;
-
-                account
-                    .transactions_between(&start, &end)
-                    .map_err(|error| CommandError::Account(account.name().to_string(), error))?;
-
-                // enum Parser {
-                //     SearchStart,
-                //     ComputeBalance,
-                //     End,
-                // }
-
-                // let mut parser = Parser::SearchStart;
-                // let mut operations = vec![];
-
-                // for line in
-                //     std::fs::read_to_string(std::path::PathBuf::from_iter([accounts_path, &name]))
-                //         .unwrap()
-                //         .lines()
-                // {
-                //     match parser {
-                //         Parser::SearchStart => {
-                //             let op = Operation::from_str(line).unwrap();
-                //             if op.date() == start {
-                //                 operations.push(op);
-                //                 parser = Parser::ComputeBalance;
-                //             }
-                //         }
-                //         Parser::ComputeBalance => {
-                //             let op = Operation::from_str(line).unwrap();
-                //             if op.date() == end {
-                //                 parser = Parser::End;
-                //             }
-                //             operations.push(op);
-                //         }
-                //         Parser::End => {
-                //             break;
-                //         }
-                //     }
-                // }
-
-                // let balance: f64 = operations.iter().map(|op| op.ammount()).sum();
-                // println!("balance between {start} and {end}: {balance:.2} EUR");
-
-                // if chart {
-                //     build_chart(&operations);
-                // }
-
-                Ok(())
-            }
+                chart,
+            } => Commands::list_between(&accounts_path, &account, &start, &end, chart),
             Commands::Accounts => {
                 Commands::accounts(accounts_path);
                 Ok(())
@@ -283,6 +226,36 @@ impl Commands {
                 println!("{}", name)
             }
         }
+    }
+
+    fn list_between(
+        accounts_path: &str,
+        account: &str,
+        start: &str,
+        end: &str,
+        chart: bool,
+    ) -> Result<(), CommandError> {
+        let start = time::Date::parse(&start, TIME_FORMAT).map_err(CommandError::InvalidDate)?;
+        let end = time::Date::parse(&end, TIME_FORMAT).map_err(CommandError::InvalidDate)?;
+
+        let account = Account::from_file(std::path::PathBuf::from_iter([accounts_path, &account]))
+            .map_err(|error| CommandError::Account(account.to_string(), error))?;
+
+        let transactions = account
+            .transactions_between(&start, &end)
+            .map_err(|error| CommandError::Account(account.name().to_string(), error))?;
+
+        let balance: f64 = transactions.iter().map(|op| op.ammount()).sum();
+        println!(
+            "[{start}/{end}] balance for '{}': {balance:.2} EUR",
+            account.name()
+        );
+
+        if chart {
+            charts::build(&transactions);
+        }
+
+        Ok(())
     }
 }
 

@@ -101,16 +101,25 @@ impl Account {
         start: &time::Date,
         end: &time::Date,
     ) -> Result<&[Transaction], Error> {
-        let start = self
+        let start = self.data.transactions.partition_point(|t| t.date() < start);
+        if let Some(end) = self
             .data
             .transactions
             .iter()
-            .position(|t| &t.date() == start);
-        let end = self.data.transactions.iter().position(|t| &t.date() == end);
+            .rev()
+            .position(|t| t.date() <= end)
+        {
+            // Since iteration is reverse, the position index is too.
+            let end = self.data.transactions.len() - end;
+            dbg!(start, end);
 
-        match (start, end) {
-            (Some(start), Some(end)) if start < end => Ok(&self.data.transactions[start..end]),
-            _ => Err(Error::InvalidDateRange),
+            if start < end {
+                Ok(&self.data.transactions[start..end])
+            } else {
+                Err(Error::InvalidDateRange)
+            }
+        } else {
+            Err(Error::InvalidDateRange)
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::transaction::Transaction;
 
-fn build_chart(transaction: &[Transaction]) {
+pub fn build(transaction: &[Transaction]) {
     // Define chart related sizes.
     let width = 50 * transaction.len() as isize;
     let height = 600;
