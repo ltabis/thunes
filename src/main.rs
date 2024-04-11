@@ -90,45 +90,54 @@ impl Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Create a new account.
+    /// Create a new account. Fails if the account already exists.
     New {
+        /// Name of the new account.
         #[arg(short, long)]
         name: String,
     },
-    /// Add a spending operation.
+    /// Add a spending transaction.
     Spend {
+        /// The account to add the transaction to.
         #[arg(long, value_name = "ACCOUNT-NAME")]
         account: String,
+        /// Ammount of currency associated to the transaction.
         #[arg(long, value_name = "AMMOUNT")]
         ammount: f64,
+        /// Description of the transaction.
         #[arg(short, long, value_name = "DESCRIPTION")]
         description: String,
-        /// Tags to classify transactions.
+        /// Tags to classify the transaction.
         /// Example: --tags=house,family,expenses
         #[arg(short, long, value_name = "TAGS", value_parser = Commands::parse_tags)]
         tags: std::collections::HashSet<String>,
     },
-    /// Add an income operation.
+    /// Add an income transaction.
     Income {
+        /// The account to add the transaction to.
         #[arg(long, value_name = "ACCOUNT-NAME")]
         account: String,
+        /// Ammount of currency associated to the transaction.
         #[arg(long, value_name = "AMMOUNT")]
         ammount: f64,
+        /// Description of the transaction.
         #[arg(short, long, value_name = "DESCRIPTION")]
         description: String,
-        /// Tags to classify transactions.
+        /// Tags to classify the transaction.
         /// Example: --tags=house,family,expenses
         #[arg(short, long, value_name = "TAGS", value_parser = Commands::parse_tags)]
         tags: std::collections::HashSet<String>,
     },
-    /// Display the balance of a specific account or all accounts if the --name option is not specified.
+    /// Display the total balance of accounts.
     Balance {
+        /// Name of the account to display the balance from. If not specified, will agregate all
+        /// balances from the accounts in the `--accounts` directory.
         #[arg(short, long, value_name = "ACCOUNT-NAME")]
         account: Option<String>,
-        /// List transactions sums starting from this date.
+        /// Sums balances starting from this date.
         #[arg(short, long, value_name = "START-DATE", value_parser = Commands::parse_date)]
         start: Option<time::Date>,
-        /// List transactions sums until this date.
+        /// Sums balances to this date.
         #[arg(short, long, value_name = "END-DATE", value_parser = Commands::parse_date)]
         end: Option<time::Date>,
         /// Write the transactions to a svg chart.
