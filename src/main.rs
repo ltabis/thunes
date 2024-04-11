@@ -9,6 +9,7 @@ use transaction::{Item, Transaction};
 const TIME_FORMAT: &[time::format_description::FormatItem<'_>] =
     time_macros::format_description!("[year]-[month]-[day]");
 
+// TODO: thiserror
 #[derive(Debug)]
 pub enum CommandError {
     Account(String, account::Error),
@@ -71,13 +72,18 @@ impl Cli {
                     tags,
                 }),
             ),
-            Commands::Balance { account } => Commands::balance(accounts_path, account.as_ref()),
-            Commands::List {
+            Commands::Balance {
                 account,
                 start,
                 end,
                 chart,
-            } => Commands::list_between(&accounts_path, &account, &start, &end, chart),
+            } => Commands::balance(
+                &accounts_path,
+                account.as_ref(),
+                start.as_ref(),
+                end.as_ref(),
+                chart,
+            ),
             Commands::Accounts => {
                 Commands::accounts(accounts_path);
                 Ok(())
@@ -123,16 +129,13 @@ enum Commands {
     Balance {
         #[arg(short, long, value_name = "ACCOUNT-NAME")]
         account: Option<String>,
-    },
-    /// List the transaction ammount between two dates.
-    List {
-        // TODO: set optional.
-        #[arg(short, long, value_name = "ACCOUNT-NAME")]
-        account: String,
-        #[arg(short, long, value_name = "START-DATE")]
-        start: String,
-        #[arg(short, long, value_name = "END-DATE")]
-        end: String,
+        /// List transactions sums starting from this date.
+        #[arg(short, long, value_name = "START-DATE", value_parser = Commands::parse_date)]
+        start: Option<time::Date>,
+        /// List transactions sums until this date.
+        #[arg(short, long, value_name = "END-DATE", value_parser = Commands::parse_date)]
+        end: Option<time::Date>,
+        /// Write the transactions to a svg chart.
         #[arg(short, long)]
         chart: bool,
     },
@@ -147,6 +150,12 @@ impl Commands {
     ) -> Result<std::collections::HashSet<String>, Box<dyn std::error::Error + Send + Sync + 'static>>
     {
         Ok(s.split(',').map(|s| s.to_string()).collect())
+    }
+
+    fn parse_date(
+        s: &str,
+    ) -> Result<time::Date, Box<dyn std::error::Error + Send + Sync + 'static>> {
+        time::Date::parse(s, TIME_FORMAT).map_err(|error| error.into())
     }
 
     fn list_accounts_paths(accounts_path: &str) -> Vec<std::path::PathBuf> {
@@ -166,9 +175,16 @@ impl Commands {
     }
 
     fn new_account(accounts_path: &str, name: &str) -> Result<(), CommandError> {
-        // TODO: check if the account does not already exists.
-        Account::open(std::path::PathBuf::from_iter([accounts_path, &name]))
-            .map_err(|error| CommandError::Account(name.to_string(), error))
+        let path = std::path::PathBuf::from_iter([accounts_path, &name]);
+
+        if path.exists() {
+            return Err(CommandError::Account(
+                name.to_string(),
+                account::Error::AlreadyExists,
+            ));
+        }
+
+        Account::open(path).map_err(|error| CommandError::Account(name.to_string(), error))
     }
 
     fn write_transaction(
@@ -184,17 +200,19 @@ impl Commands {
             .map(|_| ())
     }
 
-    fn balance(accounts_path: &str, name: Option<&String>) -> Result<(), CommandError> {
-        if let Some(account) = name {
+    fn balance(
+        accounts_path: &str,
+        account: Option<&String>,
+        start: Option<&time::Date>,
+        end: Option<&time::Date>,
+        chart: bool,
+    ) -> Result<(), CommandError> {
+        if let Some(account) = account {
             let account =
-                Account::from_file(std::path::PathBuf::from_iter([accounts_path, account]))
+                Account::from_file(std::path::PathBuf::from_iter([accounts_path, &account]))
                     .map_err(|error| CommandError::Account(account.to_string(), error))?;
 
-            println!(
-                "Balance for '{}': {:.2} EUR",
-                account.name(),
-                account.balance()
-            );
+            Self::list_between(&account, start, end, chart).map(|_| ())
         } else {
             let mut total = 0.0;
 
@@ -204,9 +222,7 @@ impl Commands {
                     &path.to_string_lossy(),
                 ])) {
                     Ok(account) => {
-                        let balance = account.balance();
-                        println!("{}: {:.2} EUR", account.name(), balance);
-                        total += balance;
+                        total += Self::list_between(&account, start, end, chart)?;
                     }
                     Err(error) => {
                         println!("failed to open {path:?}: {error:?}");
@@ -215,9 +231,44 @@ impl Commands {
             }
 
             println!("\nTotal: {total:.2} EUR");
-        }
 
-        Ok(())
+            Ok(())
+        }
+    }
+
+    fn list_between(
+        account: &Account,
+        start: Option<&time::Date>,
+        end: Option<&time::Date>,
+        chart: bool,
+    ) -> Result<f64, CommandError> {
+        let transactions = account
+            .transactions_between(start, end)
+            .map_err(|error| CommandError::Account(account.name().to_string(), error))?;
+
+        match (transactions.first(), transactions.last()) {
+            (Some(start), Some(end)) => {
+                let balance: f64 = transactions.iter().map(|op| op.ammount()).sum();
+
+                println!(
+                    "[{}/{}] balance for '{}': {:.2} EUR",
+                    start.date(),
+                    end.date(),
+                    account.name(),
+                    balance
+                );
+
+                if chart {
+                    charts::build(&transactions);
+                }
+
+                Ok(balance)
+            }
+            _ => {
+                println!("balance for '{}': 0.00 EUR", account.name(),);
+                Ok(0.0)
+            }
+        }
     }
 
     fn accounts(accounts_path: &str) {
@@ -226,36 +277,6 @@ impl Commands {
                 println!("{}", name)
             }
         }
-    }
-
-    fn list_between(
-        accounts_path: &str,
-        account: &str,
-        start: &str,
-        end: &str,
-        chart: bool,
-    ) -> Result<(), CommandError> {
-        let start = time::Date::parse(&start, TIME_FORMAT).map_err(CommandError::InvalidDate)?;
-        let end = time::Date::parse(&end, TIME_FORMAT).map_err(CommandError::InvalidDate)?;
-
-        let account = Account::from_file(std::path::PathBuf::from_iter([accounts_path, &account]))
-            .map_err(|error| CommandError::Account(account.to_string(), error))?;
-
-        let transactions = account
-            .transactions_between(&start, &end)
-            .map_err(|error| CommandError::Account(account.name().to_string(), error))?;
-
-        let balance: f64 = transactions.iter().map(|op| op.ammount()).sum();
-        println!(
-            "[{start}/{end}] balance for '{}': {balance:.2} EUR",
-            account.name()
-        );
-
-        if chart {
-            charts::build(&transactions);
-        }
-
-        Ok(())
     }
 }
 

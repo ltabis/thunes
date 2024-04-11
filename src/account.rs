@@ -1,12 +1,13 @@
 use std::io::{Read, Seek, Write};
 
-use crate::transaction::Transaction;
+use crate::{account, transaction::Transaction};
 
 #[derive(Debug)]
 pub enum Error {
     Io(std::io::Error),
     Serde(serde_json::Error),
     InvalidDateRange,
+    AlreadyExists,
 }
 
 impl From<std::io::Error> for Error {
@@ -69,6 +70,10 @@ impl Account {
 
     /// Write account data to the file that the account was read from.
     pub fn write(&mut self) -> Result<&mut Self, Error> {
+        // Truncate the file.
+        self.file.set_len(0)?;
+        self.file.rewind()?;
+
         self.file.write_all(&serde_json::to_vec(&self.data)?)?;
 
         Ok(self)
@@ -83,41 +88,31 @@ impl Account {
         &self.name
     }
 
-    pub fn balance(&self) -> f64 {
-        let mut balance = 0.0;
-
-        for tr in &self.data.transactions {
-            match tr {
-                Transaction::Income(i) => balance += i.ammount,
-                Transaction::Spending(i) => balance -= i.ammount,
-            }
-        }
-
-        balance
-    }
-
     pub fn transactions_between(
         &self,
-        start: &time::Date,
-        end: &time::Date,
+        start: Option<&time::Date>,
+        end: Option<&time::Date>,
     ) -> Result<&[Transaction], Error> {
-        let start = self.data.transactions.partition_point(|t| t.date() < start);
-        if let Some(end) = self
-            .data
-            .transactions
-            .iter()
-            .rev()
-            .position(|t| t.date() <= end)
-        {
-            // Since iteration is reverse, the position index is too.
-            let end = self.data.transactions.len() - end;
-            dbg!(start, end);
+        let start = match start {
+            Some(start) => self.data.transactions.partition_point(|t| t.date() < start),
+            None => 0,
+        };
 
-            if start < end {
-                Ok(&self.data.transactions[start..end])
-            } else {
-                Err(Error::InvalidDateRange)
-            }
+        let end = match end {
+            Some(end) => self
+                .data
+                .transactions
+                .iter()
+                .rev()
+                .position(|t| t.date() <= end)
+                .map_or(0, |end| self.data.transactions.len() - end),
+            None => 0,
+        };
+
+        if start == end && start == 0 {
+            Ok(&[])
+        } else if start < end {
+            Ok(&self.data.transactions[start..end])
         } else {
             Err(Error::InvalidDateRange)
         }
