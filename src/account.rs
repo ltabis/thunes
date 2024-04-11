@@ -105,7 +105,7 @@ impl Account {
                 .rev()
                 .position(|t| t.date() <= end)
                 .map_or(0, |end| self.data.transactions.len() - end),
-            None => 0,
+            None => self.data.transactions.len(),
         };
 
         if start == end && start == 0 {
