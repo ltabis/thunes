@@ -84,10 +84,6 @@ impl Cli {
                 end.as_ref(),
                 chart,
             ),
-            Commands::Accounts => {
-                Commands::accounts(accounts_path);
-                Ok(())
-            }
         }
     }
 }
@@ -139,8 +135,6 @@ enum Commands {
         #[arg(short, long)]
         chart: bool,
     },
-    /// Display all accounts names.
-    Accounts,
     // cli operations/o [bourso] [month] -> 1800 EUR
 }
 
@@ -267,14 +261,6 @@ impl Commands {
             _ => {
                 println!("balance for '{}': 0.00 EUR", account.name(),);
                 Ok(0.0)
-            }
-        }
-    }
-
-    fn accounts(accounts_path: &str) {
-        for account in Self::list_accounts_paths(accounts_path) {
-            if let Some(name) = account.file_name().and_then(|name| name.to_str()) {
-                println!("{}", name)
             }
         }
     }

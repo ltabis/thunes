@@ -1,6 +1,5 @@
+use crate::transaction::Transaction;
 use std::io::{Read, Seek, Write};
-
-use crate::{account, transaction::Transaction};
 
 #[derive(Debug)]
 pub enum Error {
