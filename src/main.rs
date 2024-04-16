@@ -41,7 +41,9 @@ impl Cli {
         let accounts_path = &accounts_path;
 
         match self.command {
-            Commands::New { name } => Commands::new_account(accounts_path, &name),
+            Commands::New { name, currency } => {
+                Commands::new_account(accounts_path, &name, &currency)
+            }
             Commands::Income {
                 account,
                 ammount,
@@ -95,6 +97,9 @@ enum Commands {
         /// Name of the new account.
         #[arg(short, long)]
         name: String,
+        /// Name of the new account.
+        #[arg(short, long)]
+        currency: String,
     },
     /// Add a spending transaction.
     Spend {
@@ -177,7 +182,7 @@ impl Commands {
             .unwrap_or_default()
     }
 
-    fn new_account(accounts_path: &str, name: &str) -> Result<(), CommandError> {
+    fn new_account(accounts_path: &str, name: &str, currency: &str) -> Result<(), CommandError> {
         let path = std::path::PathBuf::from_iter([accounts_path, &name]);
 
         if path.exists() {
@@ -187,7 +192,8 @@ impl Commands {
             ));
         }
 
-        Account::open(path).map_err(|error| CommandError::Account(name.to_string(), error))
+        Account::open(path, currency)
+            .map_err(|error| CommandError::Account(name.to_string(), error))
     }
 
     fn write_transaction(
@@ -217,7 +223,7 @@ impl Commands {
 
             Self::list_between(&account, start, end, chart).map(|_| ())
         } else {
-            let mut total = 0.0;
+            let mut totals = std::collections::HashMap::<String, f64>::new();
 
             for path in Self::list_accounts_paths(accounts_path) {
                 match Account::from_file(std::path::PathBuf::from_iter([
@@ -225,7 +231,12 @@ impl Commands {
                     &path.to_string_lossy(),
                 ])) {
                     Ok(account) => {
-                        total += Self::list_between(&account, start, end, chart)?;
+                        let account_balance = Self::list_between(&account, start, end, chart)?;
+
+                        totals
+                            .entry(account.currency().to_string())
+                            .and_modify(|entry| *entry += account_balance)
+                            .or_insert(account_balance);
                     }
                     Err(error) => {
                         println!("failed to open {path:?}: {error:?}");
@@ -233,7 +244,17 @@ impl Commands {
                 }
             }
 
-            println!("\nTotal: {total:.2} EUR");
+            let mut totals: Vec<(String, f64)> = totals
+                .into_iter()
+                .map(|(currency, total)| (currency.to_string(), total))
+                .collect();
+            totals.sort_by(|(c1, _), (c2, _)| c1.cmp(c2));
+
+            println!("\nTotals:");
+
+            for (currency, total) in totals {
+                println!("  {total:.2} {currency}");
+            }
 
             Ok(())
         }
@@ -254,11 +275,12 @@ impl Commands {
                 let balance: f64 = transactions.iter().map(|op| op.ammount()).sum();
 
                 println!(
-                    "[{}/{}] balance for '{}': {:.2} EUR",
+                    "[{}/{}] balance for '{}': {:.2} {}",
                     start.date(),
                     end.date(),
                     account.name(),
-                    balance
+                    balance,
+                    account.currency()
                 );
 
                 if chart {
@@ -268,7 +290,11 @@ impl Commands {
                 Ok(balance)
             }
             _ => {
-                println!("balance for '{}': 0.00 EUR", account.name(),);
+                println!(
+                    "balance for '{}': 0.00 {}",
+                    account.name(),
+                    account.currency()
+                );
                 Ok(0.0)
             }
         }

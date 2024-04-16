@@ -30,11 +30,11 @@ pub struct Account {
 
 impl Account {
     /// Write a new empty account to a file.
-    pub fn open(file: impl AsRef<std::path::Path>) -> Result<(), Error> {
+    pub fn open(file: impl AsRef<std::path::Path>, currency: &str) -> Result<(), Error> {
         std::fs::File::create(file.as_ref())
             .and_then(|mut w| {
                 w.write_all(
-                    &serde_json::to_vec(&AccountData::default())
+                    &serde_json::to_vec(&AccountData::new(currency))
                         .expect("empty account must be deserialized"),
                 )
             })
@@ -87,6 +87,10 @@ impl Account {
         &self.name
     }
 
+    pub fn currency(&self) -> &str {
+        &self.data.currency
+    }
+
     pub fn transactions_between(
         &self,
         start: Option<&time::Date>,
@@ -118,7 +122,17 @@ impl Account {
     }
 }
 
-#[derive(Default, serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 struct AccountData {
     pub transactions: Vec<Transaction>,
+    pub currency: String,
+}
+
+impl AccountData {
+    pub fn new(currency: &str) -> Self {
+        Self {
+            transactions: vec![],
+            currency: currency.to_string(),
+        }
+    }
 }
