@@ -6,17 +6,17 @@ pub fn build(transaction: &[Transaction]) {
     let height = 600;
     let (top, right, bottom, left) = (90, 40, 50, 60);
 
-    let smallest_ammount = transaction.iter().fold(0.0, |state, op| {
-        if op.ammount() < state {
-            op.ammount()
+    let smallest_amount = transaction.iter().fold(0.0, |state, op| {
+        if op.amount() < state {
+            op.amount()
         } else {
             state
         }
     });
 
-    let biggest_ammount = transaction.iter().fold(0.0, |state, op| {
-        if op.ammount() > state {
-            op.ammount()
+    let biggest_amount = transaction.iter().fold(0.0, |state, op| {
+        if op.amount() > state {
+            op.amount()
         } else {
             state
         }
@@ -26,11 +26,11 @@ pub fn build(transaction: &[Transaction]) {
 
     for op in transaction {
         match data.last_mut() {
-            Some((date, ammount)) if *date == op.date().to_string() => {
-                *ammount += op.ammount() as f32;
+            Some((date, amount)) if *date == op.date().to_string() => {
+                *amount += op.amount() as f32;
             }
             _ => {
-                data.push((op.date().to_string(), op.ammount() as f32));
+                data.push((op.date().to_string(), op.amount() as f32));
             }
         }
     }
@@ -47,7 +47,7 @@ pub fn build(transaction: &[Transaction]) {
     // in top left corner, while chart's origin is in bottom left corner, hence we need to invert
     // the range on Y axis for the chart to display as though its origin is at bottom left.
     let y = charts::ScaleLinear::new()
-        .set_domain(vec![smallest_ammount as f32, biggest_ammount as f32])
+        .set_domain(vec![smallest_amount as f32, biggest_amount as f32])
         .set_range(vec![height - top - bottom, 0]);
 
     // Create Line series view that is going to represent the data.
@@ -68,7 +68,7 @@ pub fn build(transaction: &[Transaction]) {
         .add_view(&line_view)
         .add_axis_bottom(&x)
         .add_axis_left(&y)
-        .add_left_axis_label("Ammount")
+        .add_left_axis_label("amount")
         .add_bottom_axis_label("Date")
         .save("line-chart.svg")
         .unwrap();

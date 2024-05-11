@@ -38,9 +38,9 @@ pub enum Commands {
         /// The account to add the transaction to.
         #[arg(long, value_name = "ACCOUNT-NAME")]
         account: String,
-        /// Ammount of currency associated to the transaction.
-        #[arg(long, value_name = "AMMOUNT")]
-        ammount: f64,
+        /// amount of currency associated to the transaction.
+        #[arg(long, value_name = "amount")]
+        amount: f64,
         /// Description of the transaction.
         #[arg(short, long, value_name = "DESCRIPTION")]
         description: String,
@@ -54,9 +54,9 @@ pub enum Commands {
         /// The account to add the transaction to.
         #[arg(long, value_name = "ACCOUNT-NAME")]
         account: String,
-        /// Ammount of currency associated to the transaction.
-        #[arg(long, value_name = "AMMOUNT")]
-        ammount: f64,
+        /// amount of currency associated to the transaction.
+        #[arg(long, value_name = "amount")]
+        amount: f64,
         /// Description of the transaction.
         #[arg(short, long, value_name = "DESCRIPTION")]
         description: String,
@@ -105,7 +105,7 @@ impl Commands {
             }
             Commands::Income {
                 account,
-                ammount,
+                amount,
                 description,
                 tags,
             } => Commands::write_transaction(
@@ -113,14 +113,14 @@ impl Commands {
                 &account,
                 Transaction::Income(Item {
                     date: time::OffsetDateTime::now_utc().date(),
-                    ammount,
+                    amount,
                     description: description.to_string(),
                     tags: tags.clone(),
                 }),
             ),
             Commands::Spend {
                 account,
-                ammount,
+                amount,
                 description,
                 tags,
             } => Commands::write_transaction(
@@ -128,7 +128,7 @@ impl Commands {
                 &account,
                 Transaction::Spending(Item {
                     date: time::OffsetDateTime::now_utc().date(),
-                    ammount,
+                    amount,
                     description,
                     tags,
                 }),
@@ -139,7 +139,7 @@ impl Commands {
                 end,
                 chart,
             } => Commands::balance(
-                &accounts_path,
+                accounts_path,
                 account.as_ref(),
                 start.as_ref(),
                 end.as_ref(),
@@ -165,7 +165,7 @@ impl Commands {
     }
 
     fn new_account(accounts_path: &str, name: &str, currency: &str) -> Result<(), CommandError> {
-        let path = std::path::PathBuf::from_iter([accounts_path, &name]);
+        let path = std::path::PathBuf::from_iter([accounts_path, name]);
 
         if path.exists() {
             return Err(CommandError::Account(
@@ -200,7 +200,7 @@ impl Commands {
     ) -> Result<(), CommandError> {
         if let Some(account) = account {
             let account =
-                Account::from_file(std::path::PathBuf::from_iter([accounts_path, &account]))
+                Account::from_file(std::path::PathBuf::from_iter([accounts_path, account]))
                     .map_err(|error| CommandError::Account(account.to_string(), error))?;
 
             Self::list_between(&account, start, end, chart).map(|_| ())
@@ -254,7 +254,7 @@ impl Commands {
 
         match (transactions.first(), transactions.last()) {
             (Some(start), Some(end)) => {
-                let balance: f64 = transactions.iter().map(|op| op.ammount()).sum();
+                let balance: f64 = transactions.iter().map(|op| op.amount()).sum();
 
                 println!(
                     "[{}/{}] balance for '{}': {:.2} {}",
@@ -266,7 +266,7 @@ impl Commands {
                 );
 
                 if chart {
-                    charts::build(&transactions);
+                    charts::build(transactions);
                 }
 
                 Ok(balance)

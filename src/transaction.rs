@@ -14,7 +14,7 @@ pub enum Error {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Item {
     pub date: time::Date,
-    pub ammount: f64,
+    pub amount: f64,
     pub description: String,
     pub tags: std::collections::HashSet<String>,
 }
@@ -38,10 +38,10 @@ impl Transaction {
         }
     }
 
-    pub fn ammount(&self) -> f64 {
+    pub fn amount(&self) -> f64 {
         match self {
-            Self::Income(item) => item.ammount,
-            Self::Spending(item) => -item.ammount,
+            Self::Income(item) => item.amount,
+            Self::Spending(item) => -item.amount,
         }
     }
 }

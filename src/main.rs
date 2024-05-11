@@ -18,7 +18,7 @@ impl Cli {
         let accounts_path = self.accounts.unwrap_or(".".to_string());
         let accounts_path = &accounts_path;
 
-        self.command.run(&accounts_path)
+        self.command.run(accounts_path)
     }
 }
 
