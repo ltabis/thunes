@@ -7,6 +7,8 @@ use clap::Subcommand;
 use rhai::packages::Package;
 use transaction::{Item, Transaction};
 
+use crate::transaction::TransactionRhai;
+
 const TIME_FORMAT: &[time::format_description::FormatItem<'_>] =
     time_macros::format_description!("[year]-[month]-[day]");
 
@@ -212,10 +214,11 @@ impl Commands {
         chart: bool,
         script: Option<&std::path::PathBuf>,
     ) -> Result<(), Error> {
-        if let Some(script) = script {
+        let totals = if let Some(script) = script {
             let engine = {
                 let mut engine = rhai::Engine::new();
                 rhai_http::HttpPackage::new().register_into_engine(&mut engine);
+                engine.register_type::<TransactionRhai>();
                 engine
             };
             let accounts = Self::get_accounts(accounts_path, account);
@@ -224,30 +227,35 @@ impl Commands {
                 .map_err(Error::ScriptEvaluation)?;
             let mut totals = std::collections::HashMap::<String, f64>::new();
 
-            // TODO: no function specified ?
             for account in accounts {
+                let fn_name = format!("on_{}", account.name());
                 if ast
                     .iter_functions()
-                    .find(|func| func.name == account.name())
+                    .find(|func| func.name == fn_name)
                     .is_some()
                 {
                     let transactions = account
                         .transactions_between(from, to)
                         .map_err(|error| Error::Account(account.name().to_string(), error))?;
 
-                    let transactions =
-                        rhai::serde::to_dynamic(transactions).map_err(Error::ScriptEvaluation)?;
+                    let parameters = transactions
+                        .iter()
+                        .map(|t| rhai::serde::to_dynamic(TransactionRhai::from(t)).unwrap())
+                        .collect::<rhai::Array>();
+
+                    let parameters =
+                        rhai::serde::to_dynamic(parameters).map_err(Error::ScriptEvaluation)?;
 
                     let account_balance = engine
                         .call_fn::<rhai::Dynamic>(
                             &mut rhai::Scope::new(),
                             &ast,
-                            format!("on_{}", account.name()),
-                            (transactions,),
+                            fn_name,
+                            (parameters,),
                         )
                         .map_err(Error::ScriptEvaluation)?;
 
-                    if account_balance.is_map() {
+                    let balance = if account_balance.is_map() {
                         let balance: ScriptAccountBalance =
                             rhai::serde::from_dynamic(&account_balance)
                                 .map_err(Error::ScriptEvaluation)?;
@@ -256,12 +264,15 @@ impl Commands {
                             .entry(balance.currency)
                             .and_modify(|entry| *entry += balance.amount)
                             .or_insert(balance.amount);
+
+                        balance.amount
                     } else if account_balance.is_float() {
                         let balance = account_balance.cast::<rhai::FLOAT>();
                         totals
                             .entry(account.currency().to_string())
                             .and_modify(|entry| *entry += balance)
                             .or_insert(balance);
+                        balance
                     } else {
                         // FIXME: better error.
                         return Err(Error::ScriptEvaluation(Box::new(
@@ -270,6 +281,30 @@ impl Commands {
                                 rhai::Position::NONE,
                             ),
                         )));
+                    };
+
+                    match (transactions.first(), transactions.last()) {
+                        (Some(from), Some(to)) => {
+                            println!(
+                                "[{}/{}] balance for '{}': {:.2} {}",
+                                from.date(),
+                                to.date(),
+                                account.name(),
+                                balance,
+                                account.currency()
+                            );
+
+                            if chart {
+                                charts::build(transactions);
+                            }
+                        }
+                        _ => {
+                            println!(
+                                "balance for '{}': 0.00 {}",
+                                account.name(),
+                                account.currency()
+                            );
+                        }
                     }
                 } else {
                     let account_balance = Self::list_between(&account, from, to, chart)?;
@@ -281,7 +316,7 @@ impl Commands {
                 }
             }
 
-            Ok(())
+            totals
         } else {
             let mut totals = std::collections::HashMap::<String, f64>::new();
 
@@ -296,20 +331,22 @@ impl Commands {
                     .or_insert(account_balance);
             }
 
-            let mut totals: Vec<(String, f64)> = totals
-                .into_iter()
-                .map(|(currency, total)| (currency.to_string(), total))
-                .collect();
-            totals.sort_by(|(c1, _), (c2, _)| c1.cmp(c2));
+            totals
+        };
 
-            println!("\nTotals:");
+        let mut totals: Vec<(String, f64)> = totals
+            .into_iter()
+            .map(|(currency, total)| (currency.to_string(), total))
+            .collect();
+        totals.sort_by(|(c1, _), (c2, _)| c1.cmp(c2));
 
-            for (currency, total) in totals {
-                println!("  {total:.2} {currency}");
-            }
+        println!("\nTotals:");
 
-            Ok(())
+        for (currency, total) in totals {
+            println!("  {total:.2} {currency}");
         }
+
+        Ok(())
     }
 
     fn get_accounts(accounts_path: &str, account: Option<&String>) -> Vec<Account> {

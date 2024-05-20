@@ -1,3 +1,5 @@
+use rhai::{CustomType, TypeBuilder};
+
 #[derive(Debug)]
 pub enum Error {
     ParsingFieldNotFound(String),
@@ -43,6 +45,50 @@ impl Transaction {
         match self {
             Self::Income(item) => item.amount,
             Self::Spending(item) => -item.amount,
+        }
+    }
+
+    pub fn description(&self) -> &str {
+        match self {
+            Self::Income(item) | Self::Spending(item) => &item.description,
+        }
+    }
+
+    pub fn tags(&self) -> &std::collections::HashSet<String> {
+        match self {
+            Self::Income(item) | Self::Spending(item) => &item.tags,
+        }
+    }
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, rhai::CustomType)]
+pub struct TransactionRhai {
+    /// Get the date of the transaction.
+    #[rhai_type(readonly)]
+    pub date: String,
+    /// Currency amount of the transaction, can be negative or positive depending of the transaction type.
+    #[rhai_type(readonly)]
+    pub amount: rhai::FLOAT,
+    /// Description of the transaction.
+    #[rhai_type(readonly)]
+    pub description: String,
+    /// Tags associated with the transaction.
+    #[rhai_type(readonly)]
+    pub tags: rhai::Array,
+}
+
+impl From<&Transaction> for TransactionRhai {
+    fn from(value: &Transaction) -> Self {
+        Self {
+            date: value.date().to_string(),
+            amount: value.amount(),
+            description: value.description().to_string(),
+            tags: value
+                .tags()
+                .iter()
+                .cloned()
+                .map(rhai::Dynamic::from)
+                .collect::<rhai::Array>(),
         }
     }
 }
