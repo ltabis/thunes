@@ -26,6 +26,7 @@ pub enum Transaction {
     /// Add currency to an account.
     #[serde(rename = "i")]
     Income(Item),
+    // FIXME: expense
     /// Substract currency from an account.
     #[serde(rename = "s")]
     Spending(Item),

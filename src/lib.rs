@@ -4,6 +4,7 @@ mod transaction;
 
 use account::Account;
 use clap::Subcommand;
+use rhai::packages::Package;
 use transaction::{Item, Transaction};
 
 const TIME_FORMAT: &[time::format_description::FormatItem<'_>] =
@@ -11,17 +12,25 @@ const TIME_FORMAT: &[time::format_description::FormatItem<'_>] =
 
 // TODO: thiserror
 #[derive(Debug)]
-pub enum CommandError {
+pub enum Error {
     Account(String, account::Error),
     Operation(transaction::Error),
     InvalidDate(time::error::Parse),
+    ScriptEvaluation(Box<rhai::EvalAltResult>),
 }
 
-impl From<transaction::Error> for CommandError {
+impl From<transaction::Error> for Error {
     fn from(value: transaction::Error) -> Self {
         Self::Operation(value)
     }
 }
+
+#[derive(Clone, serde::Deserialize)]
+pub struct ScriptAccountBalance {
+    pub amount: rhai::FLOAT,
+    pub currency: String,
+}
+
 #[derive(Subcommand)]
 pub enum Commands {
     /// Create a new account. Fails if the account already exists.
@@ -73,13 +82,16 @@ pub enum Commands {
         account: Option<String>,
         /// Sums balances starting from this date.
         #[arg(short, long, value_name = "START-DATE", value_parser = Commands::parse_date)]
-        start: Option<time::Date>,
+        from: Option<time::Date>,
         /// Sums balances to this date.
         #[arg(short, long, value_name = "END-DATE", value_parser = Commands::parse_date)]
-        end: Option<time::Date>,
+        to: Option<time::Date>,
         /// Write the transactions to a svg chart.
         #[arg(short, long)]
         chart: bool,
+        /// Use a rhai script to format the output.
+        #[arg(short, long)]
+        script: Option<std::path::PathBuf>,
     },
     // cli operations/o [bourso] [month] -> 1800 EUR
 }
@@ -98,7 +110,7 @@ impl Commands {
         time::Date::parse(s, TIME_FORMAT).map_err(|error| error.into())
     }
 
-    pub fn run(self, accounts_path: &str) -> Result<(), CommandError> {
+    pub fn run(self, accounts_path: &str) -> Result<(), Error> {
         match self {
             Commands::New { name, currency } => {
                 Commands::new_account(accounts_path, &name, &currency)
@@ -135,15 +147,17 @@ impl Commands {
             ),
             Commands::Balance {
                 account,
-                start,
-                end,
+                from,
+                to,
                 chart,
+                script,
             } => Commands::balance(
                 accounts_path,
                 account.as_ref(),
-                start.as_ref(),
-                end.as_ref(),
+                from.as_ref(),
+                to.as_ref(),
                 chart,
+                script.as_ref(),
             ),
         }
     }
@@ -164,66 +178,122 @@ impl Commands {
             .unwrap_or_default()
     }
 
-    fn new_account(accounts_path: &str, name: &str, currency: &str) -> Result<(), CommandError> {
+    fn new_account(accounts_path: &str, name: &str, currency: &str) -> Result<(), Error> {
         let path = std::path::PathBuf::from_iter([accounts_path, name]);
 
         if path.exists() {
-            return Err(CommandError::Account(
+            return Err(Error::Account(
                 name.to_string(),
                 account::Error::AlreadyExists,
             ));
         }
 
-        Account::open(path, currency)
-            .map_err(|error| CommandError::Account(name.to_string(), error))
+        Account::open(path, currency).map_err(|error| Error::Account(name.to_string(), error))
     }
 
     fn write_transaction(
         accounts_path: &str,
         name: &str,
         transaction: Transaction,
-    ) -> Result<(), CommandError> {
+    ) -> Result<(), Error> {
         Account::from_file(std::path::PathBuf::from_iter([accounts_path, name]))
-            .map_err(|error| CommandError::Account(name.to_string(), error))?
+            .map_err(|error| Error::Account(name.to_string(), error))?
             .push_transaction(transaction)
             .write()
-            .map_err(|error| CommandError::Account(name.to_string(), error))
+            .map_err(|error| Error::Account(name.to_string(), error))
             .map(|_| ())
     }
 
     fn balance(
         accounts_path: &str,
         account: Option<&String>,
-        start: Option<&time::Date>,
-        end: Option<&time::Date>,
+        from: Option<&time::Date>,
+        to: Option<&time::Date>,
         chart: bool,
-    ) -> Result<(), CommandError> {
-        if let Some(account) = account {
-            let account =
-                Account::from_file(std::path::PathBuf::from_iter([accounts_path, account]))
-                    .map_err(|error| CommandError::Account(account.to_string(), error))?;
+        script: Option<&std::path::PathBuf>,
+    ) -> Result<(), Error> {
+        if let Some(script) = script {
+            let engine = {
+                let mut engine = rhai::Engine::new();
+                rhai_http::HttpPackage::new().register_into_engine(&mut engine);
+                engine
+            };
+            let accounts = Self::get_accounts(accounts_path, account);
+            let ast = engine
+                .compile_file(script.into())
+                .map_err(Error::ScriptEvaluation)?;
+            let mut totals = std::collections::HashMap::<String, f64>::new();
 
-            Self::list_between(&account, start, end, chart).map(|_| ())
+            // TODO: no function specified ?
+            for account in accounts {
+                if ast
+                    .iter_functions()
+                    .find(|func| func.name == account.name())
+                    .is_some()
+                {
+                    let transactions = account
+                        .transactions_between(from, to)
+                        .map_err(|error| Error::Account(account.name().to_string(), error))?;
+
+                    let transactions =
+                        rhai::serde::to_dynamic(transactions).map_err(Error::ScriptEvaluation)?;
+
+                    let account_balance = engine
+                        .call_fn::<rhai::Dynamic>(
+                            &mut rhai::Scope::new(),
+                            &ast,
+                            format!("on_{}", account.name()),
+                            (transactions,),
+                        )
+                        .map_err(Error::ScriptEvaluation)?;
+
+                    if account_balance.is_map() {
+                        let balance: ScriptAccountBalance =
+                            rhai::serde::from_dynamic(&account_balance)
+                                .map_err(Error::ScriptEvaluation)?;
+
+                        totals
+                            .entry(balance.currency)
+                            .and_modify(|entry| *entry += balance.amount)
+                            .or_insert(balance.amount);
+                    } else if account_balance.is_float() {
+                        let balance = account_balance.cast::<rhai::FLOAT>();
+                        totals
+                            .entry(account.currency().to_string())
+                            .and_modify(|entry| *entry += balance)
+                            .or_insert(balance);
+                    } else {
+                        // FIXME: better error.
+                        return Err(Error::ScriptEvaluation(Box::new(
+                            rhai::EvalAltResult::ErrorRuntime(
+                                rhai::Dynamic::from("return value must be a map or float"),
+                                rhai::Position::NONE,
+                            ),
+                        )));
+                    }
+                } else {
+                    let account_balance = Self::list_between(&account, from, to, chart)?;
+
+                    totals
+                        .entry(account.currency().to_string())
+                        .and_modify(|entry| *entry += account_balance)
+                        .or_insert(account_balance);
+                }
+            }
+
+            Ok(())
         } else {
             let mut totals = std::collections::HashMap::<String, f64>::new();
 
-            for path in Self::list_accounts_paths(accounts_path) {
-                match Account::from_file(std::path::PathBuf::from_iter([
-                    accounts_path,
-                    &path.to_string_lossy(),
-                ])) {
-                    Ok(account) => {
-                        let account_balance = Self::list_between(&account, start, end, chart)?;
+            let accounts = Self::get_accounts(accounts_path, account);
 
-                        totals
-                            .entry(account.currency().to_string())
-                            .and_modify(|entry| *entry += account_balance)
-                            .or_insert(account_balance);
-                    }
-                    Err(error) => {
-                        println!("failed to open {path:?}: {error:?}");
-                    }
-                }
+            for account in accounts {
+                let account_balance = Self::list_between(&account, from, to, chart)?;
+
+                totals
+                    .entry(account.currency().to_string())
+                    .and_modify(|entry| *entry += account_balance)
+                    .or_insert(account_balance);
             }
 
             let mut totals: Vec<(String, f64)> = totals
@@ -242,24 +312,52 @@ impl Commands {
         }
     }
 
+    fn get_accounts(accounts_path: &str, account: Option<&String>) -> Vec<Account> {
+        if let Some(account) = account {
+            match Account::from_file(std::path::PathBuf::from_iter([accounts_path, account])) {
+                Ok(account) => vec![account],
+                Err(error) => {
+                    println!("failed to open {account:?}: {error:?}");
+                    vec![]
+                }
+            }
+        } else {
+            Self::list_accounts_paths(accounts_path)
+                .into_iter()
+                .filter_map(|path| {
+                    match Account::from_file(std::path::PathBuf::from_iter([
+                        accounts_path,
+                        &path.to_string_lossy(),
+                    ])) {
+                        Ok(account) => Some(account),
+                        Err(error) => {
+                            println!("failed to open {path:?}: {error:?}");
+                            None
+                        }
+                    }
+                })
+                .collect::<Vec<_>>()
+        }
+    }
+
     fn list_between(
         account: &Account,
-        start: Option<&time::Date>,
-        end: Option<&time::Date>,
+        from: Option<&time::Date>,
+        to: Option<&time::Date>,
         chart: bool,
-    ) -> Result<f64, CommandError> {
+    ) -> Result<f64, Error> {
         let transactions = account
-            .transactions_between(start, end)
-            .map_err(|error| CommandError::Account(account.name().to_string(), error))?;
+            .transactions_between(from, to)
+            .map_err(|error| Error::Account(account.name().to_string(), error))?;
 
         match (transactions.first(), transactions.last()) {
-            (Some(start), Some(end)) => {
+            (Some(from), Some(to)) => {
                 let balance: f64 = transactions.iter().map(|op| op.amount()).sum();
 
                 println!(
                     "[{}/{}] balance for '{}': {:.2} {}",
-                    start.date(),
-                    end.date(),
+                    from.date(),
+                    to.date(),
                     account.name(),
                     balance,
                     account.currency()
