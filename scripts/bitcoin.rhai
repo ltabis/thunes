@@ -1,5 +1,5 @@
 // TODO: rhai-env
-const KEY = "xxx";
+const KEY = env::variable("API_KEY");
 
 const client = http::client();
 
