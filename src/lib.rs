@@ -356,16 +356,11 @@ impl Commands {
         } else {
             Self::list_accounts_paths(accounts_path)
                 .into_iter()
-                .filter_map(|path| {
-                    match Account::from_file(std::path::PathBuf::from_iter([
-                        accounts_path,
-                        &path.to_string_lossy(),
-                    ])) {
-                        Ok(account) => Some(account),
-                        Err(error) => {
-                            println!("failed to open {path:?}: {error:?}");
-                            None
-                        }
+                .filter_map(|path| match Account::from_file(&path) {
+                    Ok(account) => Some(account),
+                    Err(error) => {
+                        println!("failed to open {path:?}: {error:?}");
+                        None
                     }
                 })
                 .collect::<Vec<_>>()
