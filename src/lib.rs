@@ -1,10 +1,10 @@
 mod account;
 mod charts;
+mod script;
 mod transaction;
 
 use account::Account;
 use clap::Subcommand;
-use rhai::packages::Package;
 use transaction::{Item, Transaction};
 
 use crate::transaction::TransactionRhai;
@@ -215,12 +215,7 @@ impl Commands {
         script: Option<&std::path::PathBuf>,
     ) -> Result<(), Error> {
         let totals = if let Some(script) = script {
-            let engine = {
-                let mut engine = rhai::Engine::new();
-                rhai_http::HttpPackage::new().register_into_engine(&mut engine);
-                engine.register_type::<TransactionRhai>();
-                engine
-            };
+            let engine = script::build_engine();
             let accounts = Self::get_accounts(accounts_path, account);
             let ast = engine
                 .compile_file(script.into())
