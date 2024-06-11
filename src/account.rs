@@ -25,7 +25,7 @@ impl From<serde_json::Error> for Error {
 pub struct Account {
     name: String,
     file: std::fs::File,
-    data: AccountData,
+    data: Data,
 }
 
 impl Account {
@@ -34,7 +34,7 @@ impl Account {
         std::fs::File::create(file.as_ref())
             .and_then(|mut w| {
                 w.write_all(
-                    &serde_json::to_vec(&AccountData::new(currency))
+                    &serde_json::to_vec(&Data::new(currency))
                         .expect("empty account must be deserialized"),
                 )
             })
@@ -72,7 +72,6 @@ impl Account {
         // Truncate the file.
         self.file.set_len(0)?;
         self.file.rewind()?;
-
         self.file.write_all(&serde_json::to_vec(&self.data)?)?;
 
         Ok(self)
@@ -123,12 +122,12 @@ impl Account {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-struct AccountData {
+struct Data {
     pub transactions: Vec<Transaction>,
     pub currency: String,
 }
 
-impl AccountData {
+impl Data {
     pub fn new(currency: &str) -> Self {
         Self {
             transactions: vec![],

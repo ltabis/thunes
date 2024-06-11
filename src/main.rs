@@ -1,4 +1,4 @@
-use accounting::{CommandError, Commands};
+use accounting::{Commands, Error};
 use clap::Parser;
 
 /// Program to record and analyze financial data.
@@ -14,15 +14,15 @@ struct Cli {
 }
 
 impl Cli {
-    fn execute(self) -> Result<(), CommandError> {
+    fn execute(self) -> Result<(), Error> {
         let accounts_path = self.accounts.unwrap_or(".".to_string());
         let accounts_path = &accounts_path;
 
-        self.command.run(&accounts_path)
+        self.command.run(accounts_path)
     }
 }
 
-fn main() -> Result<(), CommandError> {
+fn main() -> Result<(), Error> {
     let cli = Cli::parse();
     cli.execute()
 }

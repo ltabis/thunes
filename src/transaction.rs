@@ -1,3 +1,5 @@
+use rhai::{CustomType, TypeBuilder};
+
 #[derive(Debug)]
 pub enum Error {
     ParsingFieldNotFound(String),
@@ -14,7 +16,7 @@ pub enum Error {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Item {
     pub date: time::Date,
-    pub ammount: f64,
+    pub amount: f64,
     pub description: String,
     pub tags: std::collections::HashSet<String>,
 }
@@ -26,6 +28,7 @@ pub enum Transaction {
     /// Add currency to an account.
     #[serde(rename = "i")]
     Income(Item),
+    // FIXME: expense
     /// Substract currency from an account.
     #[serde(rename = "s")]
     Spending(Item),
@@ -38,10 +41,54 @@ impl Transaction {
         }
     }
 
-    pub fn ammount(&self) -> f64 {
+    pub fn amount(&self) -> f64 {
         match self {
-            Self::Income(item) => item.ammount,
-            Self::Spending(item) => -item.ammount,
+            Self::Income(item) => item.amount,
+            Self::Spending(item) => -item.amount,
+        }
+    }
+
+    pub fn description(&self) -> &str {
+        match self {
+            Self::Income(item) | Self::Spending(item) => &item.description,
+        }
+    }
+
+    pub fn tags(&self) -> &std::collections::HashSet<String> {
+        match self {
+            Self::Income(item) | Self::Spending(item) => &item.tags,
+        }
+    }
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, rhai::CustomType)]
+pub struct TransactionRhai {
+    /// Get the date of the transaction.
+    #[rhai_type(readonly)]
+    pub date: String,
+    /// Currency amount of the transaction, can be negative or positive depending of the transaction type.
+    #[rhai_type(readonly)]
+    pub amount: rhai::FLOAT,
+    /// Description of the transaction.
+    #[rhai_type(readonly)]
+    pub description: String,
+    /// Tags associated with the transaction.
+    #[rhai_type(readonly)]
+    pub tags: rhai::Array,
+}
+
+impl From<&Transaction> for TransactionRhai {
+    fn from(value: &Transaction) -> Self {
+        Self {
+            date: value.date().to_string(),
+            amount: value.amount(),
+            description: value.description().to_string(),
+            tags: value
+                .tags()
+                .iter()
+                .cloned()
+                .map(rhai::Dynamic::from)
+                .collect::<rhai::Array>(),
         }
     }
 }
