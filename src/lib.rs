@@ -250,24 +250,25 @@ impl Commands {
                         )
                         .map_err(Error::ScriptEvaluation)?;
 
-                    let balance = if account_balance.is_map() {
+                    let (balance, currency) = if account_balance.is_map() {
                         let balance: ScriptAccountBalance =
                             rhai::serde::from_dynamic(&account_balance)
                                 .map_err(Error::ScriptEvaluation)?;
 
                         totals
-                            .entry(balance.currency)
+                            .entry(balance.currency.clone())
                             .and_modify(|entry| *entry += balance.amount)
                             .or_insert(balance.amount);
 
-                        balance.amount
+                        (balance.amount, balance.currency)
                     } else if account_balance.is_float() {
                         let balance = account_balance.cast::<rhai::FLOAT>();
                         totals
                             .entry(account.currency().to_string())
                             .and_modify(|entry| *entry += balance)
                             .or_insert(balance);
-                        balance
+
+                        (balance, account.currency().to_string())
                     } else {
                         // FIXME: better error.
                         return Err(Error::ScriptEvaluation(Box::new(
@@ -286,7 +287,7 @@ impl Commands {
                                 to.date(),
                                 account.name(),
                                 balance,
-                                account.currency()
+                                currency
                             );
 
                             if chart {
