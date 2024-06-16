@@ -26,5 +26,6 @@ accounting --accounts ~/my-accounts balance
 
 ## Rhai integration
 
-Rhai scripts can be used to customize how the program computes the balance of your accounts. They can be useful to, for example, convert an account balance into another currency.
+[Rhai scripts](https://rhai.rs/) can be used to customize how the program computes the balance of accounts. They can be useful to, for example, convert the balance of an account into another currency,
+or aggregate multiple balances together.
 See the example folder for more details.

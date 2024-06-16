@@ -1,4 +1,4 @@
-//! This scripts performs a query to CoinMarketCap API to fetch Bitcoin price and convert the BTC account
+//! This scripts performs a query to CoinMarketCap's API to fetch Bitcoin price and convert the BTC account
 //! balance to euros.
 
 // API key for CoinMarketCap, see https://coinmarketcap.com/api/
