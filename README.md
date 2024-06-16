@@ -13,10 +13,12 @@ I wanted a tool that I could use to manage my own accounting using a simple text
 accounting new --name main --currency EUR
 
 # Record an income.
-accounting --accounts ~/my-accounts income --account main --amount "2000" --description "Salary" --tags=job
+accounting --accounts ~/my-accounts income --account main \
+ --amount "2000" --description "Salary" --tags=job
 
 # Record an expense.
-accounting --accounts ~/my-accounts spend --account main --amount "15" --description "Train tickets" --tags=transport
+accounting --accounts ~/my-accounts spend --account main \
+ --amount "15" --description "Train tickets" --tags=transport
 
 # Display the overall balance of all your accounts.
 accounting --accounts ~/my-accounts balance
