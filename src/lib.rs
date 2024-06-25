@@ -5,12 +5,16 @@ mod transaction;
 
 use account::Account;
 use clap::Subcommand;
-use transaction::{Item, Transaction};
-
-use crate::transaction::TransactionRhai;
+use transaction::{Item, Transaction, TransactionRhai};
 
 const TIME_FORMAT: &[time::format_description::FormatItem<'_>] =
     time_macros::format_description!("[year]-[month]-[day]");
+const TIME_FORMAT_MONTH: &[time::format_description::FormatItem<'_>] =
+    time_macros::format_description!("[month]");
+const TIME_FORMAT_YEAR: &[time::format_description::FormatItem<'_>] =
+    time_macros::format_description!("[year]");
+const TIME_FORMAT_DAY: &[time::format_description::FormatItem<'_>] =
+    time_macros::format_description!("[day]");
 
 // TODO: thiserror
 #[derive(Debug)]
@@ -216,6 +220,7 @@ impl Commands {
     ) -> Result<(), Error> {
         let totals = if let Some(script) = script {
             let engine = script::build_engine();
+
             let accounts = Self::get_accounts(accounts_path, account);
             let ast = engine
                 .compile_file(script.into())
@@ -233,13 +238,11 @@ impl Commands {
                         .transactions_between(from, to)
                         .map_err(|error| Error::Account(account.name().to_string(), error))?;
 
-                    let parameters = transactions
+                    let parameters: rhai::Dynamic = transactions
                         .iter()
-                        .map(|t| rhai::serde::to_dynamic(TransactionRhai::from(t)).unwrap())
-                        .collect::<rhai::Array>();
-
-                    let parameters =
-                        rhai::serde::to_dynamic(parameters).map_err(Error::ScriptEvaluation)?;
+                        .map(|t| TransactionRhai::from(t))
+                        .collect::<Vec<TransactionRhai>>()
+                        .into();
 
                     let account_balance = engine
                         .call_fn::<rhai::Dynamic>(

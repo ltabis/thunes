@@ -1,5 +1,7 @@
 use rhai::{CustomType, TypeBuilder};
 
+use crate::script::time_helper;
+
 #[derive(Debug)]
 pub enum Error {
     ParsingFieldNotFound(String),
@@ -61,11 +63,11 @@ impl Transaction {
     }
 }
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, rhai::CustomType)]
+#[derive(Clone, Debug, serde::Deserialize, rhai::CustomType)]
 pub struct TransactionRhai {
     /// Get the date of the transaction.
-    #[rhai_type(readonly)]
-    pub date: String,
+    // #[rhai_type(readonly)]
+    pub date: time_helper::Date,
     /// Currency amount of the transaction, can be negative or positive depending of the transaction type.
     #[rhai_type(readonly)]
     pub amount: rhai::FLOAT,
@@ -80,7 +82,7 @@ pub struct TransactionRhai {
 impl From<&Transaction> for TransactionRhai {
     fn from(value: &Transaction) -> Self {
         Self {
-            date: value.date().to_string(),
+            date: value.date().clone(),
             amount: value.amount(),
             description: value.description().to_string(),
             tags: value
