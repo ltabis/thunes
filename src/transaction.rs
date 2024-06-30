@@ -66,7 +66,7 @@ impl Transaction {
 #[derive(Clone, Debug, serde::Deserialize, rhai::CustomType)]
 pub struct TransactionRhai {
     /// Get the date of the transaction.
-    // #[rhai_type(readonly)]
+    #[rhai_type(readonly)]
     pub date: time_helper::Date,
     /// Currency amount of the transaction, can be negative or positive depending of the transaction type.
     #[rhai_type(readonly)]
