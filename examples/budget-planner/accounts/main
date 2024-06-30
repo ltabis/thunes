@@ -1,0 +1,68 @@
+{
+    "transactions": [
+        {
+            "operation": "i",
+            "date": [
+                2023,
+                154
+            ],
+            "amount": 1000.0,
+            "description": "init",
+            "tags": [
+                ""
+            ]
+        },
+        {
+            "operation": "s",
+            "date": [
+                2024,
+                168
+            ],
+            "amount": 500.0,
+            "description": "rent",
+            "tags": [
+                "rent",
+                "needs"
+            ]
+        },
+        {
+            "operation": "s",
+            "date": [
+                2024,
+                168
+            ],
+            "amount": 15.0,
+            "description": "Restaurant",
+            "tags": [
+                "wants",
+                "food"
+            ]
+        },
+        {
+            "operation": "s",
+            "date": [
+                2024,
+                168
+            ],
+            "amount": 10.0,
+            "description": "Cinema",
+            "tags": [
+                "wants",
+                "fun"
+            ]
+        },
+        {
+            "operation": "s",
+            "date": [
+                2024,
+                168
+            ],
+            "amount": 300.0,
+            "description": "Investement",
+            "tags": [
+                "savings"
+            ]
+        }
+    ],
+    "currency": "EUR"
+}
