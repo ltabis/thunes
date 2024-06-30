@@ -82,7 +82,7 @@ pub enum Commands {
     },
     /// Display the total balance of accounts.
     Balance {
-        /// Name of the account to display the balance from. If not specified, will agregate all
+        /// Name of the account to display the balance from. If not specified, will aggregate all
         /// balances from the accounts in the `--accounts` directory.
         #[arg(short, long, value_name = "ACCOUNT-NAME")]
         account: Option<String>,
@@ -99,7 +99,6 @@ pub enum Commands {
         #[arg(short, long)]
         script: Option<std::path::PathBuf>,
     },
-    // cli operations/o [bourso] [month] -> 1800 EUR
 }
 
 impl Commands {
@@ -229,18 +228,14 @@ impl Commands {
 
             for account in accounts {
                 let fn_name = format!("on_{}", account.name());
-                if ast
-                    .iter_functions()
-                    .find(|func| func.name == fn_name)
-                    .is_some()
-                {
+                if ast.iter_functions().any(|func| func.name == fn_name) {
                     let transactions = account
                         .transactions_between(from, to)
                         .map_err(|error| Error::Account(account.name().to_string(), error))?;
 
                     let parameters: rhai::Dynamic = transactions
                         .iter()
-                        .map(|t| TransactionRhai::from(t))
+                        .map(TransactionRhai::from)
                         .collect::<Vec<TransactionRhai>>()
                         .into();
 

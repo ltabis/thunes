@@ -82,7 +82,7 @@ pub struct TransactionRhai {
 impl From<&Transaction> for TransactionRhai {
     fn from(value: &Transaction) -> Self {
         Self {
-            date: value.date().clone(),
+            date: *value.date(),
             amount: value.amount(),
             description: value.description().to_string(),
             tags: value
