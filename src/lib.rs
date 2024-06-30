@@ -219,8 +219,8 @@ impl Commands {
     ) -> Result<(), Error> {
         let totals = if let Some(script) = script {
             let engine = script::build_engine();
-
             let accounts = Self::get_accounts(accounts_path, account);
+
             let ast = engine
                 .compile_file(script.into())
                 .map_err(Error::ScriptEvaluation)?;
@@ -313,7 +313,6 @@ impl Commands {
             totals
         } else {
             let mut totals = std::collections::HashMap::<String, f64>::new();
-
             let accounts = Self::get_accounts(accounts_path, account);
 
             for account in accounts {
@@ -344,7 +343,7 @@ impl Commands {
     }
 
     fn get_accounts(accounts_path: &str, account: Option<&String>) -> Vec<Account> {
-        if let Some(account) = account {
+        let mut accounts = if let Some(account) = account {
             match Account::from_file(std::path::PathBuf::from_iter([accounts_path, account])) {
                 Ok(account) => vec![account],
                 Err(error) => {
@@ -363,7 +362,9 @@ impl Commands {
                     }
                 })
                 .collect::<Vec<_>>()
-        }
+        };
+        accounts.sort_by(|a, b| a.name().cmp(b.name()));
+        accounts
     }
 
     fn list_between(
