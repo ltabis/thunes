@@ -17,5 +17,5 @@ clap = { version = "4.5", features = ["derive"] }
 time = { version = "0.3", features = ["std", "parsing", "formatting", "serde"] }
 time-macros = { version = "0.2", features = ["parsing"] }
 charts = "0.3"
-rhai-http = { git = "https://github.com/ltabis/rhai-http", rev = "1aa662b" }
+rhai-http = { version = "0.2" }
 rhai = { version = "1.18" }
