@@ -218,7 +218,7 @@ impl Commands {
         script: Option<&std::path::PathBuf>,
     ) -> Result<(), Error> {
         let totals = if let Some(script) = script {
-            let engine = script::build_engine();
+            let engine = script::build_engine(script);
             let accounts = Self::get_accounts(accounts_path, account);
 
             let ast = engine

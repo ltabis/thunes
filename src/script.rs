@@ -123,7 +123,7 @@ pub mod prelude {
     }
 }
 
-pub fn build_engine() -> rhai::Engine {
+pub fn build_engine(path: &std::path::PathBuf) -> rhai::Engine {
     let mut engine = rhai::Engine::new();
 
     rhai_http::HttpPackage::new().register_into_engine(&mut engine);
@@ -131,6 +131,9 @@ pub fn build_engine() -> rhai::Engine {
     engine.register_global_module(rhai::exported_module!(prelude).into());
     engine.register_global_module(rhai::exported_module!(time_helper).into());
     engine.build_type::<TransactionRhai>();
+    engine.set_module_resolver(rhai::module_resolvers::FileModuleResolver::new_with_path(
+        path.parent().expect("should have a parent"),
+    ));
 
     engine
 }
