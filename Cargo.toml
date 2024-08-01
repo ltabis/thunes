@@ -1,8 +1,9 @@
 [package]
-name = "accounting"
-version = "0.1.0"
+name = "accounts-cli"
+version = "0.0.0"
 authors = ["ltabis <ltabis.pro@gmail.com>"]
 edition = "2021"
+description = "A cli to register and analyze monetary transactions"
 
 [dependencies]
 toml = "0.8"
