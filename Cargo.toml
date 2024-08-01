@@ -4,6 +4,10 @@ version = "0.0.0"
 authors = ["ltabis <ltabis.pro@gmail.com>"]
 edition = "2021"
 description = "A cli to register and analyze monetary transactions"
+license-file = "./LICENSE"
+documentation = ""
+homepage = "https://github.com/ltabis/accounts-cli"
+repository = "https://github.com/ltabis/accounts-cli"
 
 [dependencies]
 toml = "0.8"

@@ -1,4 +1,4 @@
-use accounting::{Commands, Error};
+use accounts_cli::{Commands, Error};
 use clap::Parser;
 
 /// Program to record and analyze financial data.
