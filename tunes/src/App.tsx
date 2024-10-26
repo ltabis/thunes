@@ -2,7 +2,8 @@
 // import reactLogo from "./assets/react.svg";
 // import { invoke } from "@tauri-apps/api/core";
 
-import Menu from "./components/layout/Menu";
+import { CssBaseline } from "@mui/material";
+import Menu from "./components/layout/SideMenu";
 
 function App() {
   // const [greetMsg, setGreetMsg] = useState("");
@@ -15,6 +16,7 @@ function App() {
 
   return (
     <>
+      <CssBaseline />
       <Menu></Menu>
     </>
   );
