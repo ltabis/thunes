@@ -4,8 +4,14 @@
 
 import { CssBaseline } from "@mui/material";
 import Menu from "./components/layout/SideMenu";
+// import { useReducer } from "react";
+// import Dashboard from "./pages/Dashboard";
+import Account from "./pages/Account";
 
+// TODO: https://react.dev/learn/scaling-up-with-reducer-and-context
 function App() {
+  // const [route, dispatch] = useReducer(routeReducer, "dashboard");
+
   // const [greetMsg, setGreetMsg] = useState("");
   // const [name, setName] = useState("");
 
@@ -18,6 +24,15 @@ function App() {
     <>
       <CssBaseline />
       <Menu></Menu>
+
+      {/* TODO: Routing */}
+      {/* {context === "dashboard" ?
+        (<Dashboard></Dashboard>) :
+        context === "account" ?
+          (<Account></Account>) : (<></>)
+      } */}
+
+      <Account></Account>
     </>
   );
 }

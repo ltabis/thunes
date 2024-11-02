@@ -2,6 +2,7 @@ import { Box, CSSObject, Drawer as MuiDrawer, List, ListItem, ListItemButton, Li
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import React from "react";
+import { Route, } from "../../context/Route";
 
 export default function Menu() {
     const [open, setOpen] = React.useState(false);
@@ -64,12 +65,14 @@ export default function Menu() {
 
     const items = [
         {
-            label: "Overview",
+            label: "Dashboard",
             icon: DashboardIcon,
+            route: "dashboard" as Route,
         },
         {
             label: "Accounts",
             icon: AccountBalanceWalletIcon,
+            route: "account" as Route,
         }
     ];
 
