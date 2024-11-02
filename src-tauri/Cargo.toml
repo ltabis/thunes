@@ -1,5 +1,5 @@
 [package]
-name = "accounts-cli"
+name = "tunes"
 version = "0.1.0"
 authors = ["ltabis <ltabis.pro@gmail.com>"]
 edition = "2021"
@@ -9,10 +9,24 @@ documentation = "https://docs.rs/"
 homepage = "https://github.com/ltabis/accounts-cli"
 repository = "https://github.com/ltabis/accounts-cli"
 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "tunes_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
 [dependencies]
-toml = "0.8"
+tauri = { version = "2.0", features = [] }
+tauri-plugin-shell = "2.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0" }
+toml = "0.8"
 clap = { version = "4.5", features = ["derive"] }
 time = { version = "0.3", features = ["std", "parsing", "formatting", "serde"] }
 time-macros = { version = "0.2", features = ["parsing"] }
