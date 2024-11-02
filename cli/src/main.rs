@@ -1,5 +1,5 @@
-use accounts_cli::{Commands, Error};
 use clap::Parser;
+use tunes_cli::{Commands, Error};
 
 /// Program to record and analyze financial data.
 #[derive(Parser)]
