@@ -18,3 +18,4 @@ time = { version = "0.3", features = ["std", "parsing", "formatting", "serde"] }
 time-macros = { version = "0.2", features = ["parsing"] }
 rhai-http = { version = "0.2" }
 rhai = { version = "1.18" }
+ts-rs = "10.0"

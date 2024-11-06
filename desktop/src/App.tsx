@@ -3,7 +3,7 @@
 // import { invoke } from "@tauri-apps/api/core";
 
 import { CssBaseline } from "@mui/material";
-import Menu from "./components/layout/SideMenu";
+// import Menu from "./components/layout/SideMenu";
 // import { useReducer } from "react";
 // import Dashboard from "./pages/Dashboard";
 import Account from "./pages/Account";
@@ -23,7 +23,7 @@ function App() {
   return (
     <>
       <CssBaseline />
-      <Menu></Menu>
+      {/* <Menu></Menu> */}
 
       {/* TODO: Routing */}
       {/* {context === "dashboard" ?

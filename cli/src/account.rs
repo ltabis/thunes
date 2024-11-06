@@ -23,9 +23,9 @@ impl From<serde_json::Error> for Error {
 
 // NOTE: balance could be cached.
 pub struct Account {
-    name: String,
+    pub name: String,
     file: std::fs::File,
-    data: Data,
+    pub data: Data,
 }
 
 impl Account {
@@ -148,8 +148,10 @@ impl Account {
     }
 }
 
+#[derive(ts_rs::TS)]
+#[ts(export)]
 #[derive(serde::Serialize, serde::Deserialize)]
-struct Data {
+pub struct Data {
     pub transactions: Vec<Transaction>,
     pub currency: String,
 }

@@ -15,8 +15,12 @@ pub enum Error {
 }
 
 /// Information common to all operations types.
+#[derive(ts_rs::TS)]
+#[ts(export)]
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Item {
+    // FIXME: serialize in another format.
+    #[ts(skip)]
     pub date: time::Date,
     pub amount: f64,
     pub description: String,
@@ -24,6 +28,8 @@ pub struct Item {
 }
 
 /// Type of operations on an account.
+#[derive(ts_rs::TS)]
+#[ts(export)]
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "operation")]
 pub enum Transaction {
