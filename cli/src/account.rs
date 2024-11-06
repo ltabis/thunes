@@ -6,7 +6,7 @@ pub enum Error {
     Io(std::io::Error),
     Serde(serde_json::Error),
     InvalidDateRange,
-    AlreadyExists,
+    Exists,
 }
 
 impl From<std::io::Error> for Error {
@@ -30,18 +30,30 @@ pub struct Account {
 
 impl Account {
     /// Write a new empty account to a file.
-    pub fn open(file: impl AsRef<std::path::Path>, currency: &str) -> Result<(), Error> {
-        std::fs::File::create(file.as_ref())
+    pub fn new(
+        path: impl AsRef<std::path::Path>,
+        currency: impl AsRef<str>,
+    ) -> Result<Self, Error> {
+        let path = path.as_ref();
+
+        if path.exists() {
+            return Err(Error::Exists);
+        }
+
+        std::fs::File::create(&path)
             .and_then(|mut w| {
                 w.write_all(
-                    &serde_json::to_vec(&Data::new(currency))
-                        .expect("empty account must be deserialized"),
+                    &serde_json::to_vec(&Data::new(currency.as_ref()))
+                        .expect("empty account is deserializable"),
                 )
             })
-            .map_err(Error::Io)
+            .map_err(Error::Io)?;
+
+        Self::open(path)
     }
 
-    pub fn from_file(file: impl AsRef<std::path::Path>) -> Result<Self, Error> {
+    /// Open an account from a file.
+    pub fn open(file: impl AsRef<std::path::Path>) -> Result<Self, Error> {
         let name = file
             .as_ref()
             .file_stem()
@@ -67,27 +79,32 @@ impl Account {
         })
     }
 
-    /// Write account data to the file that the account was read from.
-    pub fn write(&mut self) -> Result<&mut Self, Error> {
-        // Truncate the file.
-        self.file.set_len(0)?;
-        self.file.rewind()?;
-        self.file.write_all(&serde_json::to_vec(&self.data)?)?;
-
-        Ok(self)
-    }
-
-    pub fn push_transaction(&mut self, transaction: Transaction) -> &mut Self {
-        self.data.transactions.push(transaction);
-        self
-    }
-
     pub fn name(&self) -> &str {
         &self.name
     }
 
     pub fn currency(&self) -> &str {
         &self.data.currency
+    }
+
+    pub fn write_transaction(&mut self, transaction: Transaction) -> Result<&mut Self, Error> {
+        self.data.transactions.push(transaction);
+
+        self.write()
+    }
+
+    pub fn write_transactions(
+        &mut self,
+        transactions: Vec<Transaction>,
+    ) -> Result<&mut Self, Error> {
+        self.data.transactions.extend(transactions);
+
+        self.write()
+    }
+
+    pub fn balance(&self) -> Result<f64, Error> {
+        self.transactions_between(None, None)
+            .map(|ts| ts.iter().fold(0.0, |acc, t| acc + t.amount()))
     }
 
     pub fn transactions_between(
@@ -118,6 +135,16 @@ impl Account {
         } else {
             Err(Error::InvalidDateRange)
         }
+    }
+
+    /// Write account data to the file that the account was read from.
+    fn write(&mut self) -> Result<&mut Self, Error> {
+        // Truncate the file.
+        self.file.set_len(0)?;
+        self.file.rewind()?;
+        self.file.write_all(&serde_json::to_vec(&self.data)?)?;
+
+        Ok(self)
     }
 }
 

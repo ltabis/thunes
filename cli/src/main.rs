@@ -3,12 +3,32 @@ use clap::Subcommand;
 use tunes_cli::account;
 use tunes_cli::account::Account;
 use tunes_cli::script;
+use tunes_cli::script::ScriptAccountBalance;
+use tunes_cli::transaction;
 use tunes_cli::transaction::Item;
 use tunes_cli::transaction::Transaction;
 use tunes_cli::transaction::TransactionRhai;
-use tunes_cli::Error;
-use tunes_cli::ScriptAccountBalance;
 use tunes_cli::TIME_FORMAT;
+
+#[derive(Debug)]
+pub enum Error {
+    Account(account::Error),
+    Operation(transaction::Error),
+    InvalidDate(time::error::Parse),
+    ScriptEvaluation(Box<rhai::EvalAltResult>),
+}
+
+impl From<transaction::Error> for Error {
+    fn from(value: transaction::Error) -> Self {
+        Self::Operation(value)
+    }
+}
+
+impl From<account::Error> for Error {
+    fn from(value: account::Error) -> Self {
+        Self::Account(value)
+    }
+}
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -154,14 +174,9 @@ impl Commands {
     fn new_account(accounts_path: &str, name: &str, currency: &str) -> Result<(), Error> {
         let path = std::path::PathBuf::from_iter([accounts_path, name]);
 
-        if path.exists() {
-            return Err(Error::Account(
-                name.to_string(),
-                account::Error::AlreadyExists,
-            ));
-        }
-
-        Account::open(path, currency).map_err(|error| Error::Account(name.to_string(), error))
+        Account::new(path, currency)
+            .map_err(|error| Error::Account(error))
+            .map(|_| ())
     }
 
     fn write_transaction(
@@ -169,12 +184,10 @@ impl Commands {
         name: &str,
         transaction: Transaction,
     ) -> Result<(), Error> {
-        Account::from_file(std::path::PathBuf::from_iter([accounts_path, name]))
-            .map_err(|error| Error::Account(name.to_string(), error))?
-            .push_transaction(transaction)
-            .write()
-            .map_err(|error| Error::Account(name.to_string(), error))
-            .map(|_| ())
+        let path = std::path::PathBuf::from_iter([accounts_path, name]);
+
+        Account::open(path)?.write_transaction(transaction)?;
+        Ok(())
     }
 
     fn balance(
@@ -198,7 +211,7 @@ impl Commands {
                 if ast.iter_functions().any(|func| func.name == fn_name) {
                     let transactions = account
                         .transactions_between(from, to)
-                        .map_err(|error| Error::Account(account.name().to_string(), error))?;
+                        .map_err(|error| Error::Account(error))?;
 
                     let parameters: rhai::Dynamic = transactions
                         .iter()
@@ -307,7 +320,7 @@ impl Commands {
 
     fn get_accounts(accounts_path: &str, account: Option<&String>) -> Vec<Account> {
         let mut accounts = if let Some(account) = account {
-            match Account::from_file(std::path::PathBuf::from_iter([accounts_path, account])) {
+            match Account::open(std::path::PathBuf::from_iter([accounts_path, account])) {
                 Ok(account) => vec![account],
                 Err(error) => {
                     println!("failed to open {account:?}: {error:?}");
@@ -317,7 +330,7 @@ impl Commands {
         } else {
             Self::list_accounts_paths(accounts_path)
                 .into_iter()
-                .filter_map(|path| match Account::from_file(&path) {
+                .filter_map(|path| match Account::open(&path) {
                     Ok(account) => Some(account),
                     Err(error) => {
                         println!("failed to open {path:?}: {error:?}");
@@ -337,7 +350,7 @@ impl Commands {
     ) -> Result<f64, Error> {
         let transactions = account
             .transactions_between(from, to)
-            .map_err(|error| Error::Account(account.name().to_string(), error))?;
+            .map_err(|error| Error::Account(error))?;
 
         match (transactions.first(), transactions.last()) {
             (Some(from), Some(to)) => {
