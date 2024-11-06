@@ -33,3 +33,4 @@ time-macros = { version = "0.2", features = ["parsing"] }
 charts = "0.3"
 rhai-http = { version = "0.2" }
 rhai = { version = "1.18" }
+tunes-cli = { path = "../../cli" }

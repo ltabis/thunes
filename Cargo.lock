@@ -3967,6 +3967,7 @@ dependencies = [
  "time",
  "time-macros",
  "toml 0.8.2",
+ "tunes-cli",
 ]
 
 [[package]]

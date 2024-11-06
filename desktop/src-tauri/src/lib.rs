@@ -1,7 +1,11 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+pub mod balance {
+    #[tauri::command]
+    fn get(account: &str) -> String {
+// TODO: Transform CLI into library first
+        tunes_cli::Commands::Balance { account: Some(account.to_string()), from: None, to: None, chart: false, script: None }.run(".")
+
+        todo!()
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
