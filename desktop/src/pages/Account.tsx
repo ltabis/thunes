@@ -1,22 +1,31 @@
-import { Button, Chip, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from "@mui/material";
+import { Alert, Button, Chip, Paper, Snackbar, SnackbarCloseReason, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { Data as AccountData } from "../../../cli/bindings/Data";
 
 export default function Account() {
     const [path, setPath] = useState("");
+    const [openFailure, setOpenFailure] = useState("");
     const [account, setAccount] = useState<AccountData>();
 
     const getAccount = async () => {
         invoke("get_account", { path }).then(
-            (newAccount) => {
-                console.log(newAccount);
-                setAccount(newAccount as AccountData)
-            }
-        ).catch((error) => {
-            console.error("failed to get account:", error);
-        });
+            (newAccount) => setAccount(newAccount as AccountData)
+        ).catch(
+            (error) => setOpenFailure(error)
+        );
     }
+
+    const handleClose = (
+        _event?: React.SyntheticEvent | Event,
+        reason?: SnackbarCloseReason,
+    ) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+
+        setOpenFailure("");
+    };
 
     return (<>
         <TextField id="outlined-basic" label="Account path" variant="outlined"
@@ -30,7 +39,7 @@ export default function Account() {
         {
             account ?
                 <Paper elevation={0}>
-                    <p>currency: {account.currency}</p>
+                    <Typography>currency: {account.currency}</Typography>
                     <TableContainer component={Paper}>
                         <Table sx={{ minWidth: 650 }} >
                             <TableHead>
@@ -64,5 +73,18 @@ export default function Account() {
                 :
                 <></>
         }
+
+        <Snackbar
+            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+            open={openFailure.length !== 0} autoHideDuration={5000} onClose={handleClose}>
+            <Alert
+                onClose={handleClose}
+                severity="error"
+                variant="filled"
+                sx={{ width: '100%' }}
+            >
+                failed to open the account: {openFailure}
+            </Alert>
+        </Snackbar>
     </>);
 }

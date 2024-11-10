@@ -1,9 +1,9 @@
 use tunes_cli::account::{Account, Data};
 
 #[tauri::command]
-fn get_account(path: &str) -> Result<Data, ()> {
+fn get_account(path: &str) -> Result<Data, String> {
     Account::open(path)
-        .map_err(|_| ())
+        .map_err(|error| format!("{error:?}"))
         .map(|account| account.data)
 }
 
