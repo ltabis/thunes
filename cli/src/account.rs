@@ -23,7 +23,6 @@ impl From<serde_json::Error> for Error {
 
 // NOTE: balance could be cached.
 pub struct Account {
-    pub name: String,
     file: std::fs::File,
     pub data: Data,
 }
@@ -40,10 +39,14 @@ impl Account {
             return Err(Error::Exists);
         }
 
+        let name = path
+            .file_stem()
+            .map_or("unknown".into(), |stem| stem.to_string_lossy());
+
         std::fs::File::create(&path)
             .and_then(|mut w| {
                 w.write_all(
-                    &serde_json::to_vec(&Data::new(currency.as_ref()))
+                    &serde_json::to_vec(&Data::new(&name, currency.as_ref()))
                         .expect("empty account is deserializable"),
                 )
             })
@@ -54,12 +57,6 @@ impl Account {
 
     /// Open an account from a file.
     pub fn open(file: impl AsRef<std::path::Path>) -> Result<Self, Error> {
-        let name = file
-            .as_ref()
-            .file_stem()
-            .map_or("unknown".to_string(), |stem| {
-                stem.to_string_lossy().to_string()
-            });
         let mut file = std::fs::OpenOptions::new()
             .read(true)
             .write(true)
@@ -73,14 +70,13 @@ impl Account {
         file.rewind()?;
 
         Ok(Self {
-            name,
             file,
             data: serde_json::from_slice(&bytes).map_err(Error::Serde)?,
         })
     }
 
     pub fn name(&self) -> &str {
-        &self.name
+        &self.data.name
     }
 
     pub fn currency(&self) -> &str {
@@ -152,13 +148,15 @@ impl Account {
 #[ts(export)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Data {
+    pub name: String,
     pub transactions: Vec<Transaction>,
     pub currency: String,
 }
 
 impl Data {
-    pub fn new(currency: &str) -> Self {
+    pub fn new(name: &str, currency: &str) -> Self {
         Self {
+            name: name.to_string(),
             transactions: vec![],
             currency: currency.to_string(),
         }

@@ -1,5 +1,6 @@
 pub mod account;
 pub mod script;
+pub mod settings;
 pub mod transaction;
 
 pub const TIME_FORMAT: &[time::format_description::FormatItem<'_>] =
