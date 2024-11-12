@@ -40,13 +40,6 @@ fn get_accounts(settings: State<'_, std::sync::Mutex<Settings>>) -> Result<Vec<D
 }
 
 #[tauri::command]
-fn get_account(path: &str) -> Result<Data, String> {
-    Account::open(path)
-        .map_err(|error| format!("{error:?}"))
-        .map(|account| account.data)
-}
-
-#[tauri::command]
 fn get_settings(settings: State<'_, std::sync::Mutex<Settings>>) -> Settings {
     settings.lock().unwrap().clone()
 }
