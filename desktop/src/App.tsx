@@ -1,10 +1,12 @@
 import { Box, CssBaseline, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, } from "@mui/material";
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import SettingsIcon from '@mui/icons-material/Settings';
 import Account from "./pages/Account";
 import { Route, Routes, Outlet, useNavigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import React from "react";
+import Settings from "./pages/Settings";
 
 function Layout() {
   const navigate = useNavigate();
@@ -15,13 +17,16 @@ function Layout() {
       label: "Dashboard",
       icon: DashboardIcon,
       path: "/",
-      element: <Dashboard></Dashboard>,
     },
     {
       label: "Accounts",
       icon: AccountBalanceWalletIcon,
       path: "/account",
-      element: <Account></Account>,
+    },
+    {
+      label: "Settings",
+      icon: SettingsIcon,
+      path: "/settings",
     }
   ];
 
@@ -73,6 +78,7 @@ export default function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="account" element={<Account />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>
   )
