@@ -1,4 +1,4 @@
-import { Alert, Chip, FormControl, InputLabel, MenuItem, Paper, Select, SelectChangeEvent, Snackbar, SnackbarCloseReason, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
+import { Alert, AppBar, Button, Chip, Divider, Menu, MenuItem, Paper, Snackbar, SnackbarCloseReason, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Toolbar, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { Data as AccountData } from "../../../cli/bindings/Data";
@@ -52,8 +52,25 @@ export default function Account() {
     const [openFailure, setOpenFailure] = useState("");
     const [selectedAccount, setSelectedAccount] = useState("");
     const [accounts, setAccounts] = useState<AccountData[]>();
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
 
-    const handleClose = (
+    const handleClickAccount = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuItemClick = (
+        account: string,
+    ) => {
+        setSelectedAccount(account);
+        setAnchorEl(null);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleSnackbarClose = (
         _event?: React.SyntheticEvent | Event,
         reason?: SnackbarCloseReason,
     ) => {
@@ -63,10 +80,6 @@ export default function Account() {
 
         setOpenFailure("");
     };
-
-    const handleSelectedAccountChange = (event: SelectChangeEvent) => {
-        setSelectedAccount(event.target.value);
-    }
 
     useEffect(() => {
         invoke("get_accounts").then(
@@ -78,25 +91,46 @@ export default function Account() {
 
     return (
         <>
-            {accounts ?
-                <FormControl fullWidth>
-                    <InputLabel id="demo-simple-select-label">Accounts</InputLabel>
-                    <Select
-                        labelId="demo-simple-select-label"
-                        id="demo-simple-select"
-                        label="Accounts"
-                        value={selectedAccount}
-                        onChange={handleSelectedAccountChange}
-                    >
-                        {
-                            accounts.map((account) =>
-                                <MenuItem key={account.name} value={account.name}>{account.name}</MenuItem>
-                            )
-                        }
-                    </Select>
-                </FormControl>
-                : <></>
-            }
+            <AppBar position="static">
+                <Toolbar>
+                    {
+                        accounts ?
+                            <>
+                                <Button
+                                    id="basic-button"
+                                    aria-controls={open ? 'basic-menu' : undefined}
+                                    aria-haspopup="true"
+                                    aria-expanded={open ? 'true' : undefined}
+                                    onClick={handleClickAccount}
+                                    variant="contained"
+                                >
+                                    {selectedAccount !== "" ? selectedAccount : "Select account"}
+                                </Button>
+                                <Menu
+                                    id="basic-menu"
+                                    anchorEl={anchorEl}
+                                    open={open}
+                                    onClose={handleClose}
+                                    MenuListProps={{
+                                        'aria-labelledby': 'basic-button',
+                                    }}
+                                >
+                                    {accounts.map((account) => (
+                                        <MenuItem
+                                            key={account.name}
+                                            selected={account.name === selectedAccount}
+                                            onClick={(_event) => handleMenuItemClick(account.name)}
+                                        >
+                                            {account.name}
+                                        </MenuItem>
+                                    ))}
+                                </Menu>
+                            </> : <></>
+                    }
+                </Toolbar>
+            </AppBar>
+
+            <Divider />
 
             {
                 selectedAccount && accounts
@@ -106,9 +140,9 @@ export default function Account() {
 
             <Snackbar
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-                open={openFailure.length !== 0} autoHideDuration={5000} onClose={handleClose}>
+                open={openFailure.length !== 0} autoHideDuration={5000} onClose={handleSnackbarClose}>
                 <Alert
-                    onClose={handleClose}
+                    onClose={handleSnackbarClose}
                     severity="error"
                     variant="filled"
                     sx={{ width: '100%' }}
