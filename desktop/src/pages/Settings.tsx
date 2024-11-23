@@ -12,7 +12,6 @@ export default function Settings() {
     useEffect(() => {
         invoke("get_settings").then(
             (newSettings) => {
-                console.log("PASSED", JSON.stringify(newSettings), (newSettings as AppSettings).theme);
                 dispatch({ type: "update", settings: newSettings as AppSettings });
             }
         ).catch(
