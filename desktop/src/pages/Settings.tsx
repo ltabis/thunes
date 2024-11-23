@@ -1,27 +1,26 @@
-import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { useEffect, } from "react";
+import { Button, FormControl, InputLabel, MenuItem, Paper, Select, SelectChangeEvent, TextField } from "@mui/material";
+import { Theme } from "../../../cli/bindings/Theme";
 import { Settings as AppSettings } from "../../../cli/bindings/Settings";
-import { Button, Paper, TextField } from "@mui/material";
+import { invoke } from "@tauri-apps/api/core";
+import { useDispatchSettings, useSettings } from "../contexts/Settings";
 
 export default function Settings() {
-    const [settings, setSettings] = useState<AppSettings>();
-
-    const saveSettings = () => {
-        invoke("save_settings", { settings }).then(
-            // TODO: generalize info with snackbars.
-            () => console.info("config saved!"),
-        ).catch(
-            (error) => console.error(error)
-        );
-    }
+    const settings = useSettings();
+    const dispatch = useDispatchSettings()!;
 
     useEffect(() => {
         invoke("get_settings").then(
-            (newSettings) => setSettings(newSettings as AppSettings)
+            (newSettings) => {
+                console.log("PASSED", JSON.stringify(newSettings), (newSettings as AppSettings).theme);
+                dispatch({ type: "update", settings: newSettings as AppSettings });
+            }
         ).catch(
-            (error) => console.error(error)
+            (error) => {
+                console.error(error);
+            }
         );
-    }, [setSettings]);
+    }, [dispatch]);
 
     return settings
         ?
@@ -30,14 +29,43 @@ export default function Settings() {
                 <TextField id="outlined-basic" label="Accounts path" variant="outlined"
                     value={settings.accounts_path}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                        setSettings({
-                            ...settings,
-                            accounts_path: event.target.value
-                        });
+                        dispatch(
+                            {
+                                type: "update",
+                                settings: {
+                                    ...settings,
+                                    accounts_path: event.target.value
+                                }
+                            }
+                        )
                     }}
                 />
-                <Button variant="text" onClick={saveSettings}>Save</Button>
-            </Paper>
+                <FormControl>
+                    <InputLabel id="demo-simple-select-label">Theme</InputLabel>
+                    <Select
+                        labelId="demo-simple-select-label"
+                        id="demo-simple-select"
+                        value={settings.theme}
+                        label="Theme"
+                        onChange={(event: SelectChangeEvent) => {
+                            dispatch({
+                                type: "update",
+                                settings: {
+                                    ...settings,
+                                    theme: event.target.value as Theme
+                                }
+                            });
+                        }}
+                    >
+                        <MenuItem value={"system"}>System</MenuItem>
+                        <MenuItem value={"light"}>Light</MenuItem>
+                        <MenuItem value={"dark"}>Dark</MenuItem>
+                    </Select>
+                </FormControl>
+                <Button variant="text" onClick={() => dispatch({
+                    type: "save"
+                })}>Save</Button>
+            </Paper >
         </>)
         :
         (<></>)

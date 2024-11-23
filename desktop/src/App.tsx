@@ -1,4 +1,4 @@
-import { Box, CssBaseline, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, } from "@mui/material";
+import { Box, CssBaseline, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, ThemeProvider, } from "@mui/material";
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -7,8 +7,11 @@ import { Route, Routes, Outlet, useNavigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import React from "react";
 import Settings from "./pages/Settings";
+import { darkTheme, lightTheme } from './Themes';
+import { useSettings } from "./contexts/Settings";
 
 function Layout() {
+  const settings = useSettings();
   const navigate = useNavigate();
   const drawerWidth = 240;
 
@@ -31,7 +34,7 @@ function Layout() {
   ];
 
   return (
-    <>
+    <ThemeProvider theme={settings?.theme === "dark" ? darkTheme : lightTheme}>
       <CssBaseline />
       <Box sx={{ display: 'flex' }}>
         <Drawer
@@ -68,7 +71,7 @@ function Layout() {
           <Outlet></Outlet>
         </Box>
       </Box>
-    </>
+    </ThemeProvider>
   );
 }
 
