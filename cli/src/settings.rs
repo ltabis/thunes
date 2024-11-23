@@ -6,10 +6,23 @@ pub enum Error {
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
+#[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Theme {
+    #[default]
+    System,
+    Light,
+    Dark,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Settings {
     pub path: std::path::PathBuf,
     pub accounts_path: std::path::PathBuf,
+    #[serde(default)]
+    pub theme: Theme,
 }
 
 impl Settings {
@@ -28,6 +41,7 @@ impl Settings {
             let settings = Self {
                 path,
                 accounts_path: accounts_path.into(),
+                theme: Theme::Dark,
             };
 
             std::fs::create_dir_all(&settings.path.parent().expect("expected parent"))
