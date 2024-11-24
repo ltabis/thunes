@@ -238,7 +238,7 @@ export function Layout() {
                                         'aria-labelledby': 'basic-button',
                                     }}
                                 >
-                                    {accounts.map((account) => (
+                                    {accounts.sort((a, b) => a.name.localeCompare(b.name)).map((account) => (
                                         <MenuItem
                                             key={account.name}
                                             selected={account.name === selected?.name}
