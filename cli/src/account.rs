@@ -9,6 +9,21 @@ pub enum Error {
     Exists,
 }
 
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Error::Io(error) => error.to_string(),
+                Error::Serde(error) => error.to_string(),
+                Error::InvalidDateRange => "Invalid date range".to_string(),
+                Error::Exists => "Account already exists".to_string(),
+            }
+        )
+    }
+}
+
 impl From<std::io::Error> for Error {
     fn from(value: std::io::Error) -> Self {
         Self::Io(value)
@@ -146,7 +161,7 @@ impl Account {
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Data {
     pub name: String,
     pub transactions: Vec<Transaction>,

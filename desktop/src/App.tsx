@@ -5,13 +5,16 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import Account from "./pages/Account";
 import { Route, Routes, Outlet, useNavigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-import React from "react";
+import React, { useEffect } from "react";
 import Settings from "./pages/Settings";
 import { darkTheme, lightTheme } from './Themes';
-import { useSettings } from "./contexts/Settings";
+import { useDispatchSettings, useSettings } from "./contexts/Settings";
+import { invoke } from "@tauri-apps/api/core";
+import { Settings as AppSettings } from "../../cli/bindings/Settings";
 
 function Layout() {
   const settings = useSettings();
+  const dispatch = useDispatchSettings()!;
   const navigate = useNavigate();
   const drawerWidth = 240;
 
@@ -32,6 +35,19 @@ function Layout() {
       path: "/settings",
     }
   ];
+
+  useEffect(() => {
+    invoke("get_settings").then(
+      (newSettings) => {
+        dispatch({ type: "update", settings: newSettings as AppSettings });
+      }
+    ).catch(
+      (error) => {
+        console.error(error);
+      }
+    );
+  }, [dispatch]);
+
 
   return (
     <ThemeProvider theme={settings?.theme === "dark" ? darkTheme : lightTheme}>

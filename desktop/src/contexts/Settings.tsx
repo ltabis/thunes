@@ -7,7 +7,7 @@ const SettingsDispatchContext = createContext<Dispatch<Action> | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [settings, dispatch] = useReducer(settingsReducer, {
-        path: "", accounts_path: "", theme: "system"
+        path: "", accounts_path: "", theme: "system", tags: []
     });
 
     return (

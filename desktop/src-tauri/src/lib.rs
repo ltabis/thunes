@@ -1,6 +1,9 @@
 use tauri::{Manager, State};
 use tunes_cli::account::{Account, Data};
 use tunes_cli::settings::Settings;
+use tunes_cli::transaction::Transaction;
+
+type Accounts = std::collections::HashMap<String, Account>;
 
 // FIXME: refactor with cli library.
 fn list_accounts_paths(accounts_path: &std::path::PathBuf) -> Vec<std::path::PathBuf> {
@@ -19,24 +22,39 @@ fn list_accounts_paths(accounts_path: &std::path::PathBuf) -> Vec<std::path::Pat
         .unwrap_or_default()
 }
 
+// FIXME: maybe needs to be pulled every time from disc in case of external changes to the accounts.
 #[tauri::command]
-fn get_accounts(settings: State<'_, std::sync::Mutex<Settings>>) -> Result<Vec<Data>, String> {
-    println!("get_accounts");
+fn get_accounts(accounts: State<'_, std::sync::Mutex<Accounts>>) -> Vec<Data> {
+    accounts
+        .lock()
+        .unwrap()
+        .values()
+        .map(|account| account.data.clone())
+        .collect()
+}
 
-    let settings = settings.lock().unwrap().clone();
+#[tauri::command]
+fn get_date() -> serde_json::Value {
+    serde_json::to_value(&time::OffsetDateTime::now_utc().date()).unwrap()
+}
 
-    // FIXME: refactor with cli library.
-    Ok(list_accounts_paths(&settings.accounts_path)
-        .into_iter()
-        .filter_map(|path| match Account::open(&path) {
-            Ok(account) => Some(account.data),
-            Err(error) => {
-                // FIXME: better errors, send back data + name of failed files.
-                eprintln!("failed to open {path:?}: {error:?}");
-                None
-            }
+#[tauri::command]
+fn add_transaction(
+    accounts: State<'_, std::sync::Mutex<Accounts>>,
+    account: &str,
+    transaction: Transaction,
+) -> Result<(), String> {
+    let mut accounts = accounts.lock().unwrap();
+
+    accounts
+        .get_mut(account)
+        .ok_or("Account not found".to_string())
+        .and_then(|account| {
+            account
+                .write_transaction(transaction)
+                .map_err(|error: tunes_cli::account::Error| error.to_string())
         })
-        .collect::<Vec<_>>())
+        .map(|_| ())
 }
 
 #[tauri::command]
@@ -64,7 +82,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_settings,
             save_settings,
-            get_accounts
+            get_accounts,
+            get_date,
+            add_transaction
         ])
         .setup(|app| {
             let path_resolver = app.path();
@@ -84,7 +104,20 @@ pub fn run() {
             let settings =
                 Settings::new(config_path, accounts_path).expect("failed to configure app");
 
+            let accounts = list_accounts_paths(&settings.accounts_path)
+                .into_iter()
+                .filter_map(|path| match Account::open(&path) {
+                    Ok(account) => Some((account.data.name.clone(), account)),
+                    Err(error) => {
+                        // FIXME: better errors, send back data + name of failed files.
+                        eprintln!("failed to open {path:?}: {error:?}");
+                        None
+                    }
+                })
+                .collect::<Accounts>();
+
             app.manage(std::sync::Mutex::new(settings));
+            app.manage(std::sync::Mutex::new(accounts));
 
             Ok(())
         })

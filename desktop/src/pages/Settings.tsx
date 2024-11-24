@@ -1,25 +1,10 @@
-import { useEffect, } from "react";
 import { Button, FormControl, InputLabel, MenuItem, Paper, Select, SelectChangeEvent, TextField } from "@mui/material";
 import { Theme } from "../../../cli/bindings/Theme";
-import { Settings as AppSettings } from "../../../cli/bindings/Settings";
-import { invoke } from "@tauri-apps/api/core";
 import { useDispatchSettings, useSettings } from "../contexts/Settings";
 
 export default function Settings() {
     const settings = useSettings();
     const dispatch = useDispatchSettings()!;
-
-    useEffect(() => {
-        invoke("get_settings").then(
-            (newSettings) => {
-                dispatch({ type: "update", settings: newSettings as AppSettings });
-            }
-        ).catch(
-            (error) => {
-                console.error(error);
-            }
-        );
-    }, [dispatch]);
 
     return settings
         ?

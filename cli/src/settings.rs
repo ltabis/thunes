@@ -23,6 +23,8 @@ pub struct Settings {
     pub accounts_path: std::path::PathBuf,
     #[serde(default)]
     pub theme: Theme,
+    #[serde(default)]
+    pub tags: Vec<String>,
 }
 
 impl Settings {
@@ -42,6 +44,7 @@ impl Settings {
                 path,
                 accounts_path: accounts_path.into(),
                 theme: Theme::Dark,
+                tags: vec![],
             };
 
             std::fs::create_dir_all(&settings.path.parent().expect("expected parent"))

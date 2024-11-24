@@ -3,4 +3,4 @@
 /**
  * Information common to all operations types.
  */
-export type Item = { amount: number, description: string, tags: Array<string>, };
+export type Item = { date: string, amount: number, description: string, tags: Array<string>, };

@@ -1,52 +1,178 @@
-import { Alert, AppBar, Button, Chip, Divider, Fab, Menu, MenuItem, Paper, Snackbar, SnackbarCloseReason, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Toolbar, Typography } from "@mui/material";
+import { Alert, AppBar, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fab, Menu, MenuItem, Paper, Select, Snackbar, SnackbarCloseReason, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Toolbar, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { Data as AccountData } from "../../../cli/bindings/Data";
 import AddIcon from '@mui/icons-material/Add';
 import { AccountProvider, useAccount, useDispatchAccount } from "../contexts/Account";
+import { useSettings } from "../contexts/Settings";
+import { Transaction } from "../../../cli/bindings/Transaction";
 
-function Details({ account }: { account: AccountData }) {
+function AddTransaction({ open, setOpen }: { open: boolean, setOpen: any }) {
+    const settings = useSettings()!;
+    const account = useAccount()!;
+    const dispatch = useDispatchAccount()!;
+
+    const handleCloseForm = () => {
+        setOpen(false);
+    };
+
     return (
-        <Paper elevation={0}>
-            <Typography>currency: {account.currency}</Typography>
-            <TableContainer component={Paper}>
-                <Table sx={{ minWidth: 650 }} >
-                    <TableHead>
-                        <TableRow>
-                            <TableCell align="right">description</TableCell>
-                            <TableCell align="right">tags</TableCell>
-                            <TableCell align="right">amount {account.currency}</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {account.transactions.map((t, index) => (
-                            <TableRow
-                                key={index}
-                                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                            >
-                                <TableCell align="right">{t.description}</TableCell>
-                                <TableCell align="right">{t.tags.map((tag) => (<Chip key={`${index}-${tag}`} label={tag}></Chip>))}</TableCell>
-                                <TableCell align="right">
-                                    <Chip
-                                        label={`${t.operation === "i" ? "+" : "-"}${t.amount}`}
-                                        color={t.operation === "i" ? "success" : "error"}
-                                        variant="outlined"
-                                    />
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+        <Dialog
+            open={open}
+            onClose={handleCloseForm}
+            PaperProps={{
+                component: 'form',
+                onSubmit: async (event: React.FormEvent<HTMLFormElement>) => {
+                    event.preventDefault();
+                    const formData = new FormData(event.currentTarget);
+                    const formJson = Object.fromEntries((formData as any).entries());
+                    const transaction = {
+                        ...formJson,
+                        // On autofill we get a stringified value.
+                        tags: typeof formJson.tags === 'string' ? formJson.tags.split(',') : formJson.tags,
+                        amount: parseFloat(formJson.amount),
+                        date: await invoke("get_date"),
+                    } as Transaction;
 
-            <Fab color="primary" aria-label="add" sx={{
-                position: 'absolute',
-                bottom: 16,
-                right: 16,
-            }}>
-                <AddIcon />
-            </Fab>
-        </Paper>
+                    invoke("add_transaction", { account: account.name, transaction })
+                        .then(() => {
+                            dispatch({
+                                type: "add",
+                                transaction
+                            });
+                            handleCloseForm();
+                        })
+                        .catch(error => console.error(error));
+                },
+            }}
+        >
+            <DialogTitle>Add transaction</DialogTitle>
+            <DialogContent>
+                <Select
+                    autoFocus
+                    required
+                    fullWidth
+                    id="transaction-operation"
+                    label="Operation"
+                    name="operation"
+                    value={"s"}
+                >
+                    <MenuItem value={"s"}>Expense</MenuItem>
+                    <MenuItem value={"i"}>Income</MenuItem>
+                </Select>
+                <TextField
+                    id="transaction-amount"
+                    fullWidth
+                    label="Amount"
+                    name="amount"
+                    type="number"
+                    slotProps={{
+                        inputLabel: {
+                            shrink: true,
+                        },
+                    }}
+                />
+                <TextField
+                    id="transaction-description"
+                    label="Description"
+                    name="description"
+                    fullWidth
+                />
+                <Select
+                    id="transaction-tags"
+                    label="Tags"
+                    name="tags"
+                    multiple
+                    fullWidth
+                    value={[]}
+                >
+                    {
+                        [(
+                            <MenuItem
+                                key="transaction-add-tag"
+                                value="Add a tag"
+                            >
+                                <Button variant="outlined" startIcon={<AddIcon />}>
+                                    Add tag
+                                </Button>
+                            </MenuItem>
+                        )].concat(
+                            settings.tags.map((name) => (
+                                <MenuItem
+                                    key={name}
+                                    value={name}
+                                >
+                                    {name}
+                                </MenuItem>
+                            ))
+                        )
+                    }
+                </Select>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={handleCloseForm}>Cancel</Button>
+                <Button type="submit">Add</Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
+function Details() {
+    const account = useAccount()!;
+    const [open, setOpen] = useState(false);
+
+    const handleOpenForm = () => {
+        setOpen(true);
+    };
+
+
+    return (
+        <>
+            <Paper elevation={0}>
+                <Typography>currency: {account.currency}</Typography>
+                <TableContainer component={Paper}>
+                    <Table sx={{ minWidth: 650 }} >
+                        <TableHead>
+                            <TableRow>
+                                <TableCell align="right">description</TableCell>
+                                <TableCell align="right">tags</TableCell>
+                                <TableCell align="right">amount {account.currency}</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {account.transactions.map((t, index) => (
+                                <TableRow
+                                    key={index}
+                                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                >
+                                    <TableCell align="right">{t.description}</TableCell>
+                                    <TableCell align="right">{t.tags.map((tag) => (<Chip key={`${index}-${tag}`} label={tag}></Chip>))}</TableCell>
+                                    <TableCell align="right">
+                                        <Chip
+                                            label={`${t.operation === "i" ? "+" : "-"}${t.amount}`}
+                                            color={t.operation === "i" ? "success" : "error"}
+                                            variant="outlined"
+                                        />
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+
+                <Fab color="primary" aria-label="add" sx={{
+                    position: 'absolute',
+                    bottom: 16,
+                    right: 16,
+                }}
+                    onClick={handleOpenForm}
+                >
+                    <AddIcon />
+                </Fab>
+
+                <AddTransaction open={open} setOpen={setOpen}></AddTransaction>
+            </Paper>
+        </>
     );
 }
 
@@ -134,7 +260,7 @@ export function Layout() {
 
             {
                 selected?.name
-                    ? <Details account={selected}></Details>
+                    ? <Details></Details>
                     : <></>
             }
 
