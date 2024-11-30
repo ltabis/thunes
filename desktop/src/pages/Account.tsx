@@ -132,8 +132,8 @@ function Details() {
     return (
         <>
             <Paper elevation={0}>
-                <TableContainer component={Paper}>
-                    <Table sx={{ minWidth: 650 }} >
+                <TableContainer component={Paper} sx={{ maxHeight: 440 }}>
+                    <Table stickyHeader sx={{ minWidth: 650 }} >
                         <TableHead>
                             <TableRow>
                                 <TableCell align="right">description</TableCell>
