@@ -34,6 +34,20 @@ fn get_accounts(accounts: State<'_, std::sync::Mutex<Accounts>>) -> Vec<Data> {
 }
 
 #[tauri::command]
+fn get_balance(accounts: State<'_, std::sync::Mutex<Accounts>>, account: &str) -> f64 {
+    accounts
+        .lock()
+        .unwrap()
+        .get(account)
+        .map(|account| {
+            account
+                .balance()
+                .expect("we do not use dates so the time range is always valid")
+        })
+        .unwrap_or_default()
+}
+
+#[tauri::command]
 fn get_date() -> serde_json::Value {
     serde_json::to_value(&time::OffsetDateTime::now_utc().date()).unwrap()
 }
@@ -83,6 +97,7 @@ pub fn run() {
             get_settings,
             save_settings,
             get_accounts,
+            get_balance,
             get_date,
             add_transaction
         ])

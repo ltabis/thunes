@@ -16,6 +16,27 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: any }) {
         setOpen(false);
     };
 
+    const handleTransactionSubmission = async (formData: FormData) => {
+        const formJson = Object.fromEntries((formData as any).entries());
+        const transaction = {
+            ...formJson,
+            // On autofill we get a stringified value.
+            tags: typeof formJson.tags === 'string' ? formJson.tags.split(',') : formJson.tags,
+            amount: parseFloat(formJson.amount),
+            date: await invoke("get_date"),
+        } as Transaction;
+
+        invoke("add_transaction", { account: account.name, transaction })
+            .then(() => {
+                dispatch({
+                    type: "add",
+                    transaction
+                });
+                handleCloseForm();
+            })
+            .catch(error => console.error(error));
+    }
+
     return (
         <Dialog
             open={open}
@@ -24,25 +45,7 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: any }) {
                 component: 'form',
                 onSubmit: async (event: React.FormEvent<HTMLFormElement>) => {
                     event.preventDefault();
-                    const formData = new FormData(event.currentTarget);
-                    const formJson = Object.fromEntries((formData as any).entries());
-                    const transaction = {
-                        ...formJson,
-                        // On autofill we get a stringified value.
-                        tags: typeof formJson.tags === 'string' ? formJson.tags.split(',') : formJson.tags,
-                        amount: parseFloat(formJson.amount),
-                        date: await invoke("get_date"),
-                    } as Transaction;
-
-                    invoke("add_transaction", { account: account.name, transaction })
-                        .then(() => {
-                            dispatch({
-                                type: "add",
-                                transaction
-                            });
-                            handleCloseForm();
-                        })
-                        .catch(error => console.error(error));
+                    return handleTransactionSubmission(new FormData(event.currentTarget));
                 },
             }}
         >
@@ -125,11 +128,9 @@ function Details() {
         setOpen(true);
     };
 
-
     return (
         <>
             <Paper elevation={0}>
-                <Typography>currency: {account.currency}</Typography>
                 <TableContainer component={Paper}>
                     <Table sx={{ minWidth: 650 }} >
                         <TableHead>
@@ -180,6 +181,8 @@ export function Layout() {
     // TODO: generalize Snackbar errors.
     const selected = useAccount();
     const dispatch = useDispatchAccount()!;
+    const [balance, setBalance] = useState(0.0);
+
     const [openFailure, setOpenFailure] = useState("");
     const [accounts, setAccounts] = useState<AccountData[]>();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -203,6 +206,14 @@ export function Layout() {
 
         setOpenFailure("");
     };
+
+    const handleSelectAccount = async (account: AccountData) =>
+        invoke("get_balance", { account: account.name }).then((balance) => setBalance(balance as number)).then(() => dispatch({
+            type: "select",
+            account: account
+        })
+        );
+
 
     useEffect(() => {
         invoke("get_accounts").then(
@@ -242,16 +253,24 @@ export function Layout() {
                                         <MenuItem
                                             key={account.name}
                                             selected={account.name === selected?.name}
-                                            onClick={(_event) => dispatch({
-                                                type: "select",
-                                                account: account
-                                            })}
+                                            onClick={(_event) => handleSelectAccount(account)}
                                         >
                                             {account.name}
                                         </MenuItem>
                                     ))}
                                 </Menu>
-                            </> : <></>
+                            </>
+                            : <></>
+                    }
+
+                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
+
+                    {
+                        selected ?
+                            <Typography variant="h6" >
+                                {`${balance.toFixed(2)} ${selected.currency}`}
+                            </Typography>
+                            : <></>
                     }
                 </Toolbar>
             </AppBar>
