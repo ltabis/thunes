@@ -1,4 +1,4 @@
-import { Alert, AppBar, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fab, Menu, MenuItem, Paper, Select, Snackbar, SnackbarCloseReason, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Toolbar, Typography } from "@mui/material";
+import { Alert, AppBar, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fab, FormControl, Menu, MenuItem, Paper, Select, Snackbar, SnackbarCloseReason, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Toolbar, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { Data as AccountData } from "../../../cli/bindings/Data";
@@ -52,66 +52,65 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: any }) {
         >
             <DialogTitle>Add transaction</DialogTitle>
             <DialogContent>
-                <Select
-                    autoFocus
-                    required
-                    fullWidth
-                    id="transaction-operation"
-                    label="Operation"
-                    name="operation"
-                    value={"s"}
-                >
-                    <MenuItem value={"s"}>Expense</MenuItem>
-                    <MenuItem value={"i"}>Income</MenuItem>
-                </Select>
-                <TextField
-                    id="transaction-amount"
-                    fullWidth
-                    label="Amount"
-                    name="amount"
-                    type="number"
-                    slotProps={{
-                        inputLabel: {
-                            shrink: true,
-                        },
-                    }}
-                />
-                <TextField
-                    id="transaction-description"
-                    label="Description"
-                    name="description"
-                    fullWidth
-                />
-                <Select
-                    id="transaction-tags"
-                    label="Tags"
-                    name="tags"
-                    multiple
-                    fullWidth
-                    value={[]}
-                >
-                    {
-                        [(
-                            <MenuItem
-                                key="transaction-add-tag"
-                                value="Add a tag"
-                            >
-                                <Button variant="outlined" startIcon={<AddIcon />}>
-                                    Add tag
-                                </Button>
-                            </MenuItem>
-                        )].concat(
-                            settings.tags.map((name) => (
+                <FormControl>
+                    <Select
+                        autoFocus
+                        required
+                        id="transaction-operation"
+                        label="Operation"
+                        name="operation"
+                        value={"s"}
+                        sx={{ m: 1 }}
+                    >
+                        <MenuItem value={"s"}>Expense</MenuItem>
+                        <MenuItem value={"i"}>Income</MenuItem>
+                    </Select>
+                    <TextField
+                        sx={{ m: 1 }}
+                        id="transaction-amount"
+                        label="Amount"
+                        name="amount"
+                        type="number"
+                        slotProps={{
+                            inputLabel: {
+                                shrink: true,
+                            },
+                        }}
+                    />
+                    <TextField
+                        sx={{ m: 1 }}
+                        id="transaction-description"
+                        label="Description"
+                        name="description"
+                    />
+                    <Select
+                        sx={{ m: 1 }}
+                        id="transaction-tags"
+                        label="Tags"
+                        name="tags"
+                        multiple
+                        value={[]}
+                    >
+                        {
+                            [(
                                 <MenuItem
-                                    key={name}
-                                    value={name}
+                                    key="transaction-add-tag"
+                                    value="Add a tag"
                                 >
-                                    {name}
+                                    <Button variant="outlined" startIcon={<AddIcon />}>
+                                        Add tag
+                                    </Button>
                                 </MenuItem>
-                            ))
-                        )
-                    }
-                </Select>
+                            )].concat(
+                                settings.tags.map((name) => (
+                                    <MenuItem key={name} value={name}>
+                                        {name}
+                                    </MenuItem>
+                                ))
+                            )
+                        }
+                    </Select>
+                </FormControl>
             </DialogContent>
             <DialogActions>
                 <Button onClick={handleCloseForm}>Cancel</Button>
