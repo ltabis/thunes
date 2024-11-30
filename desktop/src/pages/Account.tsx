@@ -7,6 +7,7 @@ import { AccountProvider, useAccount, useDispatchAccount } from "../contexts/Acc
 import { useSettings } from "../contexts/Settings";
 import { Transaction } from "../../../cli/bindings/Transaction";
 
+
 function AddTransaction({ open, setOpen }: { open: boolean, setOpen: any }) {
     const settings = useSettings()!;
     const account = useAccount()!;
@@ -266,22 +267,19 @@ export function Layout() {
                     <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
 
                     {
-                        selected ?
+                        selected &&
+                        (
                             <Typography variant="h6" >
                                 {`${balance.toFixed(2)} ${selected.currency}`}
                             </Typography>
-                            : <></>
+                        )
                     }
                 </Toolbar>
             </AppBar>
 
             <Divider />
 
-            {
-                selected?.name
-                    ? <Details></Details>
-                    : <></>
-            }
+            {selected?.name && <Details></Details>}
 
             <Snackbar
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
