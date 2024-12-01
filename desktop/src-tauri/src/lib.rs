@@ -17,6 +17,7 @@ pub fn run() {
             commands::account::get_transactions,
             commands::account::get_currency,
             commands::account::get_balance,
+            commands::account::get_balance_by_tag,
             commands::account::get_date,
             commands::account::add_transaction,
             commands::settings::get_settings,

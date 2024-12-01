@@ -1,6 +1,13 @@
 use crate::transaction::Transaction;
 use std::io::{Read, Seek, Write};
 
+#[derive(Default)]
+pub struct BalanceOptions {
+    pub period_start: Option<time::Date>,
+    pub period_end: Option<time::Date>,
+    pub tag: Option<String>,
+}
+
 #[derive(Debug)]
 pub enum Error {
     Io(std::io::Error),
@@ -113,9 +120,18 @@ impl Account {
         self.write()
     }
 
-    pub fn balance(&self) -> Result<f64, Error> {
-        self.transactions_between(None, None)
-            .map(|ts| ts.iter().fold(0.0, |acc, t| acc + t.amount()))
+    pub fn balance(&self, options: BalanceOptions) -> Result<f64, Error> {
+        let transactions =
+            self.transactions_between(options.period_start.as_ref(), options.period_end.as_ref())?;
+
+        Ok(if let Some(tag) = options.tag {
+            transactions
+                .into_iter()
+                .filter(|ts| ts.tags().contains(&tag))
+                .fold(0.0, |acc, t| acc + t.amount())
+        } else {
+            transactions.iter().fold(0.0, |acc, t| acc + t.amount())
+        })
     }
 
     pub fn transactions_between(

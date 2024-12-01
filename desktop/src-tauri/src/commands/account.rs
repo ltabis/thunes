@@ -1,5 +1,5 @@
 use tauri::State;
-use tunes_cli::account::{Account, Data};
+use tunes_cli::account::{Account, BalanceOptions, Data};
 use tunes_cli::transaction::Transaction;
 
 pub type Accounts = std::collections::HashMap<String, Account>;
@@ -74,7 +74,26 @@ pub fn get_balance(accounts: State<'_, std::sync::Mutex<Accounts>>, account_name
     __get_account(&accounts.lock().unwrap(), account_name)
         .map(|account| {
             account
-                .balance()
+                .balance(BalanceOptions::default())
+                .expect("we do not use dates so the time range is always valid")
+        })
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+pub fn get_balance_by_tag(
+    accounts: State<'_, std::sync::Mutex<Accounts>>,
+    account_name: &str,
+    tag: &str,
+) -> f64 {
+    __get_account(&accounts.lock().unwrap(), account_name)
+        .map(|account| {
+            account
+                .balance(BalanceOptions {
+                    tag: Some(tag.to_string()),
+                    // TODO: add dates.
+                    ..Default::default()
+                })
                 .expect("we do not use dates so the time range is always valid")
         })
         .unwrap_or_default()
