@@ -1,7 +1,6 @@
-import { Alert, AppBar, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fab, FormControl, Menu, MenuItem, Paper, Select, Snackbar, SnackbarCloseReason, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Toolbar, Typography } from "@mui/material";
+import { Alert, AppBar, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Fab, FormControl, Menu, MenuItem, Paper, Select, Skeleton, Snackbar, SnackbarCloseReason, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Toolbar, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
-import { Data as AccountData } from "../../../cli/bindings/Data";
 import AddIcon from '@mui/icons-material/Add';
 import { AccountProvider, useAccount, useDispatchAccount } from "../contexts/Account";
 import { useSettings } from "../contexts/Settings";
@@ -11,7 +10,6 @@ import { Transaction } from "../../../cli/bindings/Transaction";
 function AddTransaction({ open, setOpen }: { open: boolean, setOpen: any }) {
     const settings = useSettings()!;
     const account = useAccount()!;
-    const dispatch = useDispatchAccount()!;
 
     const handleCloseForm = () => {
         setOpen(false);
@@ -27,12 +25,8 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: any }) {
             date: await invoke("get_date"),
         } as Transaction;
 
-        invoke("add_transaction", { account: account.name, transaction })
+        invoke("add_transaction", { account, transaction })
             .then(() => {
-                dispatch({
-                    type: "add",
-                    transaction
-                });
                 handleCloseForm();
             })
             .catch(error => console.error(error));
@@ -123,43 +117,76 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: any }) {
 function Details() {
     const account = useAccount()!;
     const [open, setOpen] = useState(false);
+    const [currency, setCurrency] = useState<string | null>(null);
+    const [transactions, setTransactions] = useState<Transaction[] | null>(null);
+    const [balance, setBalance] = useState(0.0);
 
     const handleOpenForm = () => {
         setOpen(true);
     };
 
+    useEffect(() => {
+        invoke("get_currency", { accountName: account })
+            .then((currency) => setCurrency(currency as string));
+        invoke("get_transactions", { accountName: account })
+            .then((transactions) => setTransactions(transactions as Transaction[]));
+        invoke("get_balance", { accountName: account })
+            .then((balance) => setBalance(balance as number));
+    });
+
     return (
         <>
             <Paper elevation={0}>
-                <TableContainer component={Paper} sx={{ maxHeight: 440 }}>
-                    <Table stickyHeader sx={{ minWidth: 650 }} >
-                        <TableHead>
-                            <TableRow>
-                                <TableCell align="right">description</TableCell>
-                                <TableCell align="right">tags</TableCell>
-                                <TableCell align="right">amount {account.currency}</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {account.transactions.map((t, index) => (
-                                <TableRow
-                                    key={index}
-                                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                >
-                                    <TableCell align="right">{t.description}</TableCell>
-                                    <TableCell align="right">{t.tags.map((tag) => (<Chip key={`${index}-${tag}`} label={tag}></Chip>))}</TableCell>
-                                    <TableCell align="right">
-                                        <Chip
-                                            label={`${t.operation === "i" ? "+" : "-"}${t.amount}`}
-                                            color={t.operation === "i" ? "success" : "error"}
-                                            variant="outlined"
-                                        />
-                                    </TableCell>
+                {
+                    balance && currency
+                        ? (
+                            <Typography variant="h6" >
+                                {`${balance.toFixed(2)} ${currency}`}
+                            </Typography>
+                        )
+                        : (
+                            <Skeleton animation="wave" />
+                        )
+                }
+
+                {transactions ?
+                    <TableContainer component={Paper} sx={{ maxHeight: 440 }}>
+                        <Table stickyHeader sx={{ minWidth: 650 }} >
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell align="right">description</TableCell>
+                                    <TableCell align="right">tags</TableCell>
+                                    <TableCell align="right">amount</TableCell>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                            </TableHead>
+                            <TableBody>
+                                {
+                                    transactions.map((t, index) => (
+                                        <TableRow
+                                            key={index}
+                                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                        >
+                                            <TableCell align="right">{t.description}</TableCell>
+                                            <TableCell align="right">{t.tags.map((tag) => (<Chip key={`${index}-${tag}`} label={tag}></Chip>))}</TableCell>
+                                            <TableCell align="right">
+                                                <Chip
+                                                    label={`${t.operation === "i" ? "+" : "-"}${t.amount}`}
+                                                    color={t.operation === "i" ? "success" : "error"}
+                                                    variant="outlined"
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                }
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                    : <>
+                        <Skeleton animation="wave" />
+                        <Skeleton animation="wave" />
+                        <Skeleton animation="wave" />
+                    </>
+                }
 
                 <Fab color="primary" aria-label="add" sx={{
                     position: 'absolute',
@@ -181,10 +208,9 @@ export function Layout() {
     // TODO: generalize Snackbar errors.
     const selected = useAccount();
     const dispatch = useDispatchAccount()!;
-    const [balance, setBalance] = useState(0.0);
 
     const [openFailure, setOpenFailure] = useState("");
-    const [accounts, setAccounts] = useState<AccountData[]>();
+    const [accounts, setAccounts] = useState<string[]>();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
 
@@ -207,17 +233,16 @@ export function Layout() {
         setOpenFailure("");
     };
 
-    const handleSelectAccount = async (account: AccountData) =>
-        invoke("get_balance", { account: account.name }).then((balance) => setBalance(balance as number)).then(() => dispatch({
+    const handleSelectAccount = async (account: string) =>
+        dispatch({
             type: "select",
-            account: account
-        })
-        );
-
+            account: account as string,
+        });
 
     useEffect(() => {
-        invoke("get_accounts").then(
-            (newAccounts) => setAccounts(newAccounts as AccountData[])
+        console.log("passed");
+        invoke("list_accounts").then(
+            (newAccounts) => setAccounts(newAccounts as string[])
         ).catch(
             (error) => setOpenFailure(error)
         );
@@ -238,7 +263,7 @@ export function Layout() {
                                     onClick={handleClickAccount}
                                     variant="contained"
                                 >
-                                    {selected?.name ? selected.name : "Select account"}
+                                    {selected !== "" ? selected : "Select account"}
                                 </Button>
                                 <Menu
                                     id="basic-menu"
@@ -249,13 +274,13 @@ export function Layout() {
                                         'aria-labelledby': 'basic-button',
                                     }}
                                 >
-                                    {accounts.sort((a, b) => a.name.localeCompare(b.name)).map((account) => (
+                                    {accounts.sort((a, b) => a.localeCompare(b)).map((account) => (
                                         <MenuItem
-                                            key={account.name}
-                                            selected={account.name === selected?.name}
+                                            key={account}
+                                            selected={account === selected}
                                             onClick={(_event) => handleSelectAccount(account)}
                                         >
-                                            {account.name}
+                                            {account}
                                         </MenuItem>
                                     ))}
                                 </Menu>
@@ -265,20 +290,20 @@ export function Layout() {
 
                     <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
 
-                    {
+                    {/* {
                         selected &&
                         (
                             <Typography variant="h6" >
                                 {`${balance.toFixed(2)} ${selected.currency}`}
                             </Typography>
                         )
-                    }
+                    } */}
                 </Toolbar>
             </AppBar>
 
             <Divider />
 
-            {selected?.name && <Details></Details>}
+            {selected && <Details></Details>}
 
             <Snackbar
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}

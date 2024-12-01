@@ -48,7 +48,6 @@ function Layout() {
     );
   }, [dispatch]);
 
-
   return (
     <ThemeProvider theme={settings?.theme === "dark" ? darkTheme : lightTheme}>
       <CssBaseline />
