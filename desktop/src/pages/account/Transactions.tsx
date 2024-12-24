@@ -1,12 +1,13 @@
-import { Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Fab, FormControl, MenuItem, Paper, Select, Skeleton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Fab, FormControl, MenuItem, Paper, Select, Skeleton, TextField, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, SetStateAction, Dispatch } from "react";
 import AddIcon from '@mui/icons-material/Add';
 import { Transaction } from "../../../../cli/bindings/Transaction";
 import { useAccount } from "../../contexts/Account";
 import { useSettings } from "../../contexts/Settings";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
-function AddTransaction({ open, setOpen }: { open: boolean, setOpen: any }) {
+function AddTransaction({ open, setOpen }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>> }) {
     const settings = useSettings()!;
     const account = useAccount()!;
 
@@ -15,12 +16,12 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: any }) {
     };
 
     const handleTransactionSubmission = async (formData: FormData) => {
-        const formJson = Object.fromEntries((formData as any).entries());
+        const formJson = Object.fromEntries((formData).entries());
         const transaction = {
             ...formJson,
             // On autofill we get a stringified value.
             tags: typeof formJson.tags === 'string' ? formJson.tags.split(',') : formJson.tags,
-            amount: parseFloat(formJson.amount),
+            amount: parseFloat(formJson.amount as string),
             date: await invoke("get_date"),
         } as Transaction;
 
@@ -37,7 +38,7 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: any }) {
             onClose={handleCloseForm}
             PaperProps={{
                 component: 'form',
-                onSubmit: async (event: React.FormEvent<HTMLFormElement>) => {
+                onSubmit: async (event: FormEvent<HTMLFormElement>) => {
                     event.preventDefault();
                     return handleTransactionSubmission(new FormData(event.currentTarget));
                 },
@@ -117,8 +118,17 @@ export default function Transactions() {
     const account = useAccount()!;
     const [open, setOpen] = useState(false);
     const [currency, setCurrency] = useState<string | null>(null);
-    const [transactions, setTransactions] = useState<Transaction[] | null>(null);
+    const [transactions, setTransactions] = useState<(Transaction & { id: number })[] | null>(null);
     const [balance, setBalance] = useState(0.0);
+
+    const columns: GridColDef[] = [
+        { field: 'description', headerName: 'Description', minWidth: 500 },
+        { field: 'date', headerName: 'Date' },
+        { field: 'amount', headerName: 'Amount' },
+        { field: 'tags', headerName: 'Tags' },
+    ];
+
+    const paginationModel = { page: 0, pageSize: 5 };
 
     const handleOpenForm = () => {
         setOpen(true);
@@ -128,7 +138,7 @@ export default function Transactions() {
         invoke("get_currency", { accountName: account })
             .then((currency) => setCurrency(currency as string));
         invoke("get_transactions", { accountName: account })
-            .then((transactions) => setTransactions(transactions as Transaction[]));
+            .then((transactions) => setTransactions((transactions as (Transaction & { id: number })[]).map((t, i) => { t.id = i; return t; })));
         invoke("get_balance", { accountName: account })
             .then((balance) => setBalance(balance as number));
     });
@@ -149,37 +159,45 @@ export default function Transactions() {
                 }
 
                 {transactions ?
-                    <TableContainer component={Paper} sx={{ maxHeight: 440 }}>
-                        <Table stickyHeader sx={{ minWidth: 650 }} >
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell align="right">description</TableCell>
-                                    <TableCell align="right">tags</TableCell>
-                                    <TableCell align="right">amount</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {
-                                    transactions.map((t, index) => (
-                                        <TableRow
-                                            key={index}
-                                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                        >
-                                            <TableCell align="right">{t.description}</TableCell>
-                                            <TableCell align="right">{t.tags.map((tag) => (<Chip key={`${index}-${tag}`} label={tag}></Chip>))}</TableCell>
-                                            <TableCell align="right">
-                                                <Chip
-                                                    label={`${t.operation === "i" ? "+" : "-"}${t.amount}`}
-                                                    color={t.operation === "i" ? "success" : "error"}
-                                                    variant="outlined"
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                }
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                    <DataGrid
+                        rows={transactions}
+                        columns={columns}
+                        initialState={{ pagination: { paginationModel } }}
+                        pageSizeOptions={[5, 10]}
+                        checkboxSelection
+                        sx={{ border: 0 }}
+                    ></DataGrid>
+                    // <TableContainer component={Paper} sx={{ maxHeight: 440 }}>
+                    //     <Table stickyHeader sx={{ minWidth: 650 }} >
+                    //         <TableHead>
+                    //             <TableRow>
+                    //                 <TableCell align="right">description</TableCell>
+                    //                 <TableCell align="right">tags</TableCell>
+                    //                 <TableCell align="right">amount</TableCell>
+                    //             </TableRow>
+                    //         </TableHead>
+                    //         <TableBody>
+                    //             {
+                    //                 transactions.map((t, index) => (
+                    //                     <TableRow
+                    //                         key={index}
+                    //                         sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                    //                     >
+                    //                         <TableCell align="right">{t.description}</TableCell>
+                    //                         <TableCell align="right">{t.tags.map((tag) => (<Chip key={`${index}-${tag}`} label={tag}></Chip>))}</TableCell>
+                    //                         <TableCell align="right">
+                    //                             <Chip
+                    //                                 label={`${t.operation === "i" ? "+" : "-"}${t.amount}`}
+                    //                                 color={t.operation === "i" ? "success" : "error"}
+                    //                                 variant="outlined"
+                    //                             />
+                    //                         </TableCell>
+                    //                     </TableRow>
+                    //                 ))
+                    //             }
+                    //         </TableBody>
+                    //     </Table>
+                    // </TableContainer>
                     : <>
                         <Skeleton animation="wave" />
                         <Skeleton animation="wave" />

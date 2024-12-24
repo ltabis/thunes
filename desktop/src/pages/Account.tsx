@@ -5,6 +5,7 @@ import { AccountProvider, useAccount, useDispatchAccount } from "../contexts/Acc
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Transactions from "./account/Transactions";
 import Details from "./account/Details";
+import { MouseEvent, SyntheticEvent } from "react";
 
 export function Layout() {
     // TODO: generalize Snackbar errors.
@@ -17,7 +18,7 @@ export function Layout() {
     const open = Boolean(anchorEl);
     const [tab, setTab] = useState(0);
 
-    const handleClickAccount = (event: React.MouseEvent<HTMLElement>) => {
+    const handleClickAccount = (event: MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
     };
 
@@ -26,7 +27,7 @@ export function Layout() {
     };
 
     const handleSnackbarClose = (
-        _event?: React.SyntheticEvent | Event,
+        _event?: SyntheticEvent | Event,
         reason?: SnackbarCloseReason,
     ) => {
         if (reason === 'clickaway') {
@@ -42,7 +43,7 @@ export function Layout() {
             account: account as string,
         });
 
-    const handleTabChange = (_event: React.SyntheticEvent, newTab: number) => {
+    const handleTabChange = (_event: SyntheticEvent, newTab: number) => {
         setTab(newTab);
     };
 
@@ -85,7 +86,7 @@ export function Layout() {
                                         <MenuItem
                                             key={account}
                                             selected={account === selected}
-                                            onClick={(_event) => handleSelectAccount(account)}
+                                            onClick={() => handleSelectAccount(account)}
                                         >
                                             {account}
                                         </MenuItem>

@@ -25,7 +25,7 @@ export default function Details() {
             .then((balance) => setBalanceWants(balance as number * -1));
         invoke("get_balance_by_tag", { accountName: account, tag: "savings" })
             .then((balance) => setBalanceSavings(balance as number * -1));
-    });
+    }, [account]);
 
     return (
         <>

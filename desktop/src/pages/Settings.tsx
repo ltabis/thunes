@@ -1,6 +1,7 @@
 import { Button, FormControl, InputLabel, MenuItem, Paper, Select, SelectChangeEvent, TextField } from "@mui/material";
 import { Theme } from "../../../cli/bindings/Theme";
 import { useDispatchSettings, useSettings } from "../contexts/Settings";
+import { ChangeEvent } from "react";
 
 export default function Settings() {
     const settings = useSettings();
@@ -12,7 +13,7 @@ export default function Settings() {
             <Paper elevation={0}>
                 <TextField id="outlined-basic" label="Accounts path" variant="outlined"
                     value={settings.accounts_path}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
                         dispatch(
                             {
                                 type: "update",
