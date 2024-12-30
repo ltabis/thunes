@@ -128,7 +128,7 @@ export default function Transactions() {
         { field: 'tags', headerName: 'Tags', editable: true },
     ];
 
-    const paginationModel = { page: 0, pageSize: 5 };
+    const paginationModel = { page: 0, pageSize: 10 };
 
     const handleOpenForm = () => {
         setOpen(true);
