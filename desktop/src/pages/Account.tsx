@@ -48,7 +48,6 @@ export function Layout() {
     };
 
     useEffect(() => {
-        console.log("passed");
         invoke("list_accounts").then(
             (newAccounts) => setAccounts(newAccounts as string[])
         ).catch(
@@ -112,15 +111,15 @@ export function Layout() {
                 </Toolbar>
             </AppBar>
 
-            <Divider />
+            <Divider sx={{ margin: 2 }} />
 
             {selected &&
                 <>
                     <div hidden={tab !== 0}>
-                        <Details></Details>
+                        <Details />
                     </div>
                     <div hidden={tab !== 1}>
-                        <Transactions></Transactions>
+                        <Transactions />
                     </div>
                 </>
             }

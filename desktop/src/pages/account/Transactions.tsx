@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Fab, FormControl, MenuItem, Paper, Select, Skeleton, TextField, Typography } from "@mui/material";
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Fab, FormControl, MenuItem, Paper, Select, Skeleton, TextField, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
 import { FormEvent, useEffect, useState, SetStateAction, Dispatch } from "react";
 import AddIcon from '@mui/icons-material/Add';
@@ -122,10 +122,10 @@ export default function Transactions() {
     const [balance, setBalance] = useState(0.0);
 
     const columns: GridColDef[] = [
-        { field: 'description', headerName: 'Description', minWidth: 500 },
-        { field: 'date', headerName: 'Date' },
-        { field: 'amount', headerName: 'Amount' },
-        { field: 'tags', headerName: 'Tags' },
+        { field: 'description', headerName: 'Description', minWidth: 500, editable: true },
+        { field: 'date', headerName: 'Date', editable: true },
+        { field: 'amount', headerName: 'Amount', editable: true },
+        { field: 'tags', headerName: 'Tags', editable: true },
     ];
 
     const paginationModel = { page: 0, pageSize: 5 };
@@ -141,82 +141,52 @@ export default function Transactions() {
             .then((transactions) => setTransactions((transactions as (Transaction & { id: number })[]).map((t, i) => { t.id = i; return t; })));
         invoke("get_balance", { accountName: account })
             .then((balance) => setBalance(balance as number));
-    });
+    }, [account]);
 
     return (
-        <>
-            <Paper elevation={0}>
-                {
-                    balance && currency
-                        ? (
-                            <Typography variant="h6" >
-                                {`${balance.toFixed(2)} ${currency}`}
-                            </Typography>
-                        )
-                        : (
-                            <Skeleton animation="wave" />
-                        )
-                }
+        <Paper elevation={0}>
+            {/* {
+                balance && currency
+                    ? (
+                        <Typography variant="h6" >
+                            {`${balance.toFixed(2)} ${currency}`}
+                        </Typography>
+                    )
+                    : (
+                        <Skeleton animation="wave" />
+                    )
+            } */}
 
-                {transactions ?
+            {transactions ?
+                <Box sx={{ height: 600, width: '100%' }}>
                     <DataGrid
                         rows={transactions}
                         columns={columns}
                         initialState={{ pagination: { paginationModel } }}
-                        pageSizeOptions={[5, 10]}
+                        pageSizeOptions={[5, 10, 25, 50, 100]}
                         checkboxSelection
-                        sx={{ border: 0 }}
-                    ></DataGrid>
-                    // <TableContainer component={Paper} sx={{ maxHeight: 440 }}>
-                    //     <Table stickyHeader sx={{ minWidth: 650 }} >
-                    //         <TableHead>
-                    //             <TableRow>
-                    //                 <TableCell align="right">description</TableCell>
-                    //                 <TableCell align="right">tags</TableCell>
-                    //                 <TableCell align="right">amount</TableCell>
-                    //             </TableRow>
-                    //         </TableHead>
-                    //         <TableBody>
-                    //             {
-                    //                 transactions.map((t, index) => (
-                    //                     <TableRow
-                    //                         key={index}
-                    //                         sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                    //                     >
-                    //                         <TableCell align="right">{t.description}</TableCell>
-                    //                         <TableCell align="right">{t.tags.map((tag) => (<Chip key={`${index}-${tag}`} label={tag}></Chip>))}</TableCell>
-                    //                         <TableCell align="right">
-                    //                             <Chip
-                    //                                 label={`${t.operation === "i" ? "+" : "-"}${t.amount}`}
-                    //                                 color={t.operation === "i" ? "success" : "error"}
-                    //                                 variant="outlined"
-                    //                             />
-                    //                         </TableCell>
-                    //                     </TableRow>
-                    //                 ))
-                    //             }
-                    //         </TableBody>
-                    //     </Table>
-                    // </TableContainer>
-                    : <>
-                        <Skeleton animation="wave" />
-                        <Skeleton animation="wave" />
-                        <Skeleton animation="wave" />
-                    </>
-                }
+                        processRowUpdate={(updatedRow, originalRow) => console.log("cell edited!", updatedRow, originalRow)}
+                    />
 
-                <Fab color="primary" aria-label="add" sx={{
-                    position: 'absolute',
-                    bottom: 16,
-                    right: 16,
-                }}
-                    onClick={handleOpenForm}
-                >
-                    <AddIcon />
-                </Fab>
+                </Box>
+                : <>
+                    <Skeleton animation="wave" />
+                    <Skeleton animation="wave" />
+                    <Skeleton animation="wave" />
+                </>
+            }
 
-                <AddTransaction open={open} setOpen={setOpen}></AddTransaction>
-            </Paper>
-        </>
+            <Fab color="primary" aria-label="add" sx={{
+                position: 'absolute',
+                bottom: 16,
+                right: 16,
+            }}
+                onClick={handleOpenForm}
+            >
+                <AddIcon />
+            </Fab>
+
+            <AddTransaction open={open} setOpen={setOpen}></AddTransaction>
+        </Paper>
     );
 }
