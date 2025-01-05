@@ -13,9 +13,8 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: Dispatch<Se
     const settings = useSettings()!;
     const account = useAccount()!;
     // Note: omit amount float value to enable the user to enter a floating point character.
-    const [form, setForm] = useState<Omit<Transaction2, "amount"> & { amount: string }>({
+    const [form, setForm] = useState<Omit<Transaction2, "amount" | "date"> & { amount: string }>({
         amount: "0",
-        date: "",
         description: "",
         operation: "s",
         tags: []
@@ -30,15 +29,8 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: Dispatch<Se
     const handleTransactionSubmission = async () => {
         const amount = filterFloat(form.amount);
 
-        const transaction = {
-            ...form,
-            // On autofill we get a stringified value.
-            date: await invoke("get_date"),
-            amount,
-        };
-
         // FIXME: refresh table.
-        invoke("add_transaction", { account, transaction })
+        invoke("add_transaction", { account, ...form, amount })
             .then(() => {
                 handleCloseForm();
             })
@@ -198,6 +190,7 @@ export default function Transactions() {
                 </>
             }
 
+            {/* TODO: Add transfer option between two accounts */}
             <Fab color="primary" aria-label="add" sx={{
                 position: 'absolute',
                 bottom: 16,

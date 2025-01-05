@@ -109,24 +109,28 @@ pub async fn get_transactions(
 pub async fn add_transaction(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account: &str,
-    transaction: Transaction2,
+    operation: String,
+    amount: f64,
+    description: String,
+    tags: std::collections::HashSet<String>,
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    let _: Option<Record> = database
-        .create("transaction")
-        .content(serde_json::json!(
-            {
-                "operation": transaction.operation,
-                "date": transaction.date,
-                "amount": transaction.amount,
-                "description": transaction.description,
-                "tags": transaction.tags,
-                "account": format!(r#"account:"{account}""#)
-            }
-        ))
-        .await
-        .unwrap();
+    let query = format!(
+        r#"
+    CREATE transaction SET
+        operation = "{operation}",
+        date = time::now(),
+        amount = {amount},
+        description = "{description}",
+        tags = {},
+        account = '{}'
+"#,
+        serde_json::json!(tags),
+        format!(r#"account:"{account}""#)
+    );
+
+    database.query(query).await.unwrap();
 
     Ok(())
 }
