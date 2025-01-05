@@ -193,3 +193,12 @@ impl Data {
         }
     }
 }
+
+// TODO: migrate.
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct Data2 {
+    pub name: String,
+    pub currency: String,
+}

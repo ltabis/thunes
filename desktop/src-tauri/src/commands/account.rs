@@ -1,124 +1,137 @@
+use surrealdb::engine::local::Db;
+use surrealdb::{RecordId, Surreal};
 use tauri::State;
-use tunes_cli::account::{Account, BalanceOptions, Data};
-use tunes_cli::transaction::Transaction;
+use tunes_cli::account::{Account, Data2};
+use tunes_cli::transaction::Transaction2;
 
 pub type Accounts = std::collections::HashMap<String, Account>;
 
-// FIXME: refactor with cli library.
-pub fn list_accounts_paths(accounts_path: &std::path::PathBuf) -> Vec<std::path::PathBuf> {
-    std::fs::read_dir(accounts_path)
-        .map(|dir| {
-            dir.filter_map(|entry| {
-                let account = entry.expect("entry must be valid").path();
-                if account.is_file() {
-                    Some(account)
-                } else {
-                    None
-                }
-            })
-            .collect()
-        })
-        .unwrap_or_default()
-}
-
-fn __get_account<'a>(accounts: &'a Accounts, account_name: &str) -> Result<&'a Account, String> {
-    accounts
-        .get(account_name)
-        .ok_or("account not found".to_string())
+#[derive(Debug, serde::Deserialize)]
+struct Record {
+    #[allow(dead_code)]
+    id: RecordId,
 }
 
 #[tauri::command]
-pub fn list_accounts(accounts: State<'_, std::sync::Mutex<Accounts>>) -> Vec<String> {
-    accounts
-        .lock()
-        .unwrap()
-        .values()
+pub async fn list_accounts(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+) -> Result<Vec<String>, ()> {
+    // FIXME: unwraps.
+    let database = database.lock().await;
+    let accounts: Vec<Data2> = database.select("account").await.unwrap();
+
+    Ok(accounts
         .into_iter()
-        .map(|account| account.data.name.to_string())
-        .collect()
-}
-
-// FIXME: maybe needs to be pulled every time from disc in case of external changes to the accounts.
-#[tauri::command]
-pub fn get_account(
-    accounts: State<'_, std::sync::Mutex<Accounts>>,
-    account_name: &str,
-) -> Result<Data, String> {
-    __get_account(&accounts.lock().unwrap(), account_name).map(|account| account.data.clone())
+        .map(|account| account.name.to_string())
+        .collect())
 }
 
 #[tauri::command]
-pub fn get_currency(
-    accounts: State<'_, std::sync::Mutex<Accounts>>,
-    account_name: &str,
-) -> Result<String, String> {
-    __get_account(&accounts.lock().unwrap(), account_name)
-        .map(|account| account.currency().to_string())
+pub async fn get_balance(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    account: &str,
+) -> Result<f64, ()> {
+    let database = database.lock().await;
+    let transactions: Vec<Transaction2> = database
+        .query(format!(
+            r#"SELECT * FROM transaction WHERE account = 'account:"{account}"'"#
+        ))
+        .await
+        .unwrap()
+        .take(0)
+        .unwrap();
+
+    Ok(transactions.iter().map(|t| t.amount()).sum())
 }
 
 #[tauri::command]
-pub fn get_transactions(
-    accounts: State<'_, std::sync::Mutex<Accounts>>,
-    account_name: &str,
-) -> Result<Vec<Transaction>, String> {
-    __get_account(&accounts.lock().unwrap(), account_name).map(|account| {
-        account
-            .transactions_between(None, None)
-            .expect("we do not use dates so the time range is always valid")
-            .into()
-    })
-}
-
-#[tauri::command]
-pub fn get_balance(accounts: State<'_, std::sync::Mutex<Accounts>>, account_name: &str) -> f64 {
-    __get_account(&accounts.lock().unwrap(), account_name)
-        .map(|account| {
-            account
-                .balance(BalanceOptions::default())
-                .expect("we do not use dates so the time range is always valid")
-        })
-        .unwrap_or_default()
-}
-
-#[tauri::command]
-pub fn get_balance_by_tag(
-    accounts: State<'_, std::sync::Mutex<Accounts>>,
-    account_name: &str,
+pub async fn get_balance_by_tag(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    account: &str,
     tag: &str,
-) -> f64 {
-    __get_account(&accounts.lock().unwrap(), account_name)
-        .map(|account| {
-            account
-                .balance(BalanceOptions {
-                    tag: Some(tag.to_string()),
-                    // TODO: add dates.
-                    ..Default::default()
-                })
-                .expect("we do not use dates so the time range is always valid")
+) -> Result<f64, ()> {
+    let database = database.lock().await;
+    let transactions: Vec<Transaction2> = database
+        .query(format!(
+            r#"SELECT * FROM transaction WHERE account = 'account:"{account}"'"#
+        ))
+        .await
+        .unwrap()
+        .take(0)
+        .unwrap();
+
+    // FIXME: use the query instead.
+    Ok(transactions
+        .iter()
+        .filter_map(|t| {
+            if t.tags().contains(tag) {
+                Some(t.amount())
+            } else {
+                None
+            }
         })
-        .unwrap_or_default()
+        .sum())
+}
+
+#[tauri::command]
+pub async fn get_currency(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    account: &str,
+) -> Result<String, String> {
+    let database = database.lock().await;
+    let account: Data2 = database
+        .select(("account", format!(r#""{account}""#)))
+        .await
+        .unwrap()
+        .unwrap();
+
+    Ok(account.currency)
+}
+
+#[tauri::command]
+pub async fn get_transactions(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    account: &str,
+) -> Result<Vec<Transaction2>, String> {
+    let database = database.lock().await;
+
+    Ok(database
+        .query(format!(
+            r#"SELECT * FROM transaction WHERE account = 'account:"{account}"'"#
+        ))
+        .await
+        .unwrap()
+        .take(0)
+        .unwrap())
+}
+
+#[tauri::command]
+pub async fn add_transaction(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    account: &str,
+    transaction: Transaction2,
+) -> Result<(), String> {
+    let database = database.lock().await;
+
+    let _: Option<Record> = database
+        .create("transaction")
+        .content(serde_json::json!(
+            {
+                "operation": transaction.operation,
+                "date": transaction.date,
+                "amount": transaction.amount,
+                "description": transaction.description,
+                "tags": transaction.tags,
+                "account": format!(r#"account:"{account}""#)
+            }
+        ))
+        .await
+        .unwrap();
+
+    Ok(())
 }
 
 #[tauri::command]
 pub fn get_date() -> serde_json::Value {
     serde_json::to_value(&time::OffsetDateTime::now_utc().date()).unwrap()
-}
-
-#[tauri::command]
-pub fn add_transaction(
-    accounts: State<'_, std::sync::Mutex<Accounts>>,
-    account: &str,
-    transaction: Transaction,
-) -> Result<(), String> {
-    let mut accounts = accounts.lock().unwrap();
-
-    accounts
-        .get_mut(account)
-        .ok_or("Account not found".to_string())
-        .and_then(|account| {
-            account
-                .write_transaction(transaction)
-                .map_err(|error: tunes_cli::account::Error| error.to_string())
-        })
-        .map(|_| ())
 }

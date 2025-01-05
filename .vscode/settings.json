@@ -2,8 +2,13 @@
     "cSpell.words": [
         "clickaway",
         "fontsource",
+        "ltabis",
         "rhai",
+        "rocksdb",
+        "serde",
+        "surrealdb",
         "tauri",
-        "thiserror"
+        "thiserror",
+        "tokio"
     ]
 }

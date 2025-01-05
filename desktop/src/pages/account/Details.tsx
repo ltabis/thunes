@@ -13,17 +13,17 @@ export default function Details() {
     const [balanceSavings, setBalanceSavings] = useState(0.0);
 
     useEffect(() => {
-        invoke("get_currency", { accountName: account })
+        invoke("get_currency", { account })
             .then((currency) => setCurrency(currency as string));
-        invoke("get_balance", { accountName: account })
+        invoke("get_balance", { account })
             .then((balance) => setBalance(balance as number));
 
         // TODO: get balances for the current month.
-        invoke("get_balance_by_tag", { accountName: account, tag: "needs" })
+        invoke("get_balance_by_tag", { account, tag: "needs" })
             .then((balance) => setBalanceNeeds(balance as number * -1));
-        invoke("get_balance_by_tag", { accountName: account, tag: "wants" })
+        invoke("get_balance_by_tag", { account, tag: "wants" })
             .then((balance) => setBalanceWants(balance as number * -1));
-        invoke("get_balance_by_tag", { accountName: account, tag: "savings" })
+        invoke("get_balance_by_tag", { account, tag: "savings" })
             .then((balance) => setBalanceSavings(balance as number * -1));
     }, [account]);
 

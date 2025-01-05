@@ -41,6 +41,40 @@ pub enum Transaction {
     Spending(Item),
 }
 
+// FIXME: to replace.
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct Transaction2 {
+    pub operation: String,
+    pub date: String,
+    pub amount: f64,
+    pub description: String,
+    pub tags: std::collections::HashSet<String>,
+}
+
+impl Transaction2 {
+    pub fn date(&self) -> &str {
+        &self.date
+    }
+
+    pub fn amount(&self) -> f64 {
+        if self.operation == "s" {
+            -self.amount
+        } else {
+            self.amount
+        }
+    }
+
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+
+    pub fn tags(&self) -> &std::collections::HashSet<String> {
+        &self.tags
+    }
+}
+
 impl Transaction {
     pub fn date(&self) -> &time::Date {
         match self {
