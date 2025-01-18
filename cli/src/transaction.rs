@@ -1,4 +1,5 @@
 use rhai::{CustomType, TypeBuilder};
+use surrealdb::RecordId;
 
 use crate::script::time_helper;
 
@@ -41,6 +42,14 @@ pub enum Transaction {
     Spending(Item),
 }
 
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct Tag {
+    pub label: String,
+    pub color: Option<String>,
+}
+
 // FIXME: to replace.
 #[derive(ts_rs::TS)]
 #[ts(export)]
@@ -50,7 +59,17 @@ pub struct Transaction2 {
     pub date: String,
     pub amount: f64,
     pub description: String,
-    pub tags: std::collections::HashSet<String>,
+    pub tags: Vec<Tag>,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct TransactionWithId {
+    #[serde(flatten)]
+    pub t: Transaction2,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub id: RecordId,
 }
 
 impl Transaction2 {
@@ -70,7 +89,7 @@ impl Transaction2 {
         &self.description
     }
 
-    pub fn tags(&self) -> &std::collections::HashSet<String> {
+    pub fn tags(&self) -> &[Tag] {
         &self.tags
     }
 }

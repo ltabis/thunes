@@ -1,16 +1,10 @@
 use surrealdb::engine::local::Db;
-use surrealdb::{RecordId, Surreal};
+use surrealdb::Surreal;
 use tauri::State;
 use tunes_cli::account::{Account, Data2};
-use tunes_cli::transaction::Transaction2;
+use tunes_cli::transaction::{Transaction2, TransactionWithId};
 
 pub type Accounts = std::collections::HashMap<String, Account>;
-
-#[derive(Debug, serde::Deserialize)]
-struct Record {
-    #[allow(dead_code)]
-    id: RecordId,
-}
 
 #[tauri::command]
 pub async fn list_accounts(
@@ -64,7 +58,7 @@ pub async fn get_balance_by_tag(
     Ok(transactions
         .iter()
         .filter_map(|t| {
-            if t.tags().contains(tag) {
+            if t.tags().iter().find(|t| t.label == tag).is_some() {
                 Some(t.amount())
             } else {
                 None
@@ -92,7 +86,7 @@ pub async fn get_currency(
 pub async fn get_transactions(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account: &str,
-) -> Result<Vec<Transaction2>, String> {
+) -> Result<Vec<TransactionWithId>, String> {
     let database = database.lock().await;
 
     Ok(database
@@ -131,6 +125,22 @@ pub async fn add_transaction(
     );
 
     database.query(query).await.unwrap();
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn update_transaction(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    transaction: TransactionWithId,
+) -> Result<(), String> {
+    let database = database.lock().await;
+
+    let _: Option<crate::Record> = database
+        .update(("transaction", transaction.id.key().clone()))
+        .merge(transaction)
+        .await
+        .unwrap();
 
     Ok(())
 }

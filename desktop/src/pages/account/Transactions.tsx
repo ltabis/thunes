@@ -1,16 +1,17 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Fab, MenuItem, Paper, Select, Skeleton, TextField, Typography } from "@mui/material";
+import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Fab, MenuItem, Paper, Select, Skeleton, TextField, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
 import { FormEvent, useEffect, useState, SetStateAction, Dispatch } from "react";
 import AddIcon from '@mui/icons-material/Add';
 import { Transaction2 } from "../../../../cli/bindings/Transaction2";
+import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
 import { useAccount } from "../../contexts/Account";
-import { useSettings } from "../../contexts/Settings";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridRenderCellParams, GridRenderEditCellParams, useGridApiContext } from "@mui/x-data-grid";
+import { EditTags } from "./Tags";
+import { Tag } from "../../../../cli/bindings/Tag";
 
 const filterFloat = (value: string) => /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value.replace(",", ".")) ? Number(value.replace(",", ".")) : NaN;
 
 function AddTransaction({ open, setOpen }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>> }) {
-    const settings = useSettings()!;
     const account = useAccount()!;
     // Note: omit amount float value to enable the user to enter a floating point character.
     const [form, setForm] = useState<Omit<Transaction2, "amount" | "date"> & { amount: string }>({
@@ -88,37 +89,10 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: Dispatch<Se
                     value={form.description}
                     onChange={(description) => setForm({ ...form, description: description.target.value })}
                 />
-                <Select
-                    sx={{ m: 1 }}
-                    id="transaction-tags"
-                    label="Tags"
-                    name="tags"
-                    multiple
+                <EditTags
                     value={form.tags}
-                    onChange={(element) => {
-                        const tags = element.target.value;
-                        setForm({ ...form, tags: typeof tags === 'string' ? tags.split(',') : tags });
-                    }}
-                >
-                    {
-                        [(
-                            <MenuItem
-                                key="transaction-add-tag"
-                                value="Add a tag"
-                            >
-                                <Button variant="outlined" startIcon={<AddIcon />}>
-                                    Add tag
-                                </Button>
-                            </MenuItem>
-                        )].concat(
-                            settings.tags.map((name) => (
-                                <MenuItem key={name} value={name}>
-                                    {name}
-                                </MenuItem>
-                            ))
-                        )
-                    }
-                </Select>
+                    handleChange={(tags) => setForm({ ...form, tags })}
+                />
             </DialogContent>
             <DialogActions>
                 <Button onClick={handleCloseForm}>Cancel</Button>
@@ -128,31 +102,69 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: Dispatch<Se
     );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
+    const { id, value, field } = props;
+    const apiRef = useGridApiContext();
+
+    const handleChange = (newTags: Tag[]) => {
+        // FIXME: only add new tags.
+        invoke("add_tags", { tags: newTags }).catch((error) =>
+            // FIXME: show error to client.
+            console.error("failed to store tags", error));
+        apiRef.current.setEditCellValue({ id, field, value: newTags });
+        apiRef.current.stopCellEditMode({ id, field });
+    }
+
+    return (
+        <EditTags value={value} handleChange={handleChange} />
+    );
+}
+
 export default function Transactions() {
     const account = useAccount()!;
     const [open, setOpen] = useState(false);
     const [currency, setCurrency] = useState<string | null>(null);
-    const [transactions, setTransactions] = useState<(Transaction2 & { id: number })[] | null>(null);
+    const [transactions, setTransactions] = useState<TransactionWithId[] | null>(null);
     const [balance, setBalance] = useState(0.0);
 
     const columns: GridColDef[] = [
         { field: 'description', headerName: 'Description', minWidth: 500, editable: true },
-        { field: 'date', headerName: 'Date', editable: true },
+        { field: 'date', headerName: 'Date', type: "dateTime", minWidth: 175, valueGetter: (value) => new Date(value), editable: true },
         { field: 'amount', headerName: 'Amount', editable: true },
-        { field: 'tags', headerName: 'Tags', editable: true },
+        {
+            field: 'tags', type: "custom", headerName: 'Tags', minWidth: 200,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            renderCell: (params: GridRenderCellParams<any, Tag[]>) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {params.value?.map(item => <Chip key={`${params.id}-${item.label}`} label={item.label} />)}
+                </Box>
+            ),
+            renderEditCell: (params) => <EditTagsTable {...params} />,
+            editable: true
+        },
     ];
 
     const paginationModel = { page: 0, pageSize: 10 };
+
+    function getRowId(row: TransactionWithId) {
+        return row.id.id.String;
+    }
 
     const handleOpenForm = () => {
         setOpen(true);
     };
 
+    const handleRowUpdate = (newRow: TransactionWithId) => {
+        invoke("update_transaction", { transaction: newRow });
+        return newRow;
+    }
+
     useEffect(() => {
         invoke("get_currency", { account })
             .then((currency) => setCurrency(currency as string));
         invoke("get_transactions", { account })
-            .then((transactions) => setTransactions((transactions as (Transaction2 & { id: number })[]).map((t, i) => { t.id = i; return t; })));
+            .then((transactions) => setTransactions(transactions as TransactionWithId[]));
         invoke("get_balance", { account })
             .then((balance) => setBalance(balance as number));
     }, [account]);
@@ -176,10 +188,13 @@ export default function Transactions() {
                     <DataGrid
                         rows={transactions}
                         columns={columns}
+                        getRowId={getRowId}
                         initialState={{ pagination: { paginationModel } }}
                         pageSizeOptions={[5, 10, 25, 50, 100]}
                         checkboxSelection
-                        processRowUpdate={(updatedRow, originalRow) => console.log("cell edited!", updatedRow, originalRow)}
+                        // TODO: update data.
+                        processRowUpdate={handleRowUpdate}
+                        onProcessRowUpdateError={(error) => console.error("update error", error)}
                     />
 
                 </Box>

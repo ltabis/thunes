@@ -1,3 +1,4 @@
+use surrealdb::RecordId;
 use tauri::{App, Manager};
 use tunes_cli::settings::Settings;
 // use tunes_cli::account::Account;
@@ -6,6 +7,13 @@ use tunes_cli::settings::Settings;
 pub mod commands {
     pub mod account;
     pub mod settings;
+    pub mod tags;
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct Record {
+    #[allow(dead_code)]
+    id: RecordId,
 }
 
 fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -67,6 +75,9 @@ pub fn run() {
             commands::account::get_balance_by_tag,
             commands::account::get_date,
             commands::account::add_transaction,
+            commands::account::update_transaction,
+            commands::tags::get_tags,
+            commands::tags::add_tags,
             commands::settings::get_settings,
             commands::settings::save_settings,
         ])
