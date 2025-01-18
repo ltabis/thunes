@@ -2,7 +2,7 @@ use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tauri::State;
 use tunes_cli::account::{Account, Data2};
-use tunes_cli::transaction::{Transaction2, TransactionWithId};
+use tunes_cli::transaction::{Tag, Transaction2, TransactionWithId};
 
 pub type Accounts = std::collections::HashMap<String, Account>;
 
@@ -106,7 +106,7 @@ pub async fn add_transaction(
     operation: String,
     amount: f64,
     description: String,
-    tags: std::collections::HashSet<String>,
+    tags: Vec<Tag>,
 ) -> Result<(), String> {
     let database = database.lock().await;
 

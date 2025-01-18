@@ -11,7 +11,7 @@ import { Tag } from "../../../../cli/bindings/Tag";
 
 const filterFloat = (value: string) => /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value.replace(",", ".")) ? Number(value.replace(",", ".")) : NaN;
 
-function AddTransaction({ open, setOpen }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>> }) {
+function AddTransaction({ open, setOpen, updateTransactions }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, updateTransactions: (account: string) => void }) {
     const account = useAccount()!;
     // Note: omit amount float value to enable the user to enter a floating point character.
     const [form, setForm] = useState<Omit<Transaction2, "amount" | "date"> & { amount: string }>({
@@ -30,10 +30,10 @@ function AddTransaction({ open, setOpen }: { open: boolean, setOpen: Dispatch<Se
     const handleTransactionSubmission = async () => {
         const amount = filterFloat(form.amount);
 
-        // FIXME: refresh table.
         invoke("add_transaction", { account, ...form, amount })
             .then(() => {
                 handleCloseForm();
+                updateTransactions(account);
             })
             .catch(error => console.error(error));
     }
@@ -130,7 +130,6 @@ export default function Transactions() {
     const columns: GridColDef[] = [
         { field: 'description', headerName: 'Description', minWidth: 500, editable: true },
         { field: 'date', headerName: 'Date', type: "dateTime", minWidth: 175, valueGetter: (value) => new Date(value), editable: true },
-        { field: 'amount', headerName: 'Amount', type: 'number', editable: true },
         {
             field: 'tags', type: "custom", headerName: 'Tags', minWidth: 200,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -155,6 +154,7 @@ export default function Transactions() {
             renderEditCell: (params) => <EditTagsTable {...params} />,
             editable: true
         },
+        { field: 'amount', headerName: 'Amount', type: 'number', editable: true },
     ];
 
     const paginationModel = { page: 0, pageSize: 10 };
@@ -169,16 +169,21 @@ export default function Transactions() {
 
     const handleRowUpdate = (newRow: TransactionWithId) => {
         invoke("update_transaction", { transaction: newRow });
+        updateTransactions(account);
         return newRow;
     }
 
-    useEffect(() => {
-        invoke("get_currency", { account })
-            .then((currency) => setCurrency(currency as string));
+    const updateTransactions = (account: string) => {
         invoke("get_transactions", { account })
             .then((transactions) => setTransactions(transactions as TransactionWithId[]));
+        invoke("get_currency", { account })
+            .then((currency) => setCurrency(currency as string));
         invoke("get_balance", { account })
             .then((balance) => setBalance(balance as number));
+    }
+
+    useEffect(() => {
+        updateTransactions(account);
     }, [account]);
 
     return (
@@ -228,7 +233,7 @@ export default function Transactions() {
                 <AddIcon />
             </Fab>
 
-            <AddTransaction open={open} setOpen={setOpen} />
+            <AddTransaction open={open} setOpen={setOpen} updateTransactions={updateTransactions} />
         </Paper>
     );
 }
