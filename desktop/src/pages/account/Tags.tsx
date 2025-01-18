@@ -28,6 +28,7 @@ export function EditTags({ value, handleChange }: EditTagsProps) {
                 handleHomeEndKeys
                 clearOnBlur
                 disablePortal
+                disableCloseOnSelect
                 value={value}
                 options={tags}
                 sx={{ width: 300 }}

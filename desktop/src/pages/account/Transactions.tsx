@@ -1,4 +1,4 @@
-import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Fab, MenuItem, Paper, Select, Skeleton, TextField, Typography } from "@mui/material";
+import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Fab, ListItem, MenuItem, Paper, Select, Skeleton, Stack, TextField, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
 import { FormEvent, useEffect, useState, SetStateAction, Dispatch } from "react";
 import AddIcon from '@mui/icons-material/Add';
@@ -113,7 +113,6 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
             // FIXME: show error to client.
             console.error("failed to store tags", error));
         apiRef.current.setEditCellValue({ id, field, value: newTags });
-        apiRef.current.stopCellEditMode({ id, field });
     }
 
     return (
@@ -131,14 +130,27 @@ export default function Transactions() {
     const columns: GridColDef[] = [
         { field: 'description', headerName: 'Description', minWidth: 500, editable: true },
         { field: 'date', headerName: 'Date', type: "dateTime", minWidth: 175, valueGetter: (value) => new Date(value), editable: true },
-        { field: 'amount', headerName: 'Amount', editable: true },
+        { field: 'amount', headerName: 'Amount', type: 'number', editable: true },
         {
             field: 'tags', type: "custom", headerName: 'Tags', minWidth: 200,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             renderCell: (params: GridRenderCellParams<any, Tag[]>) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {params.value?.map(item => <Chip key={`${params.id}-${item.label}`} label={item.label} />)}
-                </Box>
+                <Stack direction="row">
+                    {params.value?.map((item) => {
+                        return (
+                            <ListItem sx={{
+                                paddingLeft: 0,
+                                paddingRight: 0,
+                                marginLeft: 0.3,
+                                marginRight: 0.3,
+                            }}
+                                key={item.label}>
+                                <Chip variant="outlined" label={item.label} />
+                            </ListItem>
+                        );
+                    })}
+                </Stack>
+
             ),
             renderEditCell: (params) => <EditTagsTable {...params} />,
             editable: true
