@@ -2,7 +2,7 @@ use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tauri::State;
 use tunes_cli::account::{Account, Data2};
-use tunes_cli::transaction::{Tag, Transaction2, TransactionWithId};
+use tunes_cli::transaction::{Tag, TransactionWithId};
 
 pub type Accounts = std::collections::HashMap<String, Account>;
 
@@ -26,7 +26,7 @@ pub async fn get_balance(
     account: &str,
 ) -> Result<f64, ()> {
     let database = database.lock().await;
-    let transactions: Vec<Transaction2> = database
+    let transactions: Vec<TransactionWithId> = database
         .query(format!(
             r#"SELECT * FROM transaction WHERE account = 'account:"{account}"'"#
         ))
@@ -35,7 +35,7 @@ pub async fn get_balance(
         .take(0)
         .unwrap();
 
-    Ok(transactions.iter().map(|t| t.amount()).sum())
+    Ok(transactions.iter().map(|t| t.inner.amount()).sum())
 }
 
 #[tauri::command]
@@ -45,7 +45,7 @@ pub async fn get_balance_by_tag(
     tag: &str,
 ) -> Result<f64, ()> {
     let database = database.lock().await;
-    let transactions: Vec<Transaction2> = database
+    let transactions: Vec<TransactionWithId> = database
         .query(format!(
             r#"SELECT * FROM transaction WHERE account = 'account:"{account}"'"#
         ))
@@ -58,8 +58,8 @@ pub async fn get_balance_by_tag(
     Ok(transactions
         .iter()
         .filter_map(|t| {
-            if t.tags().iter().find(|t| t.label == tag).is_some() {
-                Some(t.amount())
+            if t.inner.tags().iter().find(|t| t.label == tag).is_some() {
+                Some(t.inner.amount())
             } else {
                 None
             }

@@ -1,4 +1,4 @@
-use crate::transaction::Transaction;
+use crate::transaction::{Tag, Transaction};
 use std::io::{Read, Seek, Write};
 
 #[derive(Default)]
@@ -127,7 +127,12 @@ impl Account {
         Ok(if let Some(tag) = options.tag {
             transactions
                 .into_iter()
-                .filter(|ts| ts.tags().contains(&tag))
+                .filter(|ts| {
+                    ts.tags().contains(&Tag {
+                        label: tag.clone(),
+                        color: None,
+                    })
+                })
                 .fold(0.0, |acc, t| acc + t.amount())
         } else {
             transactions.iter().fold(0.0, |acc, t| acc + t.amount())
@@ -140,7 +145,10 @@ impl Account {
         end: Option<&time::Date>,
     ) -> Result<&[Transaction], Error> {
         let start = match start {
-            Some(start) => self.data.transactions.partition_point(|t| t.date() < start),
+            Some(start) => self
+                .data
+                .transactions
+                .partition_point(|t| t.date_time() < *start),
             None => 0,
         };
 
@@ -150,7 +158,7 @@ impl Account {
                 .transactions
                 .iter()
                 .rev()
-                .position(|t| t.date() <= end)
+                .position(|t| t.date_time() <= *end)
                 .map_or(0, |end| self.data.transactions.len() - end),
             None => self.data.transactions.len(),
         };

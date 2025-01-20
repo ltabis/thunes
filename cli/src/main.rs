@@ -6,6 +6,7 @@ use tunes_cli::script;
 use tunes_cli::script::ScriptAccountBalance;
 use tunes_cli::transaction;
 use tunes_cli::transaction::Item;
+use tunes_cli::transaction::Tag;
 use tunes_cli::transaction::Transaction;
 use tunes_cli::transaction::TransactionRhai;
 use tunes_cli::TIME_FORMAT;
@@ -119,10 +120,16 @@ impl Commands {
                 accounts_path,
                 &account,
                 Transaction::Income(Item {
-                    date: time::OffsetDateTime::now_utc().date(),
+                    date: time::OffsetDateTime::now_utc().date().to_string(),
                     amount,
                     description: description.to_string(),
-                    tags: tags.clone(),
+                    tags: tags
+                        .into_iter()
+                        .map(|tag| Tag {
+                            label: tag.clone(),
+                            color: None,
+                        })
+                        .collect(),
                 }),
             ),
             Commands::Spend {
@@ -134,10 +141,16 @@ impl Commands {
                 accounts_path,
                 &account,
                 Transaction::Spending(Item {
-                    date: time::OffsetDateTime::now_utc().date(),
+                    date: time::OffsetDateTime::now_utc().date().to_string(),
                     amount,
                     description,
-                    tags,
+                    tags: tags
+                        .into_iter()
+                        .map(|tag| Tag {
+                            label: tag.clone(),
+                            color: None,
+                        })
+                        .collect(),
                 }),
             ),
             Commands::Balance {

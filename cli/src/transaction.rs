@@ -15,33 +15,6 @@ pub enum Error {
     Deserialize(serde_json::Error),
 }
 
-/// Information common to all operations types.
-#[derive(ts_rs::TS)]
-#[ts(export)]
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct Item {
-    #[ts(as = "String")]
-    pub date: time::Date,
-    pub amount: f64,
-    pub description: String,
-    pub tags: std::collections::HashSet<String>,
-}
-
-/// Type of operations on an account.
-#[derive(ts_rs::TS)]
-#[ts(export)]
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-#[serde(tag = "operation")]
-pub enum Transaction {
-    /// Add currency to an account.
-    #[serde(rename = "i")]
-    Income(Item),
-    // FIXME: expense
-    /// Substract currency from an account.
-    #[serde(rename = "s")]
-    Spending(Item),
-}
-
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -50,12 +23,30 @@ pub struct Tag {
     pub color: Option<String>,
 }
 
-// FIXME: to replace.
+impl PartialEq for Tag {
+    fn eq(&self, other: &Self) -> bool {
+        self.label == other.label
+    }
+}
+
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct Transaction2 {
-    pub operation: String,
+#[serde(tag = "operation")]
+pub enum Transaction {
+    /// Add currency to an account.
+    #[serde(rename = "i")]
+    Income(Item),
+    /// Subtract currency from an account.
+    #[serde(rename = "s")]
+    Spending(Item),
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct Item {
+    // pub operation: String,
     pub date: String,
     pub amount: f64,
     pub description: String,
@@ -67,56 +58,44 @@ pub struct Transaction2 {
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TransactionWithId {
     #[serde(flatten)]
-    pub t: Transaction2,
+    pub inner: Transaction,
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub id: RecordId,
 }
 
-impl Transaction2 {
+impl Transaction {
     pub fn date(&self) -> &str {
-        &self.date
+        match self {
+            Transaction::Income(item) | Transaction::Spending(item) => &item.date,
+        }
+    }
+
+    pub fn date_time(&self) -> time::Date {
+        match self {
+            Transaction::Income(item) | Transaction::Spending(item) => time::Date::parse(
+                &item.date,
+                &time::format_description::well_known::Iso8601::DEFAULT,
+            )
+            .expect("failed to parse date"),
+        }
     }
 
     pub fn amount(&self) -> f64 {
-        if self.operation == "s" {
-            -self.amount
-        } else {
-            self.amount
+        match self {
+            Transaction::Income(item) => item.amount,
+            Transaction::Spending(item) => -item.amount,
         }
     }
 
     pub fn description(&self) -> &str {
-        &self.description
+        match self {
+            Transaction::Income(item) | Transaction::Spending(item) => &item.description,
+        }
     }
 
     pub fn tags(&self) -> &[Tag] {
-        &self.tags
-    }
-}
-
-impl Transaction {
-    pub fn date(&self) -> &time::Date {
         match self {
-            Self::Income(item) | Self::Spending(item) => &item.date,
-        }
-    }
-
-    pub fn amount(&self) -> f64 {
-        match self {
-            Self::Income(item) => item.amount,
-            Self::Spending(item) => -item.amount,
-        }
-    }
-
-    pub fn description(&self) -> &str {
-        match self {
-            Self::Income(item) | Self::Spending(item) => &item.description,
-        }
-    }
-
-    pub fn tags(&self) -> &std::collections::HashSet<String> {
-        match self {
-            Self::Income(item) | Self::Spending(item) => &item.tags,
+            Transaction::Income(item) | Transaction::Spending(item) => &item.tags,
         }
     }
 }
@@ -140,7 +119,11 @@ pub struct TransactionRhai {
 impl From<&Transaction> for TransactionRhai {
     fn from(value: &Transaction) -> Self {
         Self {
-            date: *value.date(),
+            date: time::Date::parse(
+                value.date(),
+                &time::format_description::well_known::Iso8601::DEFAULT,
+            )
+            .expect("failed to parse date"),
             amount: value.amount(),
             description: value.description().to_string(),
             tags: value
