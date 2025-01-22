@@ -3,18 +3,6 @@ use surrealdb::RecordId;
 
 use crate::script::time_helper;
 
-#[derive(Debug)]
-pub enum Error {
-    ParsingFieldNotFound(String),
-    ParsingFieldFailed {
-        field: String,
-        error: Box<dyn std::error::Error>,
-    },
-    InvalidOperation(String),
-    Serialize(serde_json::Error),
-    Deserialize(serde_json::Error),
-}
-
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

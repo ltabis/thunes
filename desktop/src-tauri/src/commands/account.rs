@@ -1,7 +1,7 @@
 use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tauri::State;
-use tunes_cli::account::{Account, Data2};
+use tunes_cli::account::Account;
 use tunes_cli::transaction::{Tag, TransactionWithId};
 
 pub type Accounts = std::collections::HashMap<String, Account>;
@@ -12,11 +12,11 @@ pub async fn list_accounts(
 ) -> Result<Vec<String>, ()> {
     // FIXME: unwraps.
     let database = database.lock().await;
-    let accounts: Vec<Data2> = database.select("account").await.unwrap();
+    let accounts: Vec<Account> = database.select("account").await.unwrap();
 
     Ok(accounts
         .into_iter()
-        .map(|account| account.name.to_string())
+        .map(|account| account.data.name)
         .collect())
 }
 
@@ -73,13 +73,13 @@ pub async fn get_currency(
     account: &str,
 ) -> Result<String, String> {
     let database = database.lock().await;
-    let account: Data2 = database
+    let account: Account = database
         .select(("account", format!(r#""{account}""#)))
         .await
         .unwrap()
         .unwrap();
 
-    Ok(account.currency)
+    Ok(account.data.currency)
 }
 
 #[tauri::command]
@@ -110,23 +110,9 @@ pub async fn add_transaction(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    let query = format!(
-        r#"
-    CREATE transaction SET
-        operation = "{operation}",
-        date = time::now(),
-        amount = {amount},
-        description = "{description}",
-        tags = {},
-        account = '{}'
-"#,
-        serde_json::json!(tags),
-        format!(r#"account:"{account}""#)
-    );
-
-    database.query(query).await.unwrap();
-
-    Ok(())
+    tunes_cli::add_transaction(&database, account, &operation, amount, description, tags)
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
