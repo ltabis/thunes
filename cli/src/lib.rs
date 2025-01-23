@@ -17,10 +17,6 @@ pub const TIME_FORMAT_DAY: &[time::format_description::FormatItem<'_>] =
 
 #[derive(Debug)]
 pub enum Error {
-    Io(std::io::Error),
-    Serde(serde_json::Error),
-    InvalidDateRange,
-    Exists,
     Database(surrealdb::Error),
 }
 
@@ -36,25 +32,9 @@ impl std::fmt::Display for Error {
             f,
             "{}",
             match self {
-                Error::Io(error) => error.to_string(),
-                Error::Serde(error) => error.to_string(),
-                Error::InvalidDateRange => "Invalid date range".to_string(),
-                Error::Exists => "Account already exists".to_string(),
                 Error::Database(error) => error.to_string(),
             }
         )
-    }
-}
-
-impl From<std::io::Error> for Error {
-    fn from(value: std::io::Error) -> Self {
-        Self::Io(value)
-    }
-}
-
-impl From<serde_json::Error> for Error {
-    fn from(value: serde_json::Error) -> Self {
-        Self::Serde(value)
     }
 }
 
