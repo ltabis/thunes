@@ -1,7 +1,5 @@
 use tauri::{App, Manager};
 use tunes_cli::settings::Settings;
-// use tunes_cli::account::Account;
-// use tunes_cli::settings::Settings;
 
 pub mod commands {
     pub mod account;
@@ -16,6 +14,17 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
         let window = app.get_webview_window("main").unwrap();
         window.open_devtools();
     }
+
+    // a builder for `FmtSubscriber`.
+    let subscriber = tracing_subscriber::FmtSubscriber::builder()
+        // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
+        // will be written to stdout.
+        .with_max_level(tracing::Level::DEBUG)
+        .compact()
+        // completes the builder.
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber)?;
 
     // Setup surreal database.
     let path_resolver = app.path();
@@ -65,7 +74,6 @@ pub fn run() {
             commands::account::get_transactions,
             commands::account::get_currency,
             commands::account::get_balance,
-            commands::account::get_date,
             commands::account::add_transaction,
             commands::account::update_transaction,
             commands::tags::get_tags,

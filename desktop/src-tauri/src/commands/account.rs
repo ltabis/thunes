@@ -10,6 +10,7 @@ pub type Accounts = std::collections::HashMap<String, Account>;
 // TODO: Make errors understandable by users.
 
 #[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn list_accounts(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
 ) -> Result<Vec<String>, ()> {
@@ -24,6 +25,7 @@ pub async fn list_accounts(
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_balance(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account: &str,
@@ -40,6 +42,7 @@ pub async fn get_balance(
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_currency(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account: &str,
@@ -55,6 +58,7 @@ pub async fn get_currency(
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_transactions(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account: &str,
@@ -67,6 +71,7 @@ pub async fn get_transactions(
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn add_transaction(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account: &str,
@@ -82,6 +87,7 @@ pub async fn add_transaction(
 }
 
 #[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn update_transaction(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     transaction: TransactionWithId,
@@ -91,9 +97,4 @@ pub async fn update_transaction(
     tunes_cli::update_transaction(&database, transaction)
         .await
         .map_err(|error| error.to_string())
-}
-
-#[tauri::command]
-pub fn get_date() -> serde_json::Value {
-    serde_json::to_value(&time::OffsetDateTime::now_utc().date()).unwrap()
 }

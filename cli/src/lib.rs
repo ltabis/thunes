@@ -57,7 +57,7 @@ pub async fn init_db(
     db
 }
 
-#[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BalanceOptions {
     pub period_start: Option<surrealdb::Datetime>,
     pub period_end: Option<surrealdb::Datetime>,
