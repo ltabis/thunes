@@ -1,20 +1,33 @@
+use surrealdb::{engine::local::Db, Surreal};
 use tauri::State;
-use tunes_cli::settings::Settings;
+use tunes_cli::{settings::Settings, Record};
 
 #[tauri::command]
-pub fn get_settings(settings: State<'_, std::sync::Mutex<Settings>>) -> Settings {
-    settings.lock().unwrap().clone()
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn get_settings(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+) -> Result<Settings, ()> {
+    let database = database.lock().await;
+
+    let settings: Option<Settings> = database.select(("settings", "main")).await.unwrap();
+
+    Ok(settings.unwrap())
 }
 
 #[tauri::command]
-pub fn save_settings(
-    settings_state: State<'_, std::sync::Mutex<Settings>>,
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn save_settings(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     settings: Settings,
 ) -> Result<(), String> {
-    settings
-        .save()
-        .map_err(|error| format!("failed to write config: {error:?}"))?;
-    *settings_state.lock().unwrap() = settings;
+    let database = database.lock().await;
+
+    let _: Option<Record> = database
+        // TODO: settings per user.
+        .update(("settings", "main"))
+        .merge(settings)
+        .await
+        .unwrap();
 
     Ok(())
 }

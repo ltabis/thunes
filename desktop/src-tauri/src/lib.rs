@@ -1,5 +1,5 @@
 use tauri::{App, Manager};
-use tunes_cli::settings::Settings;
+use tunes_cli::{settings::Settings, Record};
 
 pub mod commands {
     pub mod account;
@@ -43,23 +43,24 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
 
         db.use_ns("user").use_db("accounts").await.unwrap();
 
-        db
-    }))?;
+        // FIXME: move db seeding to an install script.
+        let result: Result<Option<Record>, surrealdb::Error> = db
+            .insert(("settings", "main"))
+            .content(Settings::default())
+            .await;
+
+        match result {
+            Ok(_) | Err(surrealdb::Error::Db(surrealdb::error::Db::RecordExists { .. })) => {}
+            _ => {
+                tracing::error!("failed to initialize settings");
+                return Err("failed to initialize settings");
+            }
+        }
+
+        Ok(db)
+    }))??;
 
     app.manage(tokio::sync::Mutex::new(db));
-
-    // Setup user settings and dev tools.
-    let config_path = {
-        let mut path = path_resolver
-            .app_config_dir()
-            .expect("unknown app config path");
-        path.push("tunes.json");
-        path
-    };
-
-    let settings = Settings::new(config_path, "").expect("failed to configure app");
-
-    app.manage(std::sync::Mutex::new(settings));
 
     Ok(())
 }
