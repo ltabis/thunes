@@ -19,11 +19,11 @@ export default function Details() {
             .then((balance) => setBalance(balance as number));
 
         // TODO: get balances for the current month.
-        invoke("get_balance_by_tag", { account, tag: "needs" })
+        invoke("get_balance", { account, options: { tag: "needs" } })
             .then((balance) => setBalanceNeeds(balance as number * -1));
-        invoke("get_balance_by_tag", { account, tag: "wants" })
+        invoke("get_balance", { account, options: { tag: "wants" } })
             .then((balance) => setBalanceWants(balance as number * -1));
-        invoke("get_balance_by_tag", { account, tag: "savings" })
+        invoke("get_balance", { account, options: { tag: "savings" } })
             .then((balance) => setBalanceSavings(balance as number * -1));
     }, [account]);
 

@@ -3,9 +3,11 @@ use surrealdb::Surreal;
 use tauri::State;
 use tunes_cli::account::Account;
 use tunes_cli::transaction::{Tag, TransactionWithId};
-use tunes_cli::TransactionOptions;
+use tunes_cli::{BalanceOptions, TransactionOptions};
 
 pub type Accounts = std::collections::HashMap<String, Account>;
+
+// TODO: Make errors understandable by users.
 
 #[tauri::command]
 pub async fn list_accounts(
@@ -25,48 +27,16 @@ pub async fn list_accounts(
 pub async fn get_balance(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account: &str,
-) -> Result<f64, ()> {
-    // FIXME: use math::sum
-    let database = database.lock().await;
-    let transactions: Vec<TransactionWithId> = database
-        .query(format!(
-            r#"SELECT * FROM transaction WHERE account = 'account:"{account}"'"#
-        ))
-        .await
-        .unwrap()
-        .take(0)
-        .unwrap();
-
-    Ok(transactions.iter().map(|t| t.inner.amount).sum())
-}
-
-#[tauri::command]
-pub async fn get_balance_by_tag(
-    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    account: &str,
-    tag: &str,
+    options: Option<BalanceOptions>,
 ) -> Result<f64, ()> {
     let database = database.lock().await;
-    let transactions: Vec<TransactionWithId> = database
-        .query(format!(
-            r#"SELECT * FROM transaction WHERE account = 'account:"{account}"'"#
-        ))
-        .await
-        .unwrap()
-        .take(0)
-        .unwrap();
-
-    // FIXME: use the query instead.
-    Ok(transactions
-        .iter()
-        .filter_map(|t| {
-            if t.inner.tags.iter().find(|t| t.label == tag).is_some() {
-                Some(t.inner.amount)
-            } else {
-                None
-            }
-        })
-        .sum())
+    tunes_cli::balance(
+        &database,
+        account,
+        options.unwrap_or(BalanceOptions::default()),
+    )
+    .await
+    .map_err(|_| ())
 }
 
 #[tauri::command]

@@ -77,7 +77,7 @@ pub async fn init_db(
     db
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BalanceOptions {
     pub period_start: Option<surrealdb::Datetime>,
     pub period_end: Option<surrealdb::Datetime>,
@@ -102,14 +102,14 @@ pub async fn balance(
     }
 
     if let Some(tag) = options.tag {
-        query.push_str(&format!(" AND tags.find(|$tag| $tag.label = {tag})"));
+        query.push_str(&format!(" AND tags.find(|$tag| $tag.label = '{tag}')"));
     }
 
     query.push_str(" GROUP ALL).sum");
 
     let sum: Option<f64> = db.query(query).await?.take(0).unwrap();
 
-    Ok(sum.unwrap())
+    Ok(sum.unwrap_or(0.0))
 }
 
 pub async fn add_transaction(
