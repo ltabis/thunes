@@ -1,5 +1,5 @@
 use surrealdb::{engine::local::Db, RecordId, Surreal};
-use transaction::{Tag, Transaction};
+use transaction::{Tag, TransactionWithId};
 
 pub mod account;
 pub mod script;
@@ -22,6 +22,12 @@ pub enum Error {
     InvalidDateRange,
     Exists,
     Database(surrealdb::Error),
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct Record {
+    #[allow(dead_code)]
+    id: RecordId,
 }
 
 impl std::fmt::Display for Error {
@@ -84,7 +90,7 @@ pub async fn balance(
     options: BalanceOptions,
 ) -> Result<f64, Error> {
     let mut query = format!(
-        r#"RETURN math::sum(SELECT * FROM transaction WHERE account = 'account:"{account}"'"#
+        r#"RETURN (SELECT math::sum(amount) AS sum FROM transaction WHERE account = 'account:"{account}"'"#
     );
 
     if let Some(start) = options.period_start {
@@ -99,27 +105,16 @@ pub async fn balance(
         query.push_str(&format!(" AND tags.find(|$tag| $tag.label = {tag})"));
     }
 
-    query.push_str(")");
+    query.push_str(" GROUP ALL).sum");
 
     let sum: Option<f64> = db.query(query).await?.take(0).unwrap();
 
     Ok(sum.unwrap())
 }
 
-pub async fn add_income_transaction(
-    db: &Surreal<Db>,
-    account: &str,
-    amount: f64,
-    description: String,
-    tags: Vec<Tag>,
-) -> Result<(), Error> {
-    add_transaction(db, account, "i", amount, description, tags).await
-}
-
 pub async fn add_transaction(
     db: &Surreal<Db>,
     account: &str,
-    operation: &str,
     amount: f64,
     description: String,
     tags: Vec<Tag>,
@@ -127,7 +122,6 @@ pub async fn add_transaction(
     let query = format!(
         r#"
     CREATE transaction SET
-        operation = "{operation}",
         date = time::now(),
         amount = {amount},
         description = "{description}",
@@ -143,21 +137,31 @@ pub async fn add_transaction(
     Ok(())
 }
 
+pub async fn update_transaction(
+    db: &Surreal<Db>,
+    transaction: TransactionWithId,
+) -> Result<(), Error> {
+    let _: Option<Record> = db
+        .update(("transaction", transaction.id.key().clone()))
+        .merge(transaction)
+        .await
+        .unwrap();
+
+    Ok(())
+}
+
 #[derive(Default)]
 pub struct TransactionOptions {
     pub start: Option<surrealdb::Datetime>,
     pub end: Option<surrealdb::Datetime>,
 }
 
-pub async fn transactions_between(
+pub async fn get_transactions(
     db: &Surreal<Db>,
-    account: RecordId,
+    account: &str,
     options: TransactionOptions,
-) -> Result<Vec<Transaction>, Error> {
-    let account_id = account.key();
-    let mut query = format!(
-        r#"RETURN math::sum(SELECT * FROM transaction WHERE account = 'account:"{account_id}"'"#
-    );
+) -> Result<Vec<TransactionWithId>, Error> {
+    let mut query = format!(r#"SELECT * FROM transaction WHERE account = 'account:"{account}"'"#);
 
     if let Some(start) = options.start {
         query.push_str(&format!(" AND date > {start}"));
@@ -167,9 +171,7 @@ pub async fn transactions_between(
         query.push_str(&format!(" AND date < {end}"));
     }
 
-    query.push_str(")");
+    let transactions: Vec<TransactionWithId> = db.query(query).await.unwrap().take(0).unwrap();
 
-    let sum: Option<Vec<Transaction>> = db.query(query).await?.take(0).unwrap();
-
-    Ok(sum.unwrap())
+    Ok(transactions)
 }

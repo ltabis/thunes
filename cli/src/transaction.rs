@@ -20,21 +20,7 @@ impl PartialEq for Tag {
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-#[serde(tag = "operation")]
-pub enum Transaction {
-    /// Add currency to an account.
-    #[serde(rename = "i")]
-    Income(Item),
-    /// Subtract currency from an account.
-    #[serde(rename = "s")]
-    Spending(Item),
-}
-
-#[derive(ts_rs::TS)]
-#[ts(export)]
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct Item {
-    // pub operation: String,
+pub struct Transaction {
     pub date: String,
     pub amount: f64,
     pub description: String,
@@ -52,39 +38,12 @@ pub struct TransactionWithId {
 }
 
 impl Transaction {
-    pub fn date(&self) -> &str {
-        match self {
-            Transaction::Income(item) | Transaction::Spending(item) => &item.date,
-        }
-    }
-
     pub fn date_time(&self) -> time::Date {
-        match self {
-            Transaction::Income(item) | Transaction::Spending(item) => time::Date::parse(
-                &item.date,
-                &time::format_description::well_known::Iso8601::DEFAULT,
-            )
-            .expect("failed to parse date"),
-        }
-    }
-
-    pub fn amount(&self) -> f64 {
-        match self {
-            Transaction::Income(item) => item.amount,
-            Transaction::Spending(item) => -item.amount,
-        }
-    }
-
-    pub fn description(&self) -> &str {
-        match self {
-            Transaction::Income(item) | Transaction::Spending(item) => &item.description,
-        }
-    }
-
-    pub fn tags(&self) -> &[Tag] {
-        match self {
-            Transaction::Income(item) | Transaction::Spending(item) => &item.tags,
-        }
+        time::Date::parse(
+            &self.date,
+            &time::format_description::well_known::Iso8601::DEFAULT,
+        )
+        .expect("failed to parse date")
     }
 }
 
@@ -108,14 +67,14 @@ impl From<&Transaction> for TransactionRhai {
     fn from(value: &Transaction) -> Self {
         Self {
             date: time::Date::parse(
-                value.date(),
+                &value.date,
                 &time::format_description::well_known::Iso8601::DEFAULT,
             )
             .expect("failed to parse date"),
-            amount: value.amount(),
-            description: value.description().to_string(),
+            amount: value.amount,
+            description: value.description.to_string(),
             tags: value
-                .tags()
+                .tags
                 .iter()
                 .cloned()
                 .map(rhai::Dynamic::from)

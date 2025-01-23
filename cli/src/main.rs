@@ -97,7 +97,6 @@ impl Commands {
             } => tunes_cli::add_transaction(
                 &db,
                 &account,
-                "i",
                 amount,
                 description,
                 tags.into_iter()
@@ -118,8 +117,7 @@ impl Commands {
             } => tunes_cli::add_transaction(
                 &db,
                 &account,
-                "s",
-                amount,
+                -amount,
                 description,
                 tags.into_iter()
                     .map(|tag| Tag {

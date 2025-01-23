@@ -2,15 +2,11 @@ use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tauri::State;
 
-use crate::Record;
-
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct TagOption {
     label: String,
     color: Option<String>,
 }
-
-// FIXME: unwraps.
 
 #[tauri::command]
 pub async fn get_tags(
@@ -29,7 +25,7 @@ pub async fn add_tags(
 ) -> Result<(), String> {
     let database = database.lock().await;
     for tag in tags {
-        let _: Option<Record> = database
+        let _: Option<tunes_cli::Record> = database
             .upsert(("tag", &tag.label))
             .content(tag)
             .await

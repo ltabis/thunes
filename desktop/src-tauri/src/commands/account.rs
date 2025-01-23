@@ -3,6 +3,7 @@ use surrealdb::Surreal;
 use tauri::State;
 use tunes_cli::account::Account;
 use tunes_cli::transaction::{Tag, TransactionWithId};
+use tunes_cli::TransactionOptions;
 
 pub type Accounts = std::collections::HashMap<String, Account>;
 
@@ -25,6 +26,7 @@ pub async fn get_balance(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account: &str,
 ) -> Result<f64, ()> {
+    // FIXME: use math::sum
     let database = database.lock().await;
     let transactions: Vec<TransactionWithId> = database
         .query(format!(
@@ -35,7 +37,7 @@ pub async fn get_balance(
         .take(0)
         .unwrap();
 
-    Ok(transactions.iter().map(|t| t.inner.amount()).sum())
+    Ok(transactions.iter().map(|t| t.inner.amount).sum())
 }
 
 #[tauri::command]
@@ -58,8 +60,8 @@ pub async fn get_balance_by_tag(
     Ok(transactions
         .iter()
         .filter_map(|t| {
-            if t.inner.tags().iter().find(|t| t.label == tag).is_some() {
-                Some(t.inner.amount())
+            if t.inner.tags.iter().find(|t| t.label == tag).is_some() {
+                Some(t.inner.amount)
             } else {
                 None
             }
@@ -89,28 +91,22 @@ pub async fn get_transactions(
 ) -> Result<Vec<TransactionWithId>, String> {
     let database = database.lock().await;
 
-    Ok(database
-        .query(format!(
-            r#"SELECT * FROM transaction WHERE account = 'account:"{account}"'"#
-        ))
+    tunes_cli::get_transactions(&database, account, TransactionOptions::default())
         .await
-        .unwrap()
-        .take(0)
-        .unwrap())
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
 pub async fn add_transaction(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account: &str,
-    operation: String,
     amount: f64,
     description: String,
     tags: Vec<Tag>,
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    tunes_cli::add_transaction(&database, account, &operation, amount, description, tags)
+    tunes_cli::add_transaction(&database, account, amount, description, tags)
         .await
         .map_err(|error| error.to_string())
 }
@@ -122,13 +118,9 @@ pub async fn update_transaction(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    let _: Option<crate::Record> = database
-        .update(("transaction", transaction.id.key().clone()))
-        .merge(transaction)
+    tunes_cli::update_transaction(&database, transaction)
         .await
-        .unwrap();
-
-    Ok(())
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
