@@ -21,44 +21,43 @@ export function EditTags({ value, handleChange }: EditTagsProps) {
     }, []);
 
     return (
-        <div>
-            <Autocomplete
-                multiple
-                selectOnFocus
-                handleHomeEndKeys
-                clearOnBlur
-                disablePortal
-                disableCloseOnSelect
-                value={value}
-                options={tags}
-                sx={{ width: 300 }}
-                renderInput={(params) => <TextField {...params} label="Tags" />}
-                renderOption={(props, option) => {
-                    const { key, id, ...optionProps } = props;
-                    return (
-                        <MenuItem
-                            key={`${key}-${id}`}
-                            value={option.label}
-                            {...optionProps}
-                        >
-                            <Chip label={option.label} sx={{ backgroundColor: option.color }} />
-                        </MenuItem>
-                    )
-                }}
-                onChange={(_event, newTags) => handleChange(newTags)}
-                filterOptions={(options, params) => {
-                    const filtered = filter(options, params);
-                    const { inputValue } = params;
+        <Autocomplete
+            fullWidth
+            multiple
+            selectOnFocus
+            handleHomeEndKeys
+            clearOnBlur
+            disablePortal
+            disableCloseOnSelect
+            value={value}
+            options={tags}
+            sx={{ width: 300 }}
+            renderInput={(params) => <TextField {...params} label="Tags" />}
+            renderOption={(props, option) => {
+                const { key, id, ...optionProps } = props;
+                return (
+                    <MenuItem
+                        key={`${key}-${id}`}
+                        value={option.label}
+                        {...optionProps}
+                    >
+                        <Chip label={option.label} sx={{ backgroundColor: option.color }} />
+                    </MenuItem>
+                )
+            }}
+            onChange={(_event, newTags) => handleChange(newTags)}
+            filterOptions={(options, params) => {
+                const filtered = filter(options, params);
+                const { inputValue } = params;
 
-                    // Suggest the creation of a new value
-                    const isExisting = options.some((option) => inputValue === option.label);
-                    if (inputValue !== '' && !isExisting) {
-                        filtered.push({ label: inputValue, color: null });
-                    }
+                // Suggest the creation of a new value
+                const isExisting = options.some((option) => inputValue === option.label);
+                if (inputValue !== '' && !isExisting) {
+                    filtered.push({ label: inputValue, color: null });
+                }
 
-                    return filtered;
-                }}
-            />
-        </div>
+                return filtered;
+            }}
+        />
     );
 }

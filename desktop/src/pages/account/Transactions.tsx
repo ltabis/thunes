@@ -1,8 +1,8 @@
-import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Fab, ListItem, MenuItem, Paper, Select, Skeleton, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Fab, ListItem, Paper, Skeleton, Stack, TextField, Typography } from "@mui/material";
 import { invoke } from "@tauri-apps/api/core";
 import { FormEvent, useEffect, useState, SetStateAction, Dispatch } from "react";
 import AddIcon from '@mui/icons-material/Add';
-import { Transaction2 } from "../../../../cli/bindings/Transaction2";
+import { Transaction } from "../../../../cli/bindings/Transaction";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
 import { useAccount } from "../../contexts/Account";
 import { DataGrid, GridColDef, GridRenderCellParams, GridRenderEditCellParams, useGridApiContext } from "@mui/x-data-grid";
@@ -14,10 +14,9 @@ const filterFloat = (value: string) => /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value
 function AddTransaction({ open, setOpen, updateTransactions }: { open: boolean, setOpen: Dispatch<SetStateAction<boolean>>, updateTransactions: (account: string) => void }) {
     const account = useAccount()!;
     // Note: omit amount float value to enable the user to enter a floating point character.
-    const [form, setForm] = useState<Omit<Transaction2, "amount" | "date"> & { amount: string }>({
+    const [form, setForm] = useState<Omit<Transaction, "amount" | "date"> & { amount: string }>({
         amount: "0",
         description: "",
-        operation: "s",
         tags: []
     });
 
@@ -53,19 +52,6 @@ function AddTransaction({ open, setOpen, updateTransactions }: { open: boolean, 
         >
             <DialogTitle>Add transaction</DialogTitle>
             <DialogContent>
-                <Select
-                    autoFocus
-                    required
-                    sx={{ m: 1 }}
-                    id="transaction-operation"
-                    label="Operation"
-                    name="operation"
-                    value={form.operation}
-                    onChange={(operation) => setForm({ ...form, operation: operation.target.value })}
-                >
-                    <MenuItem value={"s"}>Expense</MenuItem>
-                    <MenuItem value={"i"}>Income</MenuItem>
-                </Select>
                 <TextField
                     sx={{ m: 1 }}
                     id="transaction-amount"
@@ -80,6 +66,7 @@ function AddTransaction({ open, setOpen, updateTransactions }: { open: boolean, 
                     onChange={(amount) => setForm({ ...form, amount: amount.target.value })}
                     error={handleValidAmount()}
                     helperText={handleValidAmount() && "Not a valid amount"}
+                    fullWidth
                 />
                 <TextField
                     sx={{ m: 1 }}
@@ -88,6 +75,7 @@ function AddTransaction({ open, setOpen, updateTransactions }: { open: boolean, 
                     name="description"
                     value={form.description}
                     onChange={(description) => setForm({ ...form, description: description.target.value })}
+                    fullWidth
                 />
                 <EditTags
                     value={form.tags}
