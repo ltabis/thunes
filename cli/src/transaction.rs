@@ -35,6 +35,8 @@ pub struct TransactionWithId {
     pub inner: Transaction,
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub id: RecordId,
+    #[ts(skip)]
+    pub account: RecordId,
 }
 
 impl Transaction {

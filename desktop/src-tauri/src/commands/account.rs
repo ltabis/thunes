@@ -3,7 +3,7 @@ use surrealdb::Surreal;
 use tauri::State;
 use tunes_cli::account::Account;
 use tunes_cli::transaction::{Tag, TransactionWithId};
-use tunes_cli::{BalanceOptions, TransactionOptions};
+use tunes_cli::{BalanceOptions, CurrencyBalance, TransactionOptions};
 
 pub type Accounts = std::collections::HashMap<String, Account>;
 
@@ -32,13 +32,20 @@ pub async fn get_balance(
     options: Option<BalanceOptions>,
 ) -> Result<f64, ()> {
     let database = database.lock().await;
-    tunes_cli::balance(
-        &database,
-        account,
-        options.unwrap_or(BalanceOptions::default()),
-    )
-    .await
-    .map_err(|_| ())
+    tunes_cli::balance(&database, account, options.unwrap_or_default())
+        .await
+        .map_err(|_| ())
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn get_all_balance(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+) -> Result<Vec<CurrencyBalance>, String> {
+    let database = database.lock().await;
+    tunes_cli::balances_by_currency(&database)
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]

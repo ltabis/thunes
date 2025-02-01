@@ -4,7 +4,7 @@ use crate::Error;
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Data {
     pub name: String,
     pub currency: String,
@@ -12,7 +12,7 @@ pub struct Data {
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Account {
     #[serde(flatten)]
     pub data: Data,

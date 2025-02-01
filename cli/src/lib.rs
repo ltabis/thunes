@@ -1,3 +1,4 @@
+use account::Account;
 use surrealdb::{engine::local::Db, RecordId, Surreal};
 use transaction::{Tag, TransactionWithId};
 
@@ -70,7 +71,7 @@ pub async fn balance(
     options: BalanceOptions,
 ) -> Result<f64, Error> {
     let mut query = format!(
-        r#"RETURN (SELECT math::sum(amount) AS sum FROM transaction WHERE account = 'account:"{account}"'"#
+        r#"RETURN (SELECT math::sum(amount) AS sum FROM transaction WHERE account = account:`"{account}"`"#
     );
 
     if let Some(start) = options.period_start {
@@ -106,10 +107,8 @@ pub async fn add_transaction(
         amount = {amount},
         description = "{description}",
         tags = {},
-        account = '{}'
-"#,
+        account = account:`"{account}"`"#,
         serde_json::json!(tags),
-        format!(r#"account:"{account}""#)
     );
 
     db.query(query).await?;
@@ -141,7 +140,7 @@ pub async fn get_transactions(
     account: &str,
     options: TransactionOptions,
 ) -> Result<Vec<TransactionWithId>, Error> {
-    let mut query = format!(r#"SELECT * FROM transaction WHERE account = 'account:"{account}"'"#);
+    let mut query = format!(r#"SELECT * FROM transaction WHERE account = account:`"{account}"`"#);
 
     if let Some(start) = options.start {
         query.push_str(&format!(" AND date > {start}"));
@@ -154,4 +153,38 @@ pub async fn get_transactions(
     let transactions: Vec<TransactionWithId> = db.query(query).await.unwrap().take(0).unwrap();
 
     Ok(transactions)
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct AccountWithBalance {
+    pub account: Account,
+    pub balance: f64,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct CurrencyBalance {
+    pub currency: String,
+    pub accounts: Vec<AccountWithBalance>,
+}
+
+pub async fn balances_by_currency(db: &Surreal<Db>) -> Result<Vec<CurrencyBalance>, Error> {
+    let query = r#"
+        SELECT 
+            array::group([{account: account, balance: balance}]) as accounts,
+            account.currency as currency
+        FROM (
+            SELECT
+                math::sum(amount) as balance,
+                account
+            FROM transaction
+            GROUP BY account
+            FETCH account
+        ) 
+        GROUP BY currency"#;
+
+    db.query(query).await?.take(0).map_err(|error| error.into())
 }

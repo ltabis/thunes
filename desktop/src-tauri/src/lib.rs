@@ -19,7 +19,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let subscriber = tracing_subscriber::FmtSubscriber::builder()
         // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
         // will be written to stdout.
-        .with_max_level(tracing::Level::DEBUG)
+        .with_max_level(tracing::Level::INFO)
         .compact()
         // completes the builder.
         .finish();
@@ -75,6 +75,7 @@ pub fn run() {
             commands::account::get_transactions,
             commands::account::get_currency,
             commands::account::get_balance,
+            commands::account::get_all_balance,
             commands::account::add_transaction,
             commands::account::update_transaction,
             commands::tags::get_tags,
