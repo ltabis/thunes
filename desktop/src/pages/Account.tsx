@@ -20,6 +20,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Transactions from "./account/Transactions";
 import Details from "./account/Details";
 import { MouseEvent, SyntheticEvent } from "react";
+import Settings from "./account/Settings";
 
 export function Layout() {
   // TODO: generalize Snackbar errors.
@@ -115,6 +116,7 @@ export function Layout() {
             <Tabs onChange={handleTabChange} value={tab} variant="fullWidth">
               <Tab label="Details"></Tab>
               <Tab label="Transactions"></Tab>
+              <Tab label="Settings"></Tab>
             </Tabs>
           )}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
@@ -135,6 +137,9 @@ export function Layout() {
           </div>
           <div hidden={tab !== 1}>
             <Transactions />
+          </div>
+          <div hidden={tab !== 2}>
+            <Settings />
           </div>
         </>
       )}

@@ -8,13 +8,38 @@ use tunes_cli::{BalanceOptions, CurrencyBalance, TransactionOptions};
 pub type Accounts = std::collections::HashMap<String, Account>;
 
 // TODO: Make errors understandable by users.
+// FIXME: unwraps.
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn get_account(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    account: &str,
+) -> Result<Account, String> {
+    let database = database.lock().await;
+    tunes_cli::get_account(&database, account)
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn update_account(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    account: Account,
+) -> Result<(), String> {
+    let database = database.lock().await;
+
+    tunes_cli::update_account(&database, account)
+        .await
+        .map_err(|error| error.to_string())
+}
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn list_accounts(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
 ) -> Result<Vec<String>, ()> {
-    // FIXME: unwraps.
     let database = database.lock().await;
     let accounts: Vec<Account> = database.select("account").await.unwrap();
 

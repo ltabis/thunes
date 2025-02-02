@@ -70,7 +70,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
-            // commands::account::get_account,
+            commands::account::get_account,
+            commands::account::update_account,
             commands::account::list_accounts,
             commands::account::get_transactions,
             commands::account::get_currency,

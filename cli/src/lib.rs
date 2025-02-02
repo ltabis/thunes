@@ -93,6 +93,22 @@ pub async fn balance(
     Ok(sum.unwrap_or(0.0))
 }
 
+pub async fn get_account(db: &Surreal<Db>, account: &str) -> Result<Account, Error> {
+    let x: Option<account::Account> = db.select(("account", format!(r#""{account}""#))).await?;
+
+    Ok(x.unwrap())
+}
+
+pub async fn update_account(db: &Surreal<Db>, account: Account) -> Result<(), Error> {
+    let _: Option<Record> = db
+        .update(("account", account.id.key().clone()))
+        .merge(account)
+        .await
+        .unwrap();
+
+    Ok(())
+}
+
 pub async fn add_transaction(
     db: &Surreal<Db>,
     account: &str,
