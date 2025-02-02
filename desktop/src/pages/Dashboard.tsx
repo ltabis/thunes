@@ -1,9 +1,10 @@
 import {
-  Box,
+  Card,
+  CardContent,
+  CardHeader,
   Divider,
   Paper,
   Skeleton,
-  Stack,
   Typography,
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts";
@@ -11,8 +12,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { CurrencyBalance } from "../../../cli/bindings/CurrencyBalance";
 import Grid from "@mui/material/Grid2";
+import { useNavigate } from "react-router-dom";
+import { useDispatchAccount } from "../contexts/Account";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const dispatch = useDispatchAccount()!;
   const [currencies, setCurrencies] = useState<CurrencyBalance[] | null>(null);
 
   const getBalances = async () =>
@@ -26,42 +31,57 @@ export default function Dashboard() {
 
   return (
     <Paper elevation={0} sx={{ height: "100%" }}>
-      {/* TODO: Go to account on click */}
       <Typography variant="h2" sx={{ m: 2 }}>
-        Overview
+        Portfolio
       </Typography>
 
       <Divider></Divider>
 
       {currencies ? (
         <Grid container spacing={2} sx={{ m: 2 }}>
-          {currencies.map(({ currency, accounts }) => (
-            <Box key={currency} flexGrow={1}>
-              <Typography variant="h4">{currency}</Typography>
-              <PieChart
-                width={400}
-                height={300}
-                slotProps={{
-                  legend: { hidden: true },
-                }}
-                series={[
-                  {
-                    data: accounts.map(({ account, balance }) => ({
-                      value: balance,
-                      label: account.name,
-                    })),
-                    innerRadius: 30,
-                    outerRadius: 100,
-                    paddingAngle: 5,
-                    cornerRadius: 5,
-                    arcLabelMinAngle: 35,
-                    arcLabel: (item) => item.label ?? "",
-                    valueFormatter: (item) =>
-                      `${item.value.toFixed(2)} ${currency}`,
-                  },
-                ]}
+          {currencies.map(({ total_balance, currency, accounts }) => (
+            <Card key={currency} variant="outlined">
+              <CardHeader
+                title={currency}
+                action={
+                  <Typography variant="subtitle1">
+                    {total_balance.toFixed(2)} {currency}
+                  </Typography>
+                }
               />
-            </Box>
+              <CardContent>
+                <PieChart
+                  width={400}
+                  height={300}
+                  slotProps={{
+                    legend: { hidden: true },
+                  }}
+                  series={[
+                    {
+                      data: accounts.map(({ account, balance }) => ({
+                        value: balance,
+                        label: account.name,
+                      })),
+                      innerRadius: 30,
+                      outerRadius: 100,
+                      paddingAngle: 5,
+                      cornerRadius: 5,
+                      arcLabelMinAngle: 35,
+                      arcLabel: (item) => item.label ?? "",
+                      valueFormatter: (item) =>
+                        `${item.value.toFixed(2)} ${currency}`,
+                    },
+                  ]}
+                  onItemClick={(_event, account) => {
+                    dispatch({
+                      type: "select",
+                      account: accounts[account.dataIndex].account.name,
+                    });
+                    navigate("/account");
+                  }}
+                />
+              </CardContent>
+            </Card>
           ))}
         </Grid>
       ) : (

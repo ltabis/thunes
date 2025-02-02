@@ -168,12 +168,14 @@ pub struct AccountWithBalance {
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct CurrencyBalance {
     pub currency: String,
+    pub total_balance: f64,
     pub accounts: Vec<AccountWithBalance>,
 }
 
 pub async fn balances_by_currency(db: &Surreal<Db>) -> Result<Vec<CurrencyBalance>, Error> {
     let query = r#"
         SELECT 
+            math::sum(balance) as total_balance,
             array::group([{account: account, balance: balance}]) as accounts,
             account.currency as currency
         FROM (
