@@ -2,12 +2,14 @@ use surrealdb::{engine::local::Db, RecordId, Surreal};
 
 use crate::Error;
 
-#[derive(ts_rs::TS)]
+#[derive(ts_rs::TS, Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[ts(export)]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Data {
     pub name: String,
     pub currency: String,
+    /// Save grid sorting state.
+    #[serde(default)]
+    pub transaction_grid_sort_model: serde_json::Value,
 }
 
 #[derive(ts_rs::TS)]
@@ -31,6 +33,7 @@ impl Account {
             .content(Data {
                 name: name.into(),
                 currency: currency.into(),
+                transaction_grid_sort_model: serde_json::value::Value::Null,
             })
             .await
             .map_err(core::convert::Into::into)

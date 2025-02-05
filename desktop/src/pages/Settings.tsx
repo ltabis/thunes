@@ -18,7 +18,7 @@ export default function Settings() {
     <>
       <Paper elevation={0}>
         <FormControl>
-          <InputLabel id="demo-simple-select-label">Theme</InputLabel>
+          <InputLabel id="theme-select">Theme</InputLabel>
           <Select
             labelId="demo-simple-select-label"
             id="demo-simple-select"
