@@ -31,8 +31,7 @@ export function Layout() {
   const [accounts, setAccounts] = useState<string[]>();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-  // FIXME: change me back to 0.
-  const [tab, setTab] = useState(1);
+  const [tab, setTab] = useState(0);
 
   const handleClickAccount = (event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
