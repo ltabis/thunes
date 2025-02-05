@@ -37,6 +37,7 @@ import {
 import { EditTags } from "./Tags";
 import { Tag } from "../../../../cli/bindings/Tag";
 import { Account } from "../../../../cli/bindings/Account";
+import { SparkLineChart } from "@mui/x-charts";
 
 const filterFloat = (value: string) =>
   /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value.replace(",", "."))
@@ -269,6 +270,24 @@ export default function Transactions() {
 
       {transactions ? (
         <Box sx={{ height: 600, width: "100%" }}>
+          <SparkLineChart
+            data={(() => {
+              let sum = 0;
+              return transactions.map((t) => {
+                sum += t.amount;
+                return sum;
+              });
+            })()}
+            valueFormatter={(value: number | null) =>
+              `${value?.toFixed(2)} ${currency}`
+            }
+            showHighlight
+            showTooltip
+            height={100}
+            // xAxis={{
+            //   data: transactions.map((t) => t.date),
+            // }}
+          />
           <DataGrid
             rows={transactions}
             columns={columns}

@@ -166,6 +166,8 @@ pub async fn get_transactions(
         query.push_str(&format!(" AND date < {end}"));
     }
 
+    query.push_str(" ORDER BY date");
+
     let transactions: Vec<TransactionWithId> = db.query(query).await.unwrap().take(0).unwrap();
 
     Ok(transactions)
