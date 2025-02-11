@@ -8,12 +8,12 @@ import {
   Typography,
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts";
-import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { CurrencyBalance } from "../../../cli/bindings/CurrencyBalance";
 import Grid from "@mui/material/Grid2";
 import { useNavigate } from "react-router-dom";
 import { useDispatchAccount } from "../contexts/Account";
+import { getAllBalance } from "../api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -21,8 +21,8 @@ export default function Dashboard() {
   const [currencies, setCurrencies] = useState<CurrencyBalance[] | null>(null);
 
   const getBalances = async () =>
-    invoke("get_all_balance")
-      .then((balances) => setCurrencies(balances as CurrencyBalance[]))
+    getAllBalance()
+      .then(setCurrencies)
       .catch((error) => console.error("failed to get balances", error));
 
   useEffect(() => {

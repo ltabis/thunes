@@ -19,9 +19,8 @@ import React, { useEffect } from "react";
 import Settings from "./pages/Settings";
 import { darkTheme, lightTheme } from "./Themes";
 import { useDispatchSettings, useSettings } from "./contexts/Settings";
-import { invoke } from "@tauri-apps/api/core";
-import { Settings as AppSettings } from "../../cli/bindings/Settings";
 import { AccountProvider } from "./contexts/Account";
+import { getSettings } from "./api";
 
 function Layout() {
   const settings = useSettings();
@@ -48,10 +47,8 @@ function Layout() {
   ];
 
   useEffect(() => {
-    invoke("get_settings")
-      .then((newSettings) => {
-        dispatch({ type: "update", settings: newSettings as AppSettings });
-      })
+    getSettings()
+      .then((settings) => dispatch({ type: "update", settings }))
       .catch((error) => {
         console.error(error);
       });

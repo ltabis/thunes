@@ -14,7 +14,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { invoke } from "@tauri-apps/api/core";
 import {
   FormEvent,
   useEffect,
@@ -38,6 +37,16 @@ import { EditTags } from "./Tags";
 import { Tag } from "../../../../cli/bindings/Tag";
 import { Account } from "../../../../cli/bindings/Account";
 import { SparkLineChart } from "@mui/x-charts";
+import {
+  addTags,
+  addTransaction,
+  getAccount,
+  getBalance,
+  getCurrency,
+  getTransactions,
+  updateAccount,
+  updateTransaction,
+} from "../../api";
 
 const filterFloat = (value: string) =>
   /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value.replace(",", "."))
@@ -47,11 +56,11 @@ const filterFloat = (value: string) =>
 function AddTransaction({
   open,
   setOpen,
-  updateTransactions,
+  handleUpdateTransactions,
 }: {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  updateTransactions: (account: string) => void;
+  handleUpdateTransactions: (account: string) => void;
 }) {
   const account = useAccount()!;
   // Note: omit amount float value to enable the user to enter a floating point character.
@@ -72,10 +81,13 @@ function AddTransaction({
   const handleTransactionSubmission = async () => {
     const amount = filterFloat(form.amount);
 
-    invoke("add_transaction", { account, ...form, amount })
+    addTransaction(account, {
+      ...form,
+      amount,
+    })
       .then(() => {
         handleCloseForm();
-        updateTransactions(account);
+        handleUpdateTransactions(account);
       })
       .catch((error) => console.error(error));
   };
@@ -145,7 +157,7 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
 
   const handleChange = (newTags: Tag[]) => {
     // FIXME: only add new tags.
-    invoke("add_tags", { tags: newTags }).catch((error) =>
+    addTags(newTags).catch((error) =>
       // FIXME: show error to client.
       console.error("failed to store tags", error)
     );
@@ -163,6 +175,9 @@ export default function Transactions() {
   const [transactions, setTransactions] = useState<TransactionWithId[] | null>(
     null
   );
+  const [sparklineTransactions, setSparklineTransactions] = useState<
+    TransactionWithId[] | null
+  >(null);
   const [balance, setBalance] = useState(0.0);
 
   const columns: GridColDef[] = [
@@ -221,42 +236,35 @@ export default function Transactions() {
     setOpen(true);
   };
 
-  const handleRowUpdate = (newRow: TransactionWithId) => {
-    invoke("update_transaction", { transaction: newRow });
-    updateTransactions(accountName);
-    return newRow;
+  const handleRowUpdate = (transaction: TransactionWithId) => {
+    updateTransaction(transaction);
+    handleUpdateTransactions(accountName);
+    return transaction;
   };
 
-  const updateTransactions = (account: string) => {
-    invoke("get_transactions", { account }).then((transactions) =>
-      setTransactions(transactions as TransactionWithId[])
-    );
-    invoke("get_currency", { account }).then((currency) =>
-      setCurrency(currency as string)
-    );
-    invoke("get_balance", { account }).then((balance) =>
-      setBalance(balance as number)
-    );
+  const handleUpdateTransactions = (account: string) => {
+    getTransactions(account).then(setTransactions);
+    // TODO: last 30 days.
+    getTransactions(account).then(setSparklineTransactions);
+    getCurrency(account).then(setCurrency);
+    getBalance(account).then(setBalance);
   };
 
+  const handleSortModelChange = (sortModel: GridSortModel) =>
+    updateAccount({
+      // FIXME: remove unnecessary casting.
+      ...(account as Account),
+      transaction_grid_sort_model: JSON.stringify(sortModel),
+    });
   useEffect(() => {
-    updateTransactions(accountName);
+    handleUpdateTransactions(accountName);
   }, [accountName]);
 
   useEffect(() => {
-    invoke("get_account", { account: accountName })
-      .then((account) => setAccount(account as Account))
+    getAccount(accountName)
+      .then(setAccount)
       .catch((error) => console.error(error));
   }, [accountName]);
-
-  const handleSortModelChange = (sortModel: GridSortModel) => {
-    invoke("update_account", {
-      account: {
-        ...account,
-        transaction_grid_sort_model: sortModel,
-      },
-    });
-  };
 
   return (
     <Paper elevation={0}>
@@ -273,7 +281,8 @@ export default function Transactions() {
           <SparkLineChart
             data={(() => {
               let sum = 0;
-              return transactions.map((t) => {
+              // FIXME: Last 30 days.
+              return transactions.slice(-30).map((t) => {
                 sum += t.amount;
                 return sum;
               });
@@ -334,7 +343,7 @@ export default function Transactions() {
       <AddTransaction
         open={open}
         setOpen={setOpen}
-        updateTransactions={updateTransactions}
+        handleUpdateTransactions={handleUpdateTransactions}
       />
     </Paper>
   );

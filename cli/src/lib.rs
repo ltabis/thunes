@@ -58,10 +58,15 @@ pub async fn init_db(
     db
 }
 
+#[derive(ts_rs::TS)]
+#[ts(export)]
 #[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BalanceOptions {
+    #[ts(as = "Option<String>", optional)]
     pub period_start: Option<surrealdb::Datetime>,
+    #[ts(as = "Option<String>", optional)]
     pub period_end: Option<surrealdb::Datetime>,
+    #[ts(optional)]
     pub tag: Option<String>,
 }
 
@@ -109,22 +114,31 @@ pub async fn update_account(db: &Surreal<Db>, account: Account) -> Result<(), Er
     Ok(())
 }
 
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Default, Debug, serde::Deserialize)]
+pub struct AddTransactionOptions {
+    pub amount: f64,
+    pub description: String,
+    pub tags: Vec<Tag>,
+}
+
 pub async fn add_transaction(
     db: &Surreal<Db>,
     account: &str,
-    amount: f64,
-    description: String,
-    tags: Vec<Tag>,
+    options: AddTransactionOptions,
 ) -> Result<(), Error> {
     let query = format!(
         r#"
     CREATE transaction SET
         date = time::now(),
-        amount = {amount},
-        description = "{description}",
+        amount = {},
+        description = "{}",
         tags = {},
         account = account:`"{account}"`"#,
-        serde_json::json!(tags),
+        options.amount,
+        options.description,
+        serde_json::json!(options.tags),
     );
 
     db.query(query).await?;
@@ -145,16 +159,20 @@ pub async fn update_transaction(
     Ok(())
 }
 
-#[derive(Default)]
-pub struct TransactionOptions {
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Default, Debug, serde::Deserialize)]
+pub struct GetTransactionOptions {
+    #[ts(as = "String")]
     pub start: Option<surrealdb::Datetime>,
+    #[ts(as = "String")]
     pub end: Option<surrealdb::Datetime>,
 }
 
 pub async fn get_transactions(
     db: &Surreal<Db>,
     account: &str,
-    options: TransactionOptions,
+    options: GetTransactionOptions,
 ) -> Result<Vec<TransactionWithId>, Error> {
     let mut query = format!(r#"SELECT * FROM transaction WHERE account = account:`"{account}"`"#);
 
@@ -207,4 +225,12 @@ pub async fn balances_by_currency(db: &Surreal<Db>) -> Result<Vec<CurrencyBalanc
         GROUP BY currency"#;
 
     db.query(query).await?.take(0).map_err(|error| error.into())
+}
+
+pub async fn add_tags(db: &Surreal<Db>, tags: Vec<Tag>) -> Result<(), String> {
+    for tag in tags {
+        let _: Option<Record> = db.upsert(("tag", &tag.label)).content(tag).await.unwrap();
+    }
+
+    Ok(())
 }

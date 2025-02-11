@@ -13,7 +13,6 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { useAccount, useDispatchAccount } from "../contexts/Account";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -21,6 +20,7 @@ import Transactions from "./account/Transactions";
 import Details from "./account/Details";
 import { MouseEvent, SyntheticEvent } from "react";
 import Settings from "./account/Settings";
+import { listAccountNames } from "../api";
 
 export function Layout() {
   // TODO: generalize Snackbar errors.
@@ -63,8 +63,8 @@ export function Layout() {
   };
 
   useEffect(() => {
-    invoke("list_accounts")
-      .then((newAccounts) => setAccounts(newAccounts as string[]))
+    listAccountNames()
+      .then(setAccounts)
       .catch((error) => setOpenFailure(error));
   }, []);
 

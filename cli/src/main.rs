@@ -2,6 +2,7 @@ use clap::Parser;
 use clap::Subcommand;
 use tunes_cli::account::Account;
 use tunes_cli::transaction::Tag;
+use tunes_cli::AddTransactionOptions;
 use tunes_cli::BalanceOptions;
 
 #[derive(Debug)]
@@ -97,14 +98,17 @@ impl Commands {
             } => tunes_cli::add_transaction(
                 &db,
                 &account,
-                amount,
-                description,
-                tags.into_iter()
-                    .map(|tag| Tag {
-                        label: tag.clone(),
-                        color: None,
-                    })
-                    .collect(),
+                AddTransactionOptions {
+                    amount,
+                    description,
+                    tags: tags
+                        .into_iter()
+                        .map(|tag| Tag {
+                            label: tag.clone(),
+                            color: None,
+                        })
+                        .collect(),
+                },
             )
             .await
             .map_err(|err| err.into()),
@@ -117,14 +121,17 @@ impl Commands {
             } => tunes_cli::add_transaction(
                 &db,
                 &account,
-                -amount,
-                description,
-                tags.into_iter()
-                    .map(|tag| Tag {
-                        label: tag.clone(),
-                        color: None,
-                    })
-                    .collect(),
+                AddTransactionOptions {
+                    amount: -amount,
+                    description,
+                    tags: tags
+                        .into_iter()
+                        .map(|tag| Tag {
+                            label: tag.clone(),
+                            color: None,
+                        })
+                        .collect(),
+                },
             )
             .await
             .map_err(|err| err.into()),
