@@ -25,7 +25,6 @@ export function EditTags({ value, handleChange }: EditTagsProps) {
 
   return (
     <Autocomplete
-      fullWidth
       multiple
       selectOnFocus
       handleHomeEndKeys
@@ -34,7 +33,6 @@ export function EditTags({ value, handleChange }: EditTagsProps) {
       disableCloseOnSelect
       value={value}
       options={tags}
-      sx={{ width: 300 }}
       renderInput={(params) => <TextField {...params} label="Tags" />}
       renderOption={(props, option) => {
         const { key, id, ...optionProps } = props;

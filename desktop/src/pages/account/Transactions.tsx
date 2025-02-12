@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogTitle,
   Fab,
+  Grid2,
   ListItem,
   Paper,
   Skeleton,
@@ -110,43 +111,49 @@ function AddTransaction({
     >
       <DialogTitle>Add transaction</DialogTitle>
       <DialogContent>
-        <TextField
-          sx={{ m: 1 }}
-          id="transaction-amount"
-          label="Amount"
-          name="amount"
-          slotProps={{
-            inputLabel: {
-              shrink: true,
-            },
-          }}
-          value={form.amount}
-          onChange={(amount) =>
-            setForm({ ...form, amount: amount.target.value })
-          }
-          error={handleValidAmount()}
-          helperText={handleValidAmount() && "Not a valid amount"}
-          fullWidth
-        />
-        <TextField
-          sx={{ m: 1 }}
-          id="transaction-description"
-          label="Description"
-          name="description"
-          value={form.description}
-          onChange={(description) =>
-            setForm({ ...form, description: description.target.value })
-          }
-          fullWidth
-        />
-        <DatePicker
-          value={form.date}
-          onChange={(date) => setForm({ ...form, date: date as Dayjs })}
-        />
-        <EditTags
-          value={form.tags}
-          handleChange={(tags) => setForm({ ...form, tags })}
-        />
+        <Grid2 container spacing={2} sx={{ margin: 1 }}>
+          <Grid2 size={5}>
+            <TextField
+              id="transaction-description"
+              label="Description"
+              name="description"
+              value={form.description}
+              onChange={(description) =>
+                setForm({ ...form, description: description.target.value })
+              }
+            />
+          </Grid2>
+          <Grid2 size={3}>
+            <TextField
+              id="transaction-amount"
+              label="Amount"
+              name="amount"
+              slotProps={{
+                inputLabel: {
+                  shrink: true,
+                },
+              }}
+              value={form.amount}
+              onChange={(amount) =>
+                setForm({ ...form, amount: amount.target.value })
+              }
+              error={handleValidAmount()}
+              helperText={handleValidAmount() && "Not a valid amount"}
+            />
+          </Grid2>
+          <Grid2 size={5}>
+            <DatePicker
+              value={form.date}
+              onChange={(date) => setForm({ ...form, date: date as Dayjs })}
+            />
+          </Grid2>
+          <Grid2 size={3}>
+            <EditTags
+              value={form.tags}
+              handleChange={(tags) => setForm({ ...form, tags })}
+            />
+          </Grid2>
+        </Grid2>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCloseForm}>Cancel</Button>
