@@ -121,6 +121,8 @@ pub struct AddTransactionOptions {
     pub amount: f64,
     pub description: String,
     pub tags: Vec<Tag>,
+    #[ts(as = "Option<String>", optional)]
+    pub date: Option<surrealdb::Datetime>,
 }
 
 pub async fn add_transaction(
@@ -131,11 +133,15 @@ pub async fn add_transaction(
     let query = format!(
         r#"
     CREATE transaction SET
-        date = time::now(),
+        date = {},
         amount = {},
         description = "{}",
         tags = {},
         account = account:`"{account}"`"#,
+        options
+            .date
+            .map(|date| date.to_string())
+            .unwrap_or_else(|| "time::now()".to_string()),
         options.amount,
         options.description,
         serde_json::json!(options.tags),

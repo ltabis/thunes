@@ -47,6 +47,8 @@ import {
   updateAccount,
   updateTransaction,
 } from "../../api";
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs, { Dayjs } from "dayjs";
 
 const filterFloat = (value: string) =>
   /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value.replace(",", "."))
@@ -65,11 +67,12 @@ function AddTransaction({
   const account = useAccount()!;
   // Note: omit amount float value to enable the user to enter a floating point character.
   const [form, setForm] = useState<
-    Omit<Transaction, "amount" | "date"> & { amount: string }
+    Omit<Transaction, "amount" | "date"> & { amount: string; date: Dayjs }
   >({
     amount: "0",
     description: "",
     tags: [],
+    date: dayjs(),
   });
 
   const handleCloseForm = () => {
@@ -84,6 +87,7 @@ function AddTransaction({
     addTransaction(account, {
       ...form,
       amount,
+      date: form.date.toISOString(),
     })
       .then(() => {
         handleCloseForm();
@@ -134,6 +138,10 @@ function AddTransaction({
             setForm({ ...form, description: description.target.value })
           }
           fullWidth
+        />
+        <DatePicker
+          value={form.date}
+          onChange={(date) => setForm({ ...form, date: date as Dayjs })}
         />
         <EditTags
           value={form.tags}
@@ -223,6 +231,7 @@ export default function Transactions() {
       renderEditCell: (params) => <EditTagsTable {...params} />,
       editable: true,
     },
+    // TODO: add color
     { field: "amount", headerName: "Amount", type: "number", editable: true },
   ];
 
@@ -319,13 +328,14 @@ export default function Transactions() {
             onProcessRowUpdateError={(error) =>
               console.error("update error", error)
             }
-            sortModel={
-              // Cast to undefined in case the model is null since `sortModel`
-              // does not handle null.
-              (account?.transaction_grid_sort_model ?? undefined) as
-                | GridSortModel
-                | undefined
-            }
+            // FIXME: add sort model back
+            // sortModel={
+            //   // Cast to undefined in case the model is null since `sortModel`
+            //   // does not handle null.
+            //   (account?.transaction_grid_sort_model ?? undefined) as
+            //     | GridSortModel
+            //     | undefined
+            // }
             onSortModelChange={handleSortModelChange}
           />
         </Box>

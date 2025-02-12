@@ -21,6 +21,8 @@ import { darkTheme, lightTheme } from "./Themes";
 import { useDispatchSettings, useSettings } from "./contexts/Settings";
 import { AccountProvider } from "./contexts/Account";
 import { getSettings } from "./api";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 function Layout() {
   const settings = useSettings();
@@ -55,48 +57,52 @@ function Layout() {
   }, [dispatch]);
 
   return (
-    <ThemeProvider theme={settings?.theme === "dark" ? darkTheme : lightTheme}>
-      <CssBaseline />
-      <AccountProvider>
-        <Box sx={{ display: "flex" }}>
-          <Drawer
-            sx={{
-              width: drawerWidth,
-              flexShrink: 0,
-              "& .MuiDrawer-paper": {
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <ThemeProvider
+        theme={settings?.theme === "dark" ? darkTheme : lightTheme}
+      >
+        <CssBaseline />
+        <AccountProvider>
+          <Box sx={{ display: "flex" }}>
+            <Drawer
+              sx={{
                 width: drawerWidth,
-                boxSizing: "border-box",
-              },
-            }}
-            variant="permanent"
-            anchor="left"
-          >
-            <List>
-              {items.map((item) => (
-                <ListItem
-                  key={item.label}
-                  disablePadding
-                  sx={{ display: "block" }}
-                >
-                  <ListItemButton onClick={() => navigate(item.path)}>
-                    <ListItemIcon>
-                      {React.createElement(item.icon)}
-                    </ListItemIcon>
-                    <ListItemText primary={item.label} />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
-          </Drawer>
-          <Box
-            component="main"
-            sx={{ flexGrow: 1, bgcolor: "background.default", p: 3 }}
-          >
-            <Outlet></Outlet>
+                flexShrink: 0,
+                "& .MuiDrawer-paper": {
+                  width: drawerWidth,
+                  boxSizing: "border-box",
+                },
+              }}
+              variant="permanent"
+              anchor="left"
+            >
+              <List>
+                {items.map((item) => (
+                  <ListItem
+                    key={item.label}
+                    disablePadding
+                    sx={{ display: "block" }}
+                  >
+                    <ListItemButton onClick={() => navigate(item.path)}>
+                      <ListItemIcon>
+                        {React.createElement(item.icon)}
+                      </ListItemIcon>
+                      <ListItemText primary={item.label} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
+            </Drawer>
+            <Box
+              component="main"
+              sx={{ flexGrow: 1, bgcolor: "background.default", p: 3 }}
+            >
+              <Outlet></Outlet>
+            </Box>
           </Box>
-        </Box>
-      </AccountProvider>
-    </ThemeProvider>
+        </AccountProvider>
+      </ThemeProvider>
+    </LocalizationProvider>
   );
 }
 

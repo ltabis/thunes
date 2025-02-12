@@ -108,6 +108,7 @@ impl Commands {
                             color: None,
                         })
                         .collect(),
+                    date: None,
                 },
             )
             .await
@@ -131,6 +132,7 @@ impl Commands {
                             color: None,
                         })
                         .collect(),
+                    date: None,
                 },
             )
             .await
