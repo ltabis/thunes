@@ -8,6 +8,8 @@ import { BalanceOptions } from "../../../cli/bindings/BalanceOptions";
 import { Settings } from "../../../cli/bindings/Settings";
 import { CurrencyBalance } from "../../../cli/bindings/CurrencyBalance";
 
+// TODO: could this be automated ?
+
 // Transactions.
 export const getCurrency = (accountName: string): Promise<string> => invoke("get_currency", { accountName });
 export const getBalance = (accountName: string, options?: BalanceOptions): Promise<number> => invoke("get_balance", { accountName, options });

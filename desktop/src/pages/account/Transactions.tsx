@@ -244,7 +244,6 @@ export default function Transactions() {
 
   const handleUpdateTransactions = (account: string) => {
     getTransactions(account).then(setTransactions);
-    // TODO: last 30 days.
     getTransactions(account).then(setSparklineTransactions);
     getCurrency(account).then(setCurrency);
     getBalance(account).then(setBalance);
@@ -276,13 +275,20 @@ export default function Transactions() {
         <Skeleton animation="wave" />
       )}
 
-      {transactions ? (
+      {transactions && sparklineTransactions ? (
         <Box sx={{ height: 600, width: "100%" }}>
           <SparkLineChart
+            // Sum account transaction until the last 30 days
+            // and display each account state every day.
             data={(() => {
-              let sum = 0;
-              // FIXME: Last 30 days.
-              return transactions.slice(-30).map((t) => {
+              const before = sparklineTransactions.slice(
+                0,
+                sparklineTransactions.length - 30
+              );
+              const after = sparklineTransactions.slice(-30);
+              let sum = before.reduce((acc, t) => acc + t.amount, 0);
+
+              return after.map((t) => {
                 sum += t.amount;
                 return sum;
               });
@@ -293,9 +299,14 @@ export default function Transactions() {
             showHighlight
             showTooltip
             height={100}
-            // xAxis={{
-            //   data: transactions.map((t) => t.date),
-            // }}
+            // TODO: add options to change the date range (1m, 5m, 1y, etc.)
+            xAxis={{
+              scaleType: "time",
+              data: sparklineTransactions
+                .slice(-30)
+                .map((t) => new Date(t.date)),
+              valueFormatter: (value) => value.toISOString().slice(0, 10),
+            }}
           />
           <DataGrid
             rows={transactions}

@@ -163,10 +163,14 @@ pub async fn update_transaction(
 #[ts(export)]
 #[derive(Default, Debug, serde::Deserialize)]
 pub struct GetTransactionOptions {
-    #[ts(as = "String")]
+    #[ts(as = "Option<String>", optional)]
     pub start: Option<surrealdb::Datetime>,
-    #[ts(as = "String")]
+    #[ts(as = "Option<String>", optional)]
     pub end: Option<surrealdb::Datetime>,
+    /// Get transactions dated in the last `last_x_days` days before today.
+    /// Cannot be combined with `start` and `end` options.
+    #[ts(optional)]
+    pub last_x_days: Option<usize>,
 }
 
 pub async fn get_transactions(
@@ -176,12 +180,18 @@ pub async fn get_transactions(
 ) -> Result<Vec<TransactionWithId>, Error> {
     let mut query = format!(r#"SELECT * FROM transaction WHERE account = account:`"{account}"`"#);
 
-    if let Some(start) = options.start {
-        query.push_str(&format!(" AND date > {start}"));
-    }
+    if let Some(last_x_days) = options.last_x_days {
+        query.push_str(&format!(
+            " AND date >= time::now() - {last_x_days}d AND date <= time::now()"
+        ));
+    } else {
+        if let Some(start) = options.start {
+            query.push_str(&format!(" AND date >= {start}"));
+        }
 
-    if let Some(end) = options.end {
-        query.push_str(&format!(" AND date < {end}"));
+        if let Some(end) = options.end {
+            query.push_str(&format!(" AND date <= {end}"));
+        }
     }
 
     query.push_str(" ORDER BY date");

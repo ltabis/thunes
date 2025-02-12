@@ -1,14 +1,15 @@
 {
-    "cSpell.words": [
-        "clickaway",
-        "fontsource",
-        "ltabis",
-        "rhai",
-        "rocksdb",
-        "serde",
-        "surrealdb",
-        "tauri",
-        "thiserror",
-        "tokio"
-    ]
+  "cSpell.words": [
+    "clickaway",
+    "fontsource",
+    "ltabis",
+    "rhai",
+    "rocksdb",
+    "serde",
+    "sparkline",
+    "surrealdb",
+    "tauri",
+    "thiserror",
+    "tokio"
+  ]
 }
