@@ -9,7 +9,7 @@ pub struct Data {
     pub currency: String,
     /// Save grid sorting state.
     #[serde(default)]
-    pub transaction_grid_sort_model: serde_json::Value,
+    pub transaction_grid_sort_model: Vec<serde_json::Value>,
 }
 
 #[derive(ts_rs::TS)]
@@ -33,7 +33,7 @@ impl Account {
             .content(Data {
                 name: name.into(),
                 currency: currency.into(),
-                transaction_grid_sort_model: serde_json::value::Value::Null,
+                transaction_grid_sort_model: vec![],
             })
             .await
             .map_err(core::convert::Into::into)

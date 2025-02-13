@@ -265,12 +265,18 @@ export default function Transactions() {
     getBalance(account).then(setBalance);
   };
 
-  const handleSortModelChange = (sortModel: GridSortModel) =>
-    updateAccount({
-      // FIXME: remove unnecessary casting.
-      ...(account as Account),
-      transaction_grid_sort_model: JSON.stringify(sortModel),
-    });
+  const handleSortModelChange = (sortModel: GridSortModel) => {
+    if (account) {
+      const newAccount = {
+        ...account,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transaction_grid_sort_model: sortModel as any,
+      };
+      setAccount(newAccount);
+      updateAccount(newAccount);
+    }
+  };
+
   useEffect(() => {
     handleUpdateTransactions(accountName);
   }, [accountName]);
@@ -335,14 +341,13 @@ export default function Transactions() {
             onProcessRowUpdateError={(error) =>
               console.error("update error", error)
             }
-            // FIXME: add sort model back
-            // sortModel={
-            //   // Cast to undefined in case the model is null since `sortModel`
-            //   // does not handle null.
-            //   (account?.transaction_grid_sort_model ?? undefined) as
-            //     | GridSortModel
-            //     | undefined
-            // }
+            sortModel={
+              // Cast to undefined in case the model is null since `sortModel`
+              // does not handle null.
+              (account?.transaction_grid_sort_model ?? undefined) as
+                | GridSortModel
+                | undefined
+            }
             onSortModelChange={handleSortModelChange}
           />
         </Box>
