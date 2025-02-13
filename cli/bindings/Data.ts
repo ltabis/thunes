@@ -5,4 +5,4 @@ export type Data = { name: string, currency: string,
 /**
  * Save grid sorting state.
  */
-transaction_grid_sort_model: JsonValue, };
+transaction_grid_sort_model: Array<JsonValue>, };

@@ -35,6 +35,10 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     path.push("store");
 
+    let mut data_dir = path_resolver.app_data_dir().expect("unknown app data path");
+
+    data_dir.push("backups");
+
     let db = tauri::async_runtime::block_on(tauri::async_runtime::spawn(async {
         let db: surrealdb::Surreal<surrealdb::engine::local::Db> = surrealdb::Surreal::init();
         db.connect::<surrealdb::engine::local::RocksDb>(path)
@@ -46,7 +50,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
         // FIXME: move db seeding to an install script.
         let result: Result<Option<Record>, surrealdb::Error> = db
             .insert(("settings", "main"))
-            .content(Settings::default())
+            .content(Settings::new(data_dir))
             .await;
 
         match result {
@@ -68,6 +72,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             commands::account::get_account,
@@ -83,6 +88,8 @@ pub fn run() {
             commands::tags::add_tags,
             commands::settings::get_settings,
             commands::settings::save_settings,
+            commands::settings::backup_export,
+            commands::settings::backup_import,
         ])
         .setup(setup)
         .run(tauri::generate_context!())

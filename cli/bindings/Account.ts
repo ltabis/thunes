@@ -5,4 +5,4 @@ export type Account = { id: { tb: string, id: { String: string }}, name: string,
 /**
  * Save grid sorting state.
  */
-transaction_grid_sort_model: JsonValue, };
+transaction_grid_sort_model: Array<JsonValue>, };

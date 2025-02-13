@@ -43,6 +43,7 @@ surrealdb = { version = "2.1.4", features = ["kv-rocksdb"] }
 tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread"] }
 tracing = { version = "0.1.41" }
 tracing-subscriber = { version = "0.3.19" }
+tauri-plugin-dialog = "2"
 
 [profile.release]
 incremental = false

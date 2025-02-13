@@ -29,3 +29,7 @@ export const getSettings = (): Promise<Settings> => invoke("get_settings");
 export const saveSettings = (settings: Settings): Promise<void> => invoke("save_settings", { settings });
 export const getTags = (): Promise<Tag[]> => invoke("get_tags");
 export const addTags = (tags: Tag[]): Promise<void> => invoke("add_tags", { tags });
+
+// Backups.
+export const ExportBackup = (): Promise<void> => invoke("backup_export");
+export const ImportBackup = (path: string): Promise<void> => invoke("backup_import", { path });

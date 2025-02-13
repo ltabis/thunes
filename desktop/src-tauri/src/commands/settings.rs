@@ -31,3 +31,47 @@ pub async fn save_settings(
 
     Ok(())
 }
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn backup_import(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    path: &str,
+) -> Result<(), String> {
+    let database = database.lock().await;
+
+    database
+        .import(path)
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn backup_export(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+) -> Result<(), String> {
+    let database = database.lock().await;
+    let settings: Settings = database
+        .select(("settings", "main"))
+        .await
+        .unwrap()
+        .unwrap();
+
+    let mut path = settings.backups_path;
+
+    let format =
+        time::format_description::parse("[year]-[month]-[day]T[hour]:[minute]:[second].surql")
+            .expect("format is not valid");
+
+    path.push(
+        time::OffsetDateTime::now_utc()
+            .format(&format)
+            .expect("failed to format"),
+    );
+
+    database
+        .export(path)
+        .await
+        .map_err(|error| error.to_string())
+}
