@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Divider,
   FormControl,
@@ -148,7 +149,7 @@ export default function Settings() {
         </Grid2>
         <Grid2 size={SETTINGS_GRID_PADDING}>
           <SettingDescription>
-            Import accounts from a file (<b>.surql</b> files)
+            Import accounts and settings from a <b>.surql</b> database file.
           </SettingDescription>
         </Grid2>
         <Grid2 size={5}>
@@ -169,8 +170,12 @@ export default function Settings() {
               }
             }}
           >
-            Import accounts
+            Import database
           </Button>
+          <Alert severity="warning">
+            Importing a database will override your current accounts and
+            settings.
+          </Alert>
         </Grid2>
       </SettingSection>
 
