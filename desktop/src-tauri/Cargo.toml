@@ -1,0 +1,53 @@
+[package]
+name = "tunes-desktop"
+version = "0.1.0"
+authors = ["ltabis <ltabis.pro@gmail.com>"]
+edition = "2021"
+description = "A cli to register and analyze monetary transactions"
+license-file = "./LICENSE"
+documentation = "https://docs.rs/"
+homepage = "https://github.com/ltabis/accounts-cli"
+repository = "https://github.com/ltabis/accounts-cli"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "tunes_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0.3", features = [] }
+
+[dependencies]
+tauri = { version = "2.1.1", features = [] }
+tauri-plugin-shell = "2.2.0"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = { version = "1.0.134" }
+toml = { version = "0.8.19" }
+clap = { version = "4.5.23", features = ["derive"] }
+time = { version = "0.3.37", features = [
+    "std",
+    "parsing",
+    "formatting",
+    "serde",
+] }
+time-macros = { version = "0.2.19", features = ["parsing"] }
+charts = "0.3.0"
+rhai-http = { version = "0.3.0" }
+rhai = { version = "1.20.1" }
+tunes-cli = { path = "../../cli" }
+surrealdb = { version = "2.1.4", features = ["kv-rocksdb"] }
+tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread"] }
+tracing = { version = "0.1.41" }
+tracing-subscriber = { version = "0.3.19" }
+tauri-plugin-dialog = "2"
+
+[profile.release]
+incremental = false
+codegen-units = 1
+panic = "abort"
+opt-level = "s"
+lto = true

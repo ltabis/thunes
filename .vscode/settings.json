@@ -1,6 +1,16 @@
 {
-    "cSpell.words": [
-        "rhai",
-        "thiserror"
-    ]
+  "cSpell.words": [
+    "clickaway",
+    "fontsource",
+    "ltabis",
+    "rhai",
+    "rocksdb",
+    "serde",
+    "sparkline",
+    "surql",
+    "surrealdb",
+    "tauri",
+    "thiserror",
+    "tokio"
+  ]
 }

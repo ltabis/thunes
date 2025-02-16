@@ -3,6 +3,12 @@ use rhai::plugin::*;
 
 use crate::transaction::TransactionRhai;
 
+#[derive(Clone, serde::Deserialize)]
+pub struct ScriptAccountBalance {
+    pub amount: rhai::FLOAT,
+    pub currency: String,
+}
+
 #[export_module]
 pub mod env {
     /// Get an environement variable by name.
@@ -123,7 +129,7 @@ pub mod prelude {
     }
 }
 
-pub fn build_engine(path: &std::path::PathBuf) -> rhai::Engine {
+pub fn build_engine(path: &std::path::Path) -> rhai::Engine {
     let mut engine = rhai::Engine::new();
 
     rhai_http::HttpPackage::new().register_into_engine(&mut engine);

@@ -1,0 +1,49 @@
+{
+  "name": "tunes",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@fontsource/roboto": "^5.1.0",
+    "@mui/icons-material": "^6.1.5",
+    "@mui/material": "^6.4.4",
+    "@mui/x-charts": "^7.23.0",
+    "@mui/x-data-grid": "^7.23.3",
+    "@mui/x-date-pickers": "^7.26.0",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "~2",
+    "@tauri-apps/plugin-shell": "^2",
+    "dayjs": "^1.11.13",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@tauri-apps/cli": "^2",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.3",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "jiti": "^2.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.2",
+    "vite": "^5.3.1",
+    "vite-plugin-eslint": "^1.8.1"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0"
+  }
+}
