@@ -32,8 +32,47 @@ import Transactions from "./account/Transactions";
 import Details from "./account/Details";
 import { MouseEvent, SyntheticEvent } from "react";
 import Settings from "./account/Settings";
-import { addAccount, listAccountNames } from "../api";
+import { addAccount, deleteAccount, listAccountNames } from "../api";
 import { Account } from "../../../cli/bindings/Account";
+
+function DeleteAccountDialog({
+  open,
+  setOpen,
+  handleUpdateAccounts,
+}: {
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  handleUpdateAccounts: (account: string) => void;
+}) {
+  const account = useAccount()!;
+  const dispatch = useDispatchAccount()!;
+
+  const handleCloseForm = () => {
+    setOpen(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    deleteAccount(account)
+      .then(() => {
+        handleCloseForm();
+        handleUpdateAccounts(account);
+        dispatch({ type: "select", account: "" });
+      })
+      .catch((error) => console.error(error));
+  };
+
+  return (
+    <Dialog open={open} onClose={handleCloseForm}>
+      <DialogTitle>
+        Are you sure you want to delete the {account} account ?
+      </DialogTitle>
+      <DialogActions>
+        <Button onClick={handleCloseForm}>Cancel</Button>
+        <Button onClick={handleDeleteAccount}>Delete</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 function AddAccountDialog({
   open,
@@ -45,7 +84,7 @@ function AddAccountDialog({
   handleUpdateAccounts: (account: string) => void;
 }) {
   const account = useAccount()!;
-  // Note: omit amount float value to enable the user to enter a floating point character.
+  const dispatch = useDispatchAccount()!;
   const [form, setForm] = useState<
     Omit<Account, "id" | "transaction_grid_sort_model">
   >({
@@ -62,6 +101,8 @@ function AddAccountDialog({
       .then(() => {
         handleCloseForm();
         handleUpdateAccounts(account);
+        // FIXME: does not work.
+        dispatch({ type: "select", account });
       })
       .catch((error) => console.error(error));
   };
@@ -123,19 +164,29 @@ export function Layout() {
   const selected = useAccount();
   const dispatch = useDispatchAccount()!;
 
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openFailure, setOpenFailure] = useState("");
   const [accounts, setAccounts] = useState<string[]>();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
+  const [accountAnchorEl, setAccountAnchorEl] = useState<null | HTMLElement>(
+    null
+  );
+  const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(
+    null
+  );
+
+  const openAccountMenu = Boolean(accountAnchorEl);
+  const openSettingsMenu = Boolean(settingsAnchorEl);
   const [tab, setTab] = useState(0);
 
-  const handleClickAccount = (event: MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
+  const handleClickAccount = (event: MouseEvent<HTMLElement>) =>
+    setAccountAnchorEl(event.currentTarget);
+  const handleClickSettings = (event: MouseEvent<HTMLElement>) =>
+    setSettingsAnchorEl(event.currentTarget);
 
   const handleClose = () => {
-    setAnchorEl(null);
+    setAccountAnchorEl(null);
+    setSettingsAnchorEl(null);
   };
 
   const handleSnackbarClose = (
@@ -177,9 +228,9 @@ export function Layout() {
             <>
               <Button
                 id="basic-button"
-                aria-controls={open ? "basic-menu" : undefined}
+                aria-controls={openAccountMenu ? "basic-menu" : undefined}
                 aria-haspopup="true"
-                aria-expanded={open ? "true" : undefined}
+                aria-expanded={openAccountMenu ? "true" : undefined}
                 onClick={handleClickAccount}
                 variant="contained"
               >
@@ -187,8 +238,8 @@ export function Layout() {
               </Button>
               <Menu
                 id="basic-menu"
-                anchorEl={anchorEl}
-                open={open}
+                anchorEl={accountAnchorEl}
+                open={openAccountMenu}
                 onClose={handleClose}
                 MenuListProps={{
                   "aria-labelledby": "basic-button",
@@ -226,9 +277,22 @@ export function Layout() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
 
           {/* TODO: account actions */}
-          <IconButton aria-label="delete">
+          <IconButton aria-label="delete" onClick={handleClickSettings}>
             <MoreVertIcon />
           </IconButton>
+          <Menu
+            id="settings-menu"
+            anchorEl={settingsAnchorEl}
+            open={openSettingsMenu}
+            onClose={handleClose}
+            MenuListProps={{
+              "aria-labelledby": "basic-button",
+            }}
+          >
+            <MenuItem onClick={() => setOpenDeleteDialog(true)}>
+              Delete
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 
@@ -267,6 +331,12 @@ export function Layout() {
       <AddAccountDialog
         open={openAddDialog}
         setOpen={setOpenAddDialog}
+        handleUpdateAccounts={handleUpdateAccounts}
+      />
+
+      <DeleteAccountDialog
+        open={openDeleteDialog}
+        setOpen={setOpenDeleteDialog}
         handleUpdateAccounts={handleUpdateAccounts}
       />
     </>

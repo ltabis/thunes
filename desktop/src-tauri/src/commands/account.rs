@@ -67,6 +67,19 @@ pub async fn add_account(
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn delete_account(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    account_name: &str,
+) -> Result<(), String> {
+    let database = database.lock().await;
+
+    tunes_cli::delete_account(&database, account_name)
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_balance(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account_name: &str,
