@@ -104,6 +104,38 @@ pub async fn get_account(db: &Surreal<Db>, account: &str) -> Result<Account, Err
     Ok(x.unwrap())
 }
 
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Default, Debug, serde::Deserialize)]
+pub struct AddAccountOptions {
+    pub name: String,
+    pub currency: String,
+}
+
+pub async fn add_account(db: &Surreal<Db>, options: AddAccountOptions) -> Result<Account, Error> {
+    let x: Option<account::Account> = db
+        .create(("account", format!(r#""{}""#, options.name)))
+        .content(serde_json::json!({
+            "name": options.name,
+            "currency": options.currency,
+            "transaction_grid_sort_model": []
+        }))
+        .await?;
+
+    Ok(x.unwrap())
+}
+
+pub async fn delete_account(db: &Surreal<Db>, account_name: &str) -> Result<(), Error> {
+    db.query(format!(
+        r#"
+    DELETE account WHERE id = account:`"{account_name}"`;
+    DELETE transaction WHERE account = account:`"{account_name}"`;"#
+    ))
+    .await
+    .map(|_| ())
+    .map_err(|error| error.into())
+}
+
 pub async fn update_account(db: &Surreal<Db>, account: Account) -> Result<(), Error> {
     let _: Option<Record> = db
         .update(("account", account.id.key().clone()))

@@ -30,7 +30,7 @@ function Layout() {
   const navigate = useNavigate();
   const drawerWidth = 240;
 
-  const items = [
+  const topItems = [
     {
       label: "Portfolio",
       icon: DashboardIcon,
@@ -41,6 +41,9 @@ function Layout() {
       icon: AccountBalanceWalletIcon,
       path: "/account",
     },
+  ];
+
+  const bottomItems = [
     {
       label: "Settings",
       icon: SettingsIcon,
@@ -76,8 +79,24 @@ function Layout() {
               variant="permanent"
               anchor="left"
             >
+              <List sx={{ flex: 2 }}>
+                {topItems.map((item) => (
+                  <ListItem
+                    key={item.label}
+                    disablePadding
+                    sx={{ display: "block" }}
+                  >
+                    <ListItemButton onClick={() => navigate(item.path)}>
+                      <ListItemIcon>
+                        {React.createElement(item.icon)}
+                      </ListItemIcon>
+                      <ListItemText primary={item.label} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
               <List>
-                {items.map((item) => (
+                {bottomItems.map((item) => (
                   <ListItem
                     key={item.label}
                     disablePadding
