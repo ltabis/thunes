@@ -56,7 +56,7 @@ const filterFloat = (value: string) =>
     ? Number(value.replace(",", "."))
     : NaN;
 
-function AddTransaction({
+function AddTransactionDialog({
   open,
   setOpen,
   handleUpdateTransactions,
@@ -101,11 +101,13 @@ function AddTransaction({
     <Dialog
       open={open}
       onClose={handleCloseForm}
-      PaperProps={{
-        component: "form",
-        onSubmit: async (event: FormEvent<HTMLFormElement>) => {
-          event.preventDefault();
-          return handleTransactionSubmission();
+      slotProps={{
+        paper: {
+          component: "form",
+          onSubmit: async (event: FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            return handleTransactionSubmission();
+          },
         },
       }}
     >
@@ -373,7 +375,7 @@ export default function Transactions() {
         <AddIcon />
       </Fab>
 
-      <AddTransaction
+      <AddTransactionDialog
         open={open}
         setOpen={setOpen}
         handleUpdateTransactions={handleUpdateTransactions}
