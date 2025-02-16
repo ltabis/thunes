@@ -3,7 +3,10 @@ use surrealdb::Surreal;
 use tauri::State;
 use tunes_cli::account::Account;
 use tunes_cli::transaction::TransactionWithId;
-use tunes_cli::{AddTransactionOptions, BalanceOptions, CurrencyBalance, GetTransactionOptions};
+use tunes_cli::{
+    AddAccountOptions, AddTransactionOptions, BalanceOptions, CurrencyBalance,
+    GetTransactionOptions,
+};
 
 pub type Accounts = std::collections::HashMap<String, Account>;
 
@@ -47,6 +50,19 @@ pub async fn list_accounts(
         .into_iter()
         .map(|account| account.data.name)
         .collect())
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn add_account(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    options: AddAccountOptions,
+) -> Result<Account, String> {
+    let database = database.lock().await;
+
+    tunes_cli::add_account(&database, options)
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]

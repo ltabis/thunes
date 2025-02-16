@@ -7,6 +7,7 @@ import { Account } from "../../../cli/bindings/Account";
 import { BalanceOptions } from "../../../cli/bindings/BalanceOptions";
 import { Settings } from "../../../cli/bindings/Settings";
 import { CurrencyBalance } from "../../../cli/bindings/CurrencyBalance";
+import { AddAccountOptions } from "../../../cli/bindings/AddAccountOptions";
 
 // TODO: could this be automated ?
 
@@ -21,6 +22,7 @@ export const updateTransaction = (transaction: TransactionWithId): Promise<void>
 // Accounts.
 export const listAccountNames = (): Promise<string[]> => invoke("list_accounts",);
 export const getAccount = (accountName: string): Promise<Account> => invoke("get_account", { accountName });
+export const addAccount = (options: AddAccountOptions): Promise<void> => invoke("add_account", { options });
 // TODO: Make this Partial<Account>
 export const updateAccount = (account: Account): Promise<void> => invoke("update_account", { account });
 
