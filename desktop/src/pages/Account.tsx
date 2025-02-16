@@ -104,6 +104,8 @@ export function Layout() {
                       {account}
                     </MenuItem>
                   ))}
+                <Divider />
+                <MenuItem>Create account</MenuItem>
               </Menu>
             </>
           ) : (
