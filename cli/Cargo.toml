@@ -18,9 +18,8 @@ codegen-units = 1
 
 [dependencies]
 serde = { version = "1.0.217", features = ["derive"] }
-serde_json = { version = "1.0.134" }
-toml = { version = "0.8.19" }
-clap = { version = "4.5.23", features = ["derive"] }
+serde_json = { version = "1.0.138" }
+clap = { version = "4.5.29", features = ["derive"] }
 time = { version = "0.3.37", features = [
     "std",
     "parsing",
@@ -31,5 +30,5 @@ time-macros = { version = "0.2.19", features = ["parsing"] }
 rhai-http = { version = "0.3.0" }
 rhai = { version = "1.20.1" }
 ts-rs = { version = "10.1.0", features = ["serde-json-impl"] }
-surrealdb = { version = "2.1.4", features = ["kv-rocksdb"] }
-tokio = { version = "1.42.0", features = ["macros", "rt-multi-thread"] }
+surrealdb = { version = "2.2.0", features = ["kv-rocksdb"] }
+tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread"] }

@@ -19,14 +19,14 @@ name = "tunes_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.0.3", features = [] }
+tauri-build = { version = "2.0.5", features = [] }
 
 [dependencies]
-tauri = { version = "2.1.1", features = [] }
+tauri = { version = "2.2.5", features = [] }
 tauri-plugin-shell = "2.2.0"
 serde = { version = "1.0.217", features = ["derive"] }
-serde_json = { version = "1.0.134" }
-toml = { version = "0.8.19" }
+serde_json = { version = "1.0.138" }
+toml = { version = "0.8.20" }
 clap = { version = "4.5.23", features = ["derive"] }
 time = { version = "0.3.37", features = [
     "std",
