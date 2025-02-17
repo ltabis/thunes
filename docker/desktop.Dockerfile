@@ -17,4 +17,4 @@ RUN apt update && apt install libwebkit2gtk-4.1-dev \
 RUN curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
 
 RUN ~/.cargo/bin/cargo build --release
-ENTRYPOINT "./target/release/tunes-desktop"
+ENTRYPOINT "./target/release/thunes-desktop"

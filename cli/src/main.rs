@@ -1,19 +1,19 @@
 use clap::Parser;
 use clap::Subcommand;
-use tunes_cli::account::Account;
-use tunes_cli::transaction::Tag;
-use tunes_cli::AddTransactionOptions;
-use tunes_cli::BalanceOptions;
+use thunes_cli::account::Account;
+use thunes_cli::transaction::Tag;
+use thunes_cli::AddTransactionOptions;
+use thunes_cli::BalanceOptions;
 
 #[derive(Debug)]
 pub enum Error {
-    Operation(tunes_cli::Error),
+    Operation(thunes_cli::Error),
     InvalidDate(time::error::Parse),
     ScriptEvaluation(Box<rhai::EvalAltResult>),
 }
 
-impl From<tunes_cli::Error> for Error {
-    fn from(value: tunes_cli::Error) -> Self {
+impl From<thunes_cli::Error> for Error {
+    fn from(value: thunes_cli::Error) -> Self {
         Self::Operation(value)
     }
 }
@@ -82,7 +82,7 @@ impl Commands {
     }
 
     pub async fn run(self, database_path: &str) -> Result<(), Error> {
-        let db = tunes_cli::init_db(database_path).await;
+        let db = thunes_cli::init_db(database_path).await;
 
         match self {
             Commands::New { name, currency } => Account::new(&db, &name, &currency)
@@ -95,7 +95,7 @@ impl Commands {
                 amount,
                 description,
                 tags,
-            } => tunes_cli::add_transaction(
+            } => thunes_cli::add_transaction(
                 &db,
                 &account,
                 AddTransactionOptions {
@@ -119,7 +119,7 @@ impl Commands {
                 amount,
                 description,
                 tags,
-            } => tunes_cli::add_transaction(
+            } => thunes_cli::add_transaction(
                 &db,
                 &account,
                 AddTransactionOptions {
@@ -139,7 +139,7 @@ impl Commands {
             .map_err(|err| err.into()),
 
             Commands::Balance { account, script: _ } => {
-                let balance = tunes_cli::balance(
+                let balance = thunes_cli::balance(
                     &db,
                     // TODO: multiple accounts.
                     account.unwrap().as_str(),

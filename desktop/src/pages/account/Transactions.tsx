@@ -80,7 +80,7 @@ function AddTransactionDialog({
     setOpen(false);
   };
 
-  const handleValidAmount = () => isNaN(parseFloat(form.amount));
+  const handleValidAmount = () => isNaN(filterFloat(form.amount));
 
   const handleTransactionSubmission = async () => {
     const amount = filterFloat(form.amount);

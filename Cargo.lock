@@ -6104,6 +6104,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "thunes-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "rhai",
+ "rhai-http",
+ "serde",
+ "serde_json",
+ "surrealdb",
+ "time",
+ "time-macros",
+ "tokio",
+ "ts-rs",
+]
+
+[[package]]
+name = "thunes-desktop"
+version = "0.1.0"
+dependencies = [
+ "charts",
+ "clap",
+ "rhai",
+ "rhai-http",
+ "serde",
+ "serde_json",
+ "surrealdb",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-shell",
+ "thunes-cli",
+ "time",
+ "time-macros",
+ "tokio",
+ "toml 0.8.20",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "time"
 version = "0.3.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6421,46 +6461,6 @@ dependencies = [
  "quote",
  "syn 2.0.87",
  "termcolor",
-]
-
-[[package]]
-name = "tunes-cli"
-version = "0.1.0"
-dependencies = [
- "clap",
- "rhai",
- "rhai-http",
- "serde",
- "serde_json",
- "surrealdb",
- "time",
- "time-macros",
- "tokio",
- "ts-rs",
-]
-
-[[package]]
-name = "tunes-desktop"
-version = "0.1.0"
-dependencies = [
- "charts",
- "clap",
- "rhai",
- "rhai-http",
- "serde",
- "serde_json",
- "surrealdb",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-shell",
- "time",
- "time-macros",
- "tokio",
- "toml 0.8.20",
- "tracing",
- "tracing-subscriber",
- "tunes-cli",
 ]
 
 [[package]]

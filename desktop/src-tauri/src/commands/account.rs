@@ -1,9 +1,9 @@
 use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tauri::State;
-use tunes_cli::account::Account;
-use tunes_cli::transaction::TransactionWithId;
-use tunes_cli::{
+use thunes_cli::account::Account;
+use thunes_cli::transaction::TransactionWithId;
+use thunes_cli::{
     AddAccountOptions, AddTransactionOptions, BalanceOptions, CurrencyBalance,
     GetTransactionOptions,
 };
@@ -20,7 +20,7 @@ pub async fn get_account(
     account_name: &str,
 ) -> Result<Account, String> {
     let database = database.lock().await;
-    tunes_cli::get_account(&database, account_name)
+    thunes_cli::get_account(&database, account_name)
         .await
         .map_err(|error| error.to_string())
 }
@@ -33,7 +33,7 @@ pub async fn update_account(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    tunes_cli::update_account(&database, account)
+    thunes_cli::update_account(&database, account)
         .await
         .map_err(|error| error.to_string())
 }
@@ -60,7 +60,7 @@ pub async fn add_account(
 ) -> Result<Account, String> {
     let database = database.lock().await;
 
-    tunes_cli::add_account(&database, options)
+    thunes_cli::add_account(&database, options)
         .await
         .map_err(|error| error.to_string())
 }
@@ -73,7 +73,7 @@ pub async fn delete_account(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    tunes_cli::delete_account(&database, account_name)
+    thunes_cli::delete_account(&database, account_name)
         .await
         .map_err(|error| error.to_string())
 }
@@ -86,7 +86,7 @@ pub async fn get_balance(
     options: Option<BalanceOptions>,
 ) -> Result<f64, ()> {
     let database = database.lock().await;
-    tunes_cli::balance(&database, account_name, options.unwrap_or_default())
+    thunes_cli::balance(&database, account_name, options.unwrap_or_default())
         .await
         .map_err(|_| ())
 }
@@ -97,7 +97,7 @@ pub async fn get_all_balance(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
 ) -> Result<Vec<CurrencyBalance>, String> {
     let database = database.lock().await;
-    tunes_cli::balances_by_currency(&database)
+    thunes_cli::balances_by_currency(&database)
         .await
         .map_err(|error| error.to_string())
 }
@@ -127,7 +127,7 @@ pub async fn get_transactions(
 ) -> Result<Vec<TransactionWithId>, String> {
     let database = database.lock().await;
 
-    tunes_cli::get_transactions(&database, account_name, options.unwrap_or_default())
+    thunes_cli::get_transactions(&database, account_name, options.unwrap_or_default())
         .await
         .map_err(|error| error.to_string())
 }
@@ -141,7 +141,7 @@ pub async fn add_transaction(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    tunes_cli::add_transaction(&database, account_name, options)
+    thunes_cli::add_transaction(&database, account_name, options)
         .await
         .map_err(|error| error.to_string())
 }
@@ -154,7 +154,7 @@ pub async fn update_transaction(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    tunes_cli::update_transaction(&database, transaction)
+    thunes_cli::update_transaction(&database, transaction)
         .await
         .map_err(|error| error.to_string())
 }

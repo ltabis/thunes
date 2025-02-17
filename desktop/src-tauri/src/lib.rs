@@ -1,5 +1,5 @@
 use tauri::{App, Manager};
-use tunes_cli::{settings::Settings, Record};
+use thunes_cli::{settings::Settings, Record};
 
 pub mod commands {
     pub mod account;

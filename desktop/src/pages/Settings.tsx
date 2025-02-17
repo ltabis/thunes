@@ -159,7 +159,7 @@ export default function Settings() {
               const path = await open({
                 filters: [
                   {
-                    name: "Tunes database file",
+                    name: "thunes database file",
                     extensions: ["surql"],
                   },
                 ],

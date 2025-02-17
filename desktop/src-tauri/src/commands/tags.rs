@@ -1,7 +1,7 @@
 use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tauri::State;
-use tunes_cli::transaction::Tag;
+use thunes_cli::transaction::Tag;
 
 #[tauri::command]
 pub async fn get_tags(
@@ -20,5 +20,5 @@ pub async fn add_tags(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    tunes_cli::add_tags(&database, tags).await
+    thunes_cli::add_tags(&database, tags).await
 }

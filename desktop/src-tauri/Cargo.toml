@@ -1,5 +1,5 @@
 [package]
-name = "tunes-desktop"
+name = "thunes-desktop"
 version = "0.1.0"
 authors = ["ltabis <ltabis.pro@gmail.com>"]
 edition = "2021"
@@ -15,7 +15,7 @@ repository = "https://github.com/ltabis/accounts-cli"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "tunes_lib"
+name = "thunes_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -38,7 +38,7 @@ time-macros = { version = "0.2.19", features = ["parsing"] }
 charts = "0.3.0"
 rhai-http = { version = "0.3.0" }
 rhai = { version = "1.20.1" }
-tunes-cli = { path = "../../cli" }
+thunes-cli = { path = "../../cli" }
 surrealdb = { version = "2.1.4", features = ["kv-rocksdb"] }
 tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread"] }
 tracing = { version = "0.1.41" }

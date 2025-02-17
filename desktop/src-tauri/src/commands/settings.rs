@@ -1,6 +1,6 @@
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::State;
-use tunes_cli::{settings::Settings, Record};
+use thunes_cli::{settings::Settings, Record};
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
