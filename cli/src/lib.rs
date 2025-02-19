@@ -106,6 +106,26 @@ pub async fn get_account(db: &Surreal<Db>, account: &str) -> Result<Account, Err
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
+#[derive(Default, Debug, serde::Deserialize, serde::Serialize)]
+pub struct AccountIdentifiers {
+    pub name: String,
+    pub id: String,
+}
+
+pub async fn list_account(db: &Surreal<Db>) -> Result<Vec<AccountIdentifiers>, Error> {
+    let accounts: Vec<Account> = db.select("account").await?;
+
+    Ok(accounts
+        .into_iter()
+        .map(|account| AccountIdentifiers {
+            name: account.data.name,
+            id: account.id.to_string(),
+        })
+        .collect())
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
 #[derive(Default, Debug, serde::Deserialize)]
 pub struct AddAccountOptions {
     pub name: String,

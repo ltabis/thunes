@@ -4,7 +4,7 @@ use tauri::State;
 use thunes_cli::account::Account;
 use thunes_cli::transaction::TransactionWithId;
 use thunes_cli::{
-    AddAccountOptions, AddTransactionOptions, BalanceOptions, CurrencyBalance,
+    AccountIdentifiers, AddAccountOptions, AddTransactionOptions, BalanceOptions, CurrencyBalance,
     GetTransactionOptions,
 };
 
@@ -42,14 +42,12 @@ pub async fn update_account(
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn list_accounts(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-) -> Result<Vec<String>, ()> {
+) -> Result<Vec<AccountIdentifiers>, String> {
     let database = database.lock().await;
-    let accounts: Vec<Account> = database.select("account").await.unwrap();
 
-    Ok(accounts
-        .into_iter()
-        .map(|account| account.data.name)
-        .collect())
+    thunes_cli::list_account(&database)
+        .await
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
