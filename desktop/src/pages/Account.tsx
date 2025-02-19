@@ -239,8 +239,8 @@ export function Layout() {
                 onClick={handleClickAccount}
                 variant="contained"
               >
-                {selected && selected.id !== ""
-                  ? selected.name
+                {accountIsSelected(selected)
+                  ? selected!.name
                   : "Select account"}
               </Button>
               <Menu
