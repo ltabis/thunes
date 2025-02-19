@@ -50,6 +50,7 @@ import {
 } from "../../api";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
+import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers";
 
 const filterFloat = (value: string) =>
   /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value.replace(",", "."))
@@ -63,7 +64,7 @@ function AddTransactionDialog({
 }: {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateTransactions: (account: string) => void;
+  handleUpdateTransactions: (account: AccountIdentifiers) => void;
 }) {
   const account = useAccount()!;
   // Note: omit amount float value to enable the user to enter a floating point character.
@@ -85,7 +86,7 @@ function AddTransactionDialog({
   const handleTransactionSubmission = async () => {
     const amount = filterFloat(form.amount);
 
-    addTransaction(account, {
+    addTransaction(account.id, {
       ...form,
       amount,
       date: form.date.toISOString(),
@@ -185,7 +186,7 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
 }
 
 export default function Transactions() {
-  const accountName = useAccount()!;
+  const accountIdentifiers = useAccount()!;
   const [account, setAccount] = useState<Account>();
   const [open, setOpen] = useState(false);
   const [currency, setCurrency] = useState<string | null>(null);
@@ -256,15 +257,15 @@ export default function Transactions() {
 
   const handleRowUpdate = (transaction: TransactionWithId) => {
     updateTransaction(transaction);
-    handleUpdateTransactions(accountName);
+    handleUpdateTransactions(accountIdentifiers);
     return transaction;
   };
 
-  const handleUpdateTransactions = (account: string) => {
-    getTransactions(account).then(setTransactions);
-    getTransactions(account).then(setSparklineTransactions);
-    getCurrency(account).then(setCurrency);
-    getBalance(account).then(setBalance);
+  const handleUpdateTransactions = (account: AccountIdentifiers) => {
+    getTransactions(account.id).then(setTransactions);
+    getTransactions(account.id).then(setSparklineTransactions);
+    getCurrency(account.id).then(setCurrency);
+    getBalance(account.id).then(setBalance);
   };
 
   const handleSortModelChange = (sortModel: GridSortModel) => {
@@ -280,14 +281,14 @@ export default function Transactions() {
   };
 
   useEffect(() => {
-    handleUpdateTransactions(accountName);
-  }, [accountName]);
+    handleUpdateTransactions(accountIdentifiers);
+  }, [accountIdentifiers]);
 
   useEffect(() => {
-    getAccount(accountName)
+    getAccount(accountIdentifiers.id)
       .then(setAccount)
       .catch((error) => console.error(error));
-  }, [accountName]);
+  }, [accountIdentifiers]);
 
   return (
     <Paper elevation={0}>

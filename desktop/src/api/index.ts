@@ -8,22 +8,27 @@ import { BalanceOptions } from "../../../cli/bindings/BalanceOptions";
 import { Settings } from "../../../cli/bindings/Settings";
 import { CurrencyBalance } from "../../../cli/bindings/CurrencyBalance";
 import { AddAccountOptions } from "../../../cli/bindings/AddAccountOptions";
+import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 
 // TODO: could this be automated ?
 
+// FIXME: To remove or setup in rust and ts_rs.
+export type RecordId = { tb: string, id: { String: string } };
+export const EMPTY_RECORD_ID: RecordId = { tb: "", id: { String: "" } };
+
 // Transactions.
-export const getCurrency = (accountName: string): Promise<string> => invoke("get_currency", { accountName });
-export const getBalance = (accountName: string, options?: BalanceOptions): Promise<number> => invoke("get_balance", { accountName, options });
+export const getCurrency = (accountId: RecordId): Promise<string> => invoke("get_currency", { accountId });
+export const getBalance = (accountId: RecordId, options?: BalanceOptions): Promise<number> => invoke("get_balance", { accountId, options });
 export const getAllBalance = (): Promise<CurrencyBalance[]> => invoke("get_all_balance");
-export const getTransactions = (accountName: string, options?: GetTransactionOptions): Promise<TransactionWithId[]> => invoke("get_transactions", { accountName, options });
-export const addTransaction = (accountName: string, options: AddTransactionOptions): Promise<void> => invoke("add_transaction", { accountName, options });
+export const getTransactions = (accountId: RecordId, options?: GetTransactionOptions): Promise<TransactionWithId[]> => invoke("get_transactions", { accountId, options });
+export const addTransaction = (accountId: RecordId, options: AddTransactionOptions): Promise<void> => invoke("add_transaction", { accountId, options });
 export const updateTransaction = (transaction: TransactionWithId): Promise<void> => invoke("update_transaction", { transaction });
 
 // Accounts.
-export const listAccountNames = (): Promise<string[]> => invoke("list_accounts",);
-export const getAccount = (accountName: string): Promise<Account> => invoke("get_account", { accountName });
+export const listAccounts = (): Promise<AccountIdentifiers[]> => invoke("list_accounts");
+export const getAccount = (accountId: RecordId): Promise<Account> => invoke("get_account", { accountId });
 export const addAccount = (options: AddAccountOptions): Promise<void> => invoke("add_account", { options });
-export const deleteAccount = (accountName: string): Promise<void> => invoke("delete_account", { accountName });
+export const deleteAccount = (accountId: RecordId): Promise<void> => invoke("delete_account", { accountId });
 // TODO: Make this Partial<Account>
 export const updateAccount = (account: Account): Promise<void> => invoke("update_account", { account });
 
