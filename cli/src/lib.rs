@@ -70,7 +70,6 @@ pub struct BalanceOptions {
     pub tag: Option<String>,
 }
 
-// FIXME: https://surrealdb.com/docs/sdk/rust/methods/query#security-when-using-the-query-method
 pub async fn balance(
     db: &Surreal<Db>,
     account_id: RecordId,
