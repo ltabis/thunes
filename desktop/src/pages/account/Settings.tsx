@@ -9,7 +9,7 @@ export default function Settings() {
   const [form, setForm] = useState<Account>();
 
   useEffect(() => {
-    getAccount(account)
+    getAccount(account.id)
       .then(setForm)
       .catch((error) => console.error(error));
   }, [account]);

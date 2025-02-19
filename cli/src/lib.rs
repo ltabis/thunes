@@ -70,13 +70,14 @@ pub struct BalanceOptions {
     pub tag: Option<String>,
 }
 
+// FIXME: https://surrealdb.com/docs/sdk/rust/methods/query#security-when-using-the-query-method
 pub async fn balance(
     db: &Surreal<Db>,
-    account: &str,
+    account_id: &str,
     options: BalanceOptions,
 ) -> Result<f64, Error> {
     let mut query = format!(
-        r#"RETURN (SELECT math::sum(amount) AS sum FROM transaction WHERE account = account:`"{account}"`"#
+        r#"RETURN (SELECT math::sum(amount) AS sum FROM transaction WHERE account = {account_id}"#
     );
 
     if let Some(start) = options.period_start {
@@ -98,10 +99,15 @@ pub async fn balance(
     Ok(sum.unwrap_or(0.0))
 }
 
-pub async fn get_account(db: &Surreal<Db>, account: &str) -> Result<Account, Error> {
-    let x: Option<account::Account> = db.select(("account", format!(r#""{account}""#))).await?;
+pub async fn get_account(db: &Surreal<Db>, account_id: &str) -> Result<Account, Error> {
+    let account: Option<Account> = db
+        .query(format!("SELECT * FROM account WHERE id = {account_id}"))
+        .await
+        .unwrap()
+        .take(0)
+        .unwrap();
 
-    Ok(x.unwrap())
+    Ok(account.unwrap())
 }
 
 #[derive(ts_rs::TS)]
@@ -134,7 +140,7 @@ pub struct AddAccountOptions {
 
 pub async fn add_account(db: &Surreal<Db>, options: AddAccountOptions) -> Result<Account, Error> {
     let x: Option<account::Account> = db
-        .create(("account", format!(r#""{}""#, options.name)))
+        .create("account")
         .content(serde_json::json!({
             "name": options.name,
             "currency": options.currency,
@@ -145,11 +151,11 @@ pub async fn add_account(db: &Surreal<Db>, options: AddAccountOptions) -> Result
     Ok(x.unwrap())
 }
 
-pub async fn delete_account(db: &Surreal<Db>, account_name: &str) -> Result<(), Error> {
+pub async fn delete_account(db: &Surreal<Db>, account_id: &str) -> Result<(), Error> {
     db.query(format!(
         r#"
-    DELETE account WHERE id = account:`"{account_name}"`;
-    DELETE transaction WHERE account = account:`"{account_name}"`;"#
+    DELETE account WHERE id = {account_id};
+    DELETE transaction WHERE account = {account_id};"#
     ))
     .await
     .map(|_| ())
@@ -166,6 +172,18 @@ pub async fn update_account(db: &Surreal<Db>, account: Account) -> Result<(), Er
     Ok(())
 }
 
+pub async fn get_currency(db: &Surreal<Db>, account_id: &str) -> Result<String, Error> {
+    // FIXME: select currency, but get a `{ "currency": "EUR" }` instead of just the currency.
+    let account: Option<Account> = db
+        .query(format!("SELECT * FROM account WHERE id = {account_id}"))
+        .await
+        .unwrap()
+        .take(0)
+        .unwrap();
+
+    Ok(account.unwrap().data.currency)
+}
+
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Default, Debug, serde::Deserialize)]
@@ -179,7 +197,7 @@ pub struct AddTransactionOptions {
 
 pub async fn add_transaction(
     db: &Surreal<Db>,
-    account: &str,
+    account_id: &str,
     options: AddTransactionOptions,
 ) -> Result<(), Error> {
     let query = format!(
@@ -189,7 +207,7 @@ pub async fn add_transaction(
         amount = {},
         description = "{}",
         tags = {},
-        account = account:`"{account}"`"#,
+        account = {}"#,
         options
             .date
             .map(|date| date.to_string())
@@ -197,6 +215,7 @@ pub async fn add_transaction(
         options.amount,
         options.description,
         serde_json::json!(options.tags),
+        account_id
     );
 
     db.query(query).await?;
@@ -233,10 +252,10 @@ pub struct GetTransactionOptions {
 
 pub async fn get_transactions(
     db: &Surreal<Db>,
-    account: &str,
+    account_id: &str,
     options: GetTransactionOptions,
 ) -> Result<Vec<TransactionWithId>, Error> {
-    let mut query = format!(r#"SELECT * FROM transaction WHERE account = account:`"{account}"`"#);
+    let mut query = format!(r#"SELECT * FROM transaction WHERE account = {account_id}"#);
 
     if let Some(last_x_days) = options.last_x_days {
         query.push_str(&format!(

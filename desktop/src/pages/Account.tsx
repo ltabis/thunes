@@ -26,14 +26,19 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useAccount, useDispatchAccount } from "../contexts/Account";
+import {
+  accountIsSelected,
+  useAccount,
+  useDispatchAccount,
+} from "../contexts/Account";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Transactions from "./account/Transactions";
 import Details from "./account/Details";
 import { MouseEvent, SyntheticEvent } from "react";
 import Settings from "./account/Settings";
-import { addAccount, deleteAccount, listAccountNames } from "../api";
+import { addAccount, deleteAccount, listAccounts } from "../api";
 import { Account } from "../../../cli/bindings/Account";
+import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 
 function DeleteAccountDialog({
   open,
@@ -52,11 +57,11 @@ function DeleteAccountDialog({
   };
 
   const handleDeleteAccount = async () => {
-    deleteAccount(account)
+    deleteAccount(account.id)
       .then(() => {
         handleCloseForm();
-        handleUpdateAccounts(account);
-        dispatch({ type: "select", account: "" });
+        handleUpdateAccounts(account.id);
+        dispatch({ type: "select", account: { id: "", name: "" } });
       })
       .catch((error) => console.error(error));
   };
@@ -64,7 +69,7 @@ function DeleteAccountDialog({
   return (
     <Dialog open={open} onClose={handleCloseForm}>
       <DialogTitle>
-        Are you sure you want to delete the {account} account ?
+        Are you sure you want to delete the {account.name} account ?
       </DialogTitle>
       <DialogActions>
         <Button onClick={handleCloseForm}>Cancel</Button>
@@ -100,7 +105,7 @@ function AddAccountDialog({
     addAccount(form)
       .then(() => {
         handleCloseForm();
-        handleUpdateAccounts(account);
+        handleUpdateAccounts(account.id);
         // FIXME: does not work.
         dispatch({ type: "select", account });
       })
@@ -167,7 +172,7 @@ export function Layout() {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openFailure, setOpenFailure] = useState("");
-  const [accounts, setAccounts] = useState<string[]>();
+  const [accounts, setAccounts] = useState<AccountIdentifiers[]>();
   const [accountAnchorEl, setAccountAnchorEl] = useState<null | HTMLElement>(
     null
   );
@@ -200,10 +205,10 @@ export function Layout() {
     setOpenFailure("");
   };
 
-  const handleSelectAccount = async (account: string) =>
+  const handleSelectAccount = async (account: AccountIdentifiers) =>
     dispatch({
       type: "select",
-      account: account as string,
+      account,
     });
 
   const handleTabChange = (_event: SyntheticEvent, newTab: number) => {
@@ -211,7 +216,7 @@ export function Layout() {
   };
 
   const handleUpdateAccounts = () => {
-    listAccountNames()
+    listAccounts()
       .then(setAccounts)
       .catch((error) => setOpenFailure(error));
   };
@@ -234,7 +239,9 @@ export function Layout() {
                 onClick={handleClickAccount}
                 variant="contained"
               >
-                {selected !== "" ? selected : "Select account"}
+                {selected && selected.id !== ""
+                  ? selected.name
+                  : "Select account"}
               </Button>
               <Menu
                 id="basic-menu"
@@ -246,14 +253,14 @@ export function Layout() {
                 }}
               >
                 {accounts
-                  .sort((a, b) => a.localeCompare(b))
+                  .sort((a, b) => a.name.localeCompare(b.name))
                   .map((account) => (
                     <MenuItem
-                      key={account}
-                      selected={account === selected}
+                      key={account.id}
+                      selected={account.id === selected?.id}
                       onClick={() => handleSelectAccount(account)}
                     >
-                      {account}
+                      {account.name}
                     </MenuItem>
                   ))}
                 <Divider />
@@ -267,7 +274,7 @@ export function Layout() {
           )}
 
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
-          {selected && (
+          {accountIsSelected(selected) && (
             <Tabs onChange={handleTabChange} value={tab} variant="fullWidth">
               <Tab label="Details"></Tab>
               <Tab label="Transactions"></Tab>
@@ -298,7 +305,7 @@ export function Layout() {
 
       <Divider sx={{ margin: 2 }} />
 
-      {selected && (
+      {accountIsSelected(selected) && (
         <>
           <div hidden={tab !== 0}>
             <Details />
