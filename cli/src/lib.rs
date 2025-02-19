@@ -73,35 +73,44 @@ pub struct BalanceOptions {
 // FIXME: https://surrealdb.com/docs/sdk/rust/methods/query#security-when-using-the-query-method
 pub async fn balance(
     db: &Surreal<Db>,
-    account_id: &str,
+    account_id: RecordId,
     options: BalanceOptions,
 ) -> Result<f64, Error> {
-    let mut query = format!(
-        r#"RETURN (SELECT math::sum(amount) AS sum FROM transaction WHERE account = {account_id}"#
-    );
+    let mut query =
+        r#"RETURN (SELECT math::sum(amount) AS sum FROM transaction WHERE account = $account_id"#
+            .to_string();
 
-    if let Some(start) = options.period_start {
-        query.push_str(&format!(" AND date > {start}"));
+    if options.period_start.is_some() {
+        query.push_str(" AND date > $start");
     }
 
-    if let Some(end) = options.period_end {
-        query.push_str(&format!(" AND date < {end}"));
+    if options.period_end.is_some() {
+        query.push_str(" AND date < $end");
     }
 
-    if let Some(tag) = options.tag {
-        query.push_str(&format!(" AND tags.find(|$tag| $tag.label = '{tag}')"));
+    if options.tag.is_some() {
+        query.push_str(" AND tags.find(|$tag| $tag.label = '$tag_label')");
     }
 
     query.push_str(" GROUP ALL).sum");
 
-    let sum: Option<f64> = db.query(query).await?.take(0).unwrap();
+    let sum: Option<f64> = db
+        .query(query)
+        .bind(("account_id", account_id))
+        .bind(("start", options.period_start.unwrap_or_default()))
+        .bind(("end", options.period_end.unwrap_or_default()))
+        .bind(("tag_label", options.tag.unwrap_or_default()))
+        .await?
+        .take(0)
+        .unwrap();
 
     Ok(sum.unwrap_or(0.0))
 }
 
-pub async fn get_account(db: &Surreal<Db>, account_id: &str) -> Result<Account, Error> {
+pub async fn get_account(db: &Surreal<Db>, account_id: RecordId) -> Result<Account, Error> {
     let account: Option<Account> = db
-        .query(format!("SELECT * FROM account WHERE id = {account_id}"))
+        .query("SELECT * FROM account WHERE id = $account_id")
+        .bind(("account_id", account_id))
         .await
         .unwrap()
         .take(0)
@@ -112,10 +121,11 @@ pub async fn get_account(db: &Surreal<Db>, account_id: &str) -> Result<Account, 
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(Default, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct AccountIdentifiers {
     pub name: String,
-    pub id: String,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub id: RecordId,
 }
 
 pub async fn list_account(db: &Surreal<Db>) -> Result<Vec<AccountIdentifiers>, Error> {
@@ -125,14 +135,14 @@ pub async fn list_account(db: &Surreal<Db>) -> Result<Vec<AccountIdentifiers>, E
         .into_iter()
         .map(|account| AccountIdentifiers {
             name: account.data.name,
-            id: account.id.to_string(),
+            id: account.id,
         })
         .collect())
 }
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(Default, Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 pub struct AddAccountOptions {
     pub name: String,
     pub currency: String,
@@ -151,12 +161,13 @@ pub async fn add_account(db: &Surreal<Db>, options: AddAccountOptions) -> Result
     Ok(x.unwrap())
 }
 
-pub async fn delete_account(db: &Surreal<Db>, account_id: &str) -> Result<(), Error> {
-    db.query(format!(
+pub async fn delete_account(db: &Surreal<Db>, account_id: RecordId) -> Result<(), Error> {
+    db.query(
         r#"
-    DELETE account WHERE id = {account_id};
-    DELETE transaction WHERE account = {account_id};"#
-    ))
+    DELETE account WHERE id = $account_id;
+    DELETE transaction WHERE account = $account_id;"#,
+    )
+    .bind(("account_id", account_id))
     .await
     .map(|_| ())
     .map_err(|error| error.into())
@@ -172,10 +183,11 @@ pub async fn update_account(db: &Surreal<Db>, account: Account) -> Result<(), Er
     Ok(())
 }
 
-pub async fn get_currency(db: &Surreal<Db>, account_id: &str) -> Result<String, Error> {
+pub async fn get_currency(db: &Surreal<Db>, account_id: RecordId) -> Result<String, Error> {
     // FIXME: select currency, but get a `{ "currency": "EUR" }` instead of just the currency.
     let account: Option<Account> = db
-        .query(format!("SELECT * FROM account WHERE id = {account_id}"))
+        .query("SELECT * FROM account WHERE id = $account_id")
+        .bind(("account_id", account_id))
         .await
         .unwrap()
         .take(0)
@@ -197,28 +209,30 @@ pub struct AddTransactionOptions {
 
 pub async fn add_transaction(
     db: &Surreal<Db>,
-    account_id: &str,
+    account_id: RecordId,
     options: AddTransactionOptions,
 ) -> Result<(), Error> {
-    let query = format!(
-        r#"
+    let query = r#"
     CREATE transaction SET
-        date = {},
-        amount = {},
-        description = "{}",
-        tags = {},
-        account = {}"#,
-        options
-            .date
-            .map(|date| date.to_string())
-            .unwrap_or_else(|| "time::now()".to_string()),
-        options.amount,
-        options.description,
-        serde_json::json!(options.tags),
-        account_id
-    );
+        date = $date,
+        amount = $amount,
+        description = $description,
+        tags = $tags,
+        account = $account_id"#;
 
-    db.query(query).await?;
+    db.query(query)
+        .bind((
+            "date",
+            options
+                .date
+                .map(|date| date.to_string())
+                .unwrap_or_else(|| "time::now()".to_string()),
+        ))
+        .bind(("amount", options.amount))
+        .bind(("description", options.description))
+        .bind(("tags", serde_json::json!(options.tags)))
+        .bind(("account_id", account_id))
+        .await?;
 
     Ok(())
 }
@@ -252,28 +266,41 @@ pub struct GetTransactionOptions {
 
 pub async fn get_transactions(
     db: &Surreal<Db>,
-    account_id: &str,
+    account_id: RecordId,
     options: GetTransactionOptions,
 ) -> Result<Vec<TransactionWithId>, Error> {
-    let mut query = format!(r#"SELECT * FROM transaction WHERE account = {account_id}"#);
+    let mut query = "SELECT * FROM transaction WHERE account = $account_id".to_string();
 
-    if let Some(last_x_days) = options.last_x_days {
-        query.push_str(&format!(
-            " AND date >= time::now() - {last_x_days}d AND date <= time::now()"
-        ));
+    if options.last_x_days.is_some() {
+        query.push_str(" AND date >= time::now() - $last_x_days AND date <= time::now()");
     } else {
-        if let Some(start) = options.start {
-            query.push_str(&format!(" AND date >= {start}"));
+        if options.start.is_some() {
+            query.push_str(" AND date >= $start");
         }
 
-        if let Some(end) = options.end {
-            query.push_str(&format!(" AND date <= {end}"));
+        if options.end.is_some() {
+            query.push_str(" AND date <= $end");
         }
     }
 
     query.push_str(" ORDER BY date");
 
-    let transactions: Vec<TransactionWithId> = db.query(query).await.unwrap().take(0).unwrap();
+    let transactions: Vec<TransactionWithId> = db
+        .query(query)
+        .bind((
+            "last_x_days",
+            options
+                .last_x_days
+                .map(|n| format!("{n}d"))
+                .unwrap_or_default(),
+        ))
+        .bind(("start", options.start.unwrap_or_default()))
+        .bind(("end", options.end.unwrap_or_default()))
+        .bind(("account_id", account_id))
+        .await
+        .unwrap()
+        .take(0)
+        .unwrap();
 
     Ok(transactions)
 }

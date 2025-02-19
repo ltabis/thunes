@@ -1,5 +1,5 @@
 use surrealdb::engine::local::Db;
-use surrealdb::Surreal;
+use surrealdb::{RecordId, Surreal};
 use tauri::State;
 use thunes_cli::account::Account;
 use thunes_cli::transaction::TransactionWithId;
@@ -17,7 +17,7 @@ pub type Accounts = std::collections::HashMap<String, Account>;
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_account(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    account_id: &str,
+    account_id: RecordId,
 ) -> Result<Account, String> {
     let database = database.lock().await;
 
@@ -68,7 +68,7 @@ pub async fn add_account(
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn delete_account(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    account_id: &str,
+    account_id: RecordId,
 ) -> Result<(), String> {
     let database = database.lock().await;
 
@@ -81,7 +81,7 @@ pub async fn delete_account(
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_balance(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    account_id: &str,
+    account_id: RecordId,
     options: Option<BalanceOptions>,
 ) -> Result<f64, ()> {
     let database = database.lock().await;
@@ -107,7 +107,7 @@ pub async fn get_all_balance(
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_currency(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    account_id: &str,
+    account_id: RecordId,
 ) -> Result<String, String> {
     let database = database.lock().await;
 
@@ -120,7 +120,7 @@ pub async fn get_currency(
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_transactions(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    account_id: &str,
+    account_id: RecordId,
     options: Option<GetTransactionOptions>,
 ) -> Result<Vec<TransactionWithId>, String> {
     let database = database.lock().await;
@@ -134,7 +134,7 @@ pub async fn get_transactions(
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn add_transaction(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    account_id: &str,
+    account_id: RecordId,
     options: AddTransactionOptions,
 ) -> Result<(), String> {
     let database = database.lock().await;

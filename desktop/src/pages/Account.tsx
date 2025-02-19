@@ -256,7 +256,7 @@ export function Layout() {
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map((account) => (
                     <MenuItem
-                      key={account.id}
+                      key={account.name}
                       selected={account.id === selected?.id}
                       onClick={() => handleSelectAccount(account)}
                     >
