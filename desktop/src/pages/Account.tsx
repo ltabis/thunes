@@ -36,7 +36,13 @@ import Transactions from "./account/Transactions";
 import Details from "./account/Details";
 import { MouseEvent, SyntheticEvent } from "react";
 import Settings from "./account/Settings";
-import { addAccount, deleteAccount, listAccounts } from "../api";
+import {
+  addAccount,
+  deleteAccount,
+  EMPTY_RECORD_ID,
+  listAccounts,
+  RecordId,
+} from "../api";
 import { Account } from "../../../cli/bindings/Account";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 
@@ -47,7 +53,7 @@ function DeleteAccountDialog({
 }: {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateAccounts: (account: string) => void;
+  handleUpdateAccounts: (account: RecordId) => void;
 }) {
   const account = useAccount()!;
   const dispatch = useDispatchAccount()!;
@@ -61,7 +67,10 @@ function DeleteAccountDialog({
       .then(() => {
         handleCloseForm();
         handleUpdateAccounts(account.id);
-        dispatch({ type: "select", account: { id: "", name: "" } });
+        dispatch({
+          type: "select",
+          account: { id: EMPTY_RECORD_ID, name: "" },
+        });
       })
       .catch((error) => console.error(error));
   };
@@ -86,7 +95,7 @@ function AddAccountDialog({
 }: {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateAccounts: (account: string) => void;
+  handleUpdateAccounts: (account: RecordId) => void;
 }) {
   const account = useAccount()!;
   const dispatch = useDispatchAccount()!;

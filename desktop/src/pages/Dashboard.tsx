@@ -73,9 +73,13 @@ export default function Dashboard() {
                     },
                   ]}
                   onItemClick={(_event, account) => {
+                    const currentAccount = accounts[account.dataIndex].account;
                     dispatch({
                       type: "select",
-                      account: accounts[account.dataIndex].account.name,
+                      account: {
+                        id: currentAccount.id,
+                        name: currentAccount.name,
+                      },
                     });
                     navigate("/account");
                   }}

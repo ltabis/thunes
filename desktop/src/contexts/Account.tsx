@@ -6,6 +6,7 @@ import {
   useReducer,
 } from "react";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
+import { EMPTY_RECORD_ID } from "../api";
 
 export type Action = { type: "select"; account: AccountIdentifiers };
 
@@ -25,7 +26,7 @@ export function accountReducer(
 
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [settings, dispatch] = useReducer(accountReducer, {
-    id: "",
+    id: EMPTY_RECORD_ID,
     name: "",
   } as AccountIdentifiers);
 
@@ -41,4 +42,4 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 export const useAccount = () => useContext(AccountContext);
 export const useDispatchAccount = () => useContext(AccountDispatchContext);
 export const accountIsSelected = (selected: AccountIdentifiers | null) =>
-  selected && selected.id !== "";
+  selected && selected.id.id.String !== "";
