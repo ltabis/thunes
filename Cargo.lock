@@ -938,16 +938,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
-name = "charts"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d1617102454184fed74f5a24e5cc1d8f2a69a2e9b1ba25f869189dc79b2b2e6"
-dependencies = [
- "format_num",
- "svg",
-]
-
-[[package]]
 name = "chrono"
 version = "0.4.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1778,15 +1768,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e13624c2627564efccf4934284bdd98cbaa14e79b0b5a141218e507b3a823456"
 dependencies = [
  "percent-encoding",
-]
-
-[[package]]
-name = "format_num"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14ac05eb8d2eb4ed1eeff847911deae077b0b53332465de9d6a26b0ea9961bc8"
-dependencies = [
- "regex",
 ]
 
 [[package]]
@@ -5444,9 +5425,9 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "surrealdb"
-version = "2.2.0"
+version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "363c7c2c8ef56a48dd6decbb2bd3193053599b1fcf31ab7d06c8bebb44f4f255"
+checksum = "aa1aa87197bad9dd12c93350533a8da09bae064a411f445c97ca0e64faabc304"
 dependencies = [
  "arrayvec",
  "async-channel",
@@ -5485,9 +5466,9 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-core"
-version = "2.2.0"
+version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13fc66ca59645fc4a019ee2428325ed101f54fc54904ef250a98e28fc5f98eda"
+checksum = "4ceb9f421e07af67b06c57ea7a8b08c3b4e4677de483435ca6d69bd00600a571"
 dependencies = [
  "addr",
  "affinitypool",
@@ -5573,12 +5554,6 @@ dependencies = [
  "wasmtimer",
  "ws_stream_wasm",
 ]
-
-[[package]]
-name = "svg"
-version = "0.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3685c82a045a6af0c488f0550b0f52b4c77d2a52b0ca8aba719f9d268fa96965"
 
 [[package]]
 name = "swift-rs"
@@ -6107,6 +6082,7 @@ dependencies = [
 name = "thunes-cli"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "clap",
  "rhai",
  "rhai-http",
@@ -6123,8 +6099,7 @@ dependencies = [
 name = "thunes-desktop"
 version = "0.1.0"
 dependencies = [
- "charts",
- "clap",
+ "chrono",
  "rhai",
  "rhai-http",
  "serde",
@@ -6138,7 +6113,6 @@ dependencies = [
  "time",
  "time-macros",
  "tokio",
- "toml 0.8.20",
  "tracing",
  "tracing-subscriber",
 ]
