@@ -26,8 +26,6 @@ tauri = { version = "2.2.5", features = [] }
 tauri-plugin-shell = "2.2.0"
 serde = { version = "1.0.217", features = ["derive"] }
 serde_json = { version = "1.0.138" }
-toml = { version = "0.8.20" }
-clap = { version = "4.5.23", features = ["derive"] }
 time = { version = "0.3.37", features = [
     "std",
     "parsing",
@@ -35,15 +33,15 @@ time = { version = "0.3.37", features = [
     "serde",
 ] }
 time-macros = { version = "0.2.19", features = ["parsing"] }
-charts = "0.3.0"
 rhai-http = { version = "0.3.0" }
 rhai = { version = "1.20.1" }
 thunes-cli = { path = "../../cli" }
-surrealdb = { version = "2.1.4", features = ["kv-rocksdb"] }
+surrealdb = { version = "2.2.1", features = ["kv-rocksdb"] }
 tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread"] }
 tracing = { version = "0.1.41" }
 tracing-subscriber = { version = "0.3.19" }
-tauri-plugin-dialog = "2"
+tauri-plugin-dialog = { version = "2.2.0" }
+chrono = { version = "0.4.39" }
 
 [profile.release]
 incremental = false

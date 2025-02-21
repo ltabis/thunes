@@ -21,7 +21,8 @@ impl PartialEq for Tag {
 #[ts(export)]
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Transaction {
-    pub date: String,
+    #[ts(as = "String")]
+    pub date: chrono::DateTime<chrono::Utc>,
     pub amount: f64,
     pub description: String,
     pub tags: Vec<Tag>,
@@ -39,16 +40,6 @@ pub struct TransactionWithId {
     pub account: RecordId,
 }
 
-impl Transaction {
-    pub fn date_time(&self) -> time::Date {
-        time::Date::parse(
-            &self.date,
-            &time::format_description::well_known::Iso8601::DEFAULT,
-        )
-        .expect("failed to parse date")
-    }
-}
-
 #[derive(Clone, Debug, serde::Deserialize, rhai::CustomType)]
 pub struct TransactionRhai {
     /// Get the date of the transaction.
@@ -63,24 +54,4 @@ pub struct TransactionRhai {
     /// Tags associated with the transaction.
     #[rhai_type(readonly)]
     pub tags: rhai::Array,
-}
-
-impl From<&Transaction> for TransactionRhai {
-    fn from(value: &Transaction) -> Self {
-        Self {
-            date: time::Date::parse(
-                &value.date,
-                &time::format_description::well_known::Iso8601::DEFAULT,
-            )
-            .expect("failed to parse date"),
-            amount: value.amount,
-            description: value.description.to_string(),
-            tags: value
-                .tags
-                .iter()
-                .cloned()
-                .map(rhai::Dynamic::from)
-                .collect::<rhai::Array>(),
-        }
-    }
 }

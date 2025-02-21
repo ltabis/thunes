@@ -203,7 +203,7 @@ pub struct AddTransactionOptions {
     pub description: String,
     pub tags: Vec<Tag>,
     #[ts(as = "Option<String>", optional)]
-    pub date: Option<surrealdb::Datetime>,
+    pub date: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 pub async fn add_transaction(
@@ -220,13 +220,7 @@ pub async fn add_transaction(
         account = $account_id"#;
 
     db.query(query)
-        .bind((
-            "date",
-            options
-                .date
-                .map(|date| date.to_string())
-                .unwrap_or_else(|| "time::now()".to_string()),
-        ))
+        .bind(("date", options.date.unwrap_or_else(chrono::Utc::now)))
         .bind(("amount", options.amount))
         .bind(("description", options.description))
         .bind(("tags", serde_json::json!(options.tags)))
