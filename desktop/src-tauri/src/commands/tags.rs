@@ -8,9 +8,11 @@ pub async fn get_tags(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
 ) -> Result<Vec<Tag>, String> {
     let database = database.lock().await;
-    let accounts: Vec<Tag> = database.select("tag").await.unwrap();
 
-    Ok(accounts)
+    thunes_cli::get_tags(&database).await.map_err(|error| {
+        tracing::error!(%error, "database error");
+        "failed to get tags".to_string()
+    })
 }
 
 #[tauri::command]
@@ -20,5 +22,10 @@ pub async fn add_tags(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    thunes_cli::add_tags(&database, tags).await
+    thunes_cli::add_tags(&database, tags)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to add tags".to_string()
+        })
 }

@@ -19,6 +19,7 @@ pub const TIME_FORMAT_DAY: &[time::format_description::FormatItem<'_>] =
 #[derive(Debug)]
 pub enum Error {
     Database(surrealdb::Error),
+    RecordNotFound,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -34,6 +35,7 @@ impl std::fmt::Display for Error {
             "{}",
             match self {
                 Error::Database(error) => error.to_string(),
+                Error::RecordNotFound => "Record not found".to_string(),
             }
         )
     }
@@ -43,19 +45,6 @@ impl From<surrealdb::Error> for Error {
     fn from(value: surrealdb::Error) -> Self {
         Self::Database(value)
     }
-}
-
-pub async fn init_db(
-    path: impl AsRef<std::path::Path>,
-) -> surrealdb::Surreal<surrealdb::engine::local::Db> {
-    let db: surrealdb::Surreal<surrealdb::engine::local::Db> = surrealdb::Surreal::init();
-    db.connect::<surrealdb::engine::local::RocksDb>(path.as_ref())
-        .await
-        .unwrap();
-
-    db.use_ns("user").use_db("accounts").await.unwrap();
-
-    db
 }
 
 #[derive(ts_rs::TS)]
@@ -100,22 +89,21 @@ pub async fn balance(
         .bind(("end", options.period_end.unwrap_or_default()))
         .bind(("tag_label", options.tag.unwrap_or_default()))
         .await?
-        .take(0)
-        .unwrap();
+        .take(0)?;
 
-    Ok(sum.unwrap_or(0.0))
+    // Note: could probably expect here, because the query does not change
+    //       the return value of the SELECT statement.
+    sum.ok_or(Error::RecordNotFound)
 }
 
 pub async fn get_account(db: &Surreal<Db>, account_id: RecordId) -> Result<Account, Error> {
     let account: Option<Account> = db
         .query("SELECT * FROM account WHERE id = $account_id")
         .bind(("account_id", account_id))
-        .await
-        .unwrap()
-        .take(0)
-        .unwrap();
+        .await?
+        .take(0)?;
 
-    Ok(account.unwrap())
+    account.ok_or(Error::RecordNotFound)
 }
 
 #[derive(ts_rs::TS)]
@@ -127,7 +115,7 @@ pub struct AccountIdentifiers {
     pub id: RecordId,
 }
 
-pub async fn list_account(db: &Surreal<Db>) -> Result<Vec<AccountIdentifiers>, Error> {
+pub async fn list_account(db: &Surreal<Db>) -> Result<Vec<AccountIdentifiers>, surrealdb::Error> {
     let accounts: Vec<Account> = db.select("account").await?;
 
     Ok(accounts
@@ -157,10 +145,15 @@ pub async fn add_account(db: &Surreal<Db>, options: AddAccountOptions) -> Result
         }))
         .await?;
 
-    Ok(x.unwrap())
+    // Note: could probably expect here, because the create function does not change
+    //       the return value of the CREATE statement.
+    x.ok_or(Error::RecordNotFound)
 }
 
-pub async fn delete_account(db: &Surreal<Db>, account_id: RecordId) -> Result<(), Error> {
+pub async fn delete_account(
+    db: &Surreal<Db>,
+    account_id: RecordId,
+) -> Result<(), surrealdb::Error> {
     db.query(
         r#"
     DELETE account WHERE id = $account_id;
@@ -169,30 +162,28 @@ pub async fn delete_account(db: &Surreal<Db>, account_id: RecordId) -> Result<()
     .bind(("account_id", account_id))
     .await
     .map(|_| ())
-    .map_err(|error| error.into())
 }
 
-pub async fn update_account(db: &Surreal<Db>, account: Account) -> Result<(), Error> {
+pub async fn update_account(db: &Surreal<Db>, account: Account) -> Result<(), surrealdb::Error> {
     let _: Option<Record> = db
         .update(("account", account.id.key().clone()))
         .merge(account)
-        .await
-        .unwrap();
+        .await?;
 
     Ok(())
 }
 
 pub async fn get_currency(db: &Surreal<Db>, account_id: RecordId) -> Result<String, Error> {
-    // FIXME: select currency, but get a `{ "currency": "EUR" }` instead of just the currency.
+    // FIXME: select currency, but get a `{ "currency": "EUR" }` instead of just the currency. (check ONLY statement)
     let account: Option<Account> = db
         .query("SELECT * FROM account WHERE id = $account_id")
         .bind(("account_id", account_id))
-        .await
-        .unwrap()
-        .take(0)
-        .unwrap();
+        .await?
+        .take(0)?;
 
-    Ok(account.unwrap().data.currency)
+    account
+        .ok_or(Error::RecordNotFound)
+        .map(|account| account.data.currency)
 }
 
 #[derive(ts_rs::TS)]
@@ -210,7 +201,7 @@ pub async fn add_transaction(
     db: &Surreal<Db>,
     account_id: RecordId,
     options: AddTransactionOptions,
-) -> Result<(), Error> {
+) -> Result<(), surrealdb::Error> {
     let query = r#"
     CREATE transaction SET
         date = $date,
@@ -233,12 +224,11 @@ pub async fn add_transaction(
 pub async fn update_transaction(
     db: &Surreal<Db>,
     transaction: TransactionWithId,
-) -> Result<(), Error> {
+) -> Result<(), surrealdb::Error> {
     let _: Option<Record> = db
         .update(("transaction", transaction.id.key().clone()))
         .merge(transaction)
-        .await
-        .unwrap();
+        .await?;
 
     Ok(())
 }
@@ -261,7 +251,7 @@ pub async fn get_transactions(
     db: &Surreal<Db>,
     account_id: RecordId,
     options: GetTransactionOptions,
-) -> Result<Vec<TransactionWithId>, Error> {
+) -> Result<Vec<TransactionWithId>, surrealdb::Error> {
     let mut query = "SELECT * FROM transaction WHERE account = $account_id".to_string();
 
     if options.last_x_days.is_some() {
@@ -290,10 +280,8 @@ pub async fn get_transactions(
         .bind(("start", options.start.unwrap_or_default()))
         .bind(("end", options.end.unwrap_or_default()))
         .bind(("account_id", account_id))
-        .await
-        .unwrap()
-        .take(0)
-        .unwrap();
+        .await?
+        .take(0)?;
 
     Ok(transactions)
 }
@@ -315,7 +303,9 @@ pub struct CurrencyBalance {
     pub accounts: Vec<AccountWithBalance>,
 }
 
-pub async fn balances_by_currency(db: &Surreal<Db>) -> Result<Vec<CurrencyBalance>, Error> {
+pub async fn balances_by_currency(
+    db: &Surreal<Db>,
+) -> Result<Vec<CurrencyBalance>, surrealdb::Error> {
     let query = r#"
         SELECT 
             math::sum(balance) as total_balance,
@@ -331,12 +321,18 @@ pub async fn balances_by_currency(db: &Surreal<Db>) -> Result<Vec<CurrencyBalanc
         ) 
         GROUP BY currency"#;
 
-    db.query(query).await?.take(0).map_err(|error| error.into())
+    let currencies: Vec<CurrencyBalance> = db.query(query).await?.take(0)?;
+
+    Ok(currencies)
 }
 
-pub async fn add_tags(db: &Surreal<Db>, tags: Vec<Tag>) -> Result<(), String> {
+pub async fn get_tags(db: &Surreal<Db>) -> Result<Vec<Tag>, surrealdb::Error> {
+    db.select("tag").await
+}
+
+pub async fn add_tags(db: &Surreal<Db>, tags: Vec<Tag>) -> Result<(), surrealdb::Error> {
     for tag in tags {
-        let _: Option<Record> = db.upsert(("tag", &tag.label)).content(tag).await.unwrap();
+        let _: Option<Record> = db.upsert(("tag", &tag.label)).content(tag).await?;
     }
 
     Ok(())
