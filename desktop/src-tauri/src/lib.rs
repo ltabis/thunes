@@ -11,8 +11,12 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Setup dev tools.
     #[cfg(debug_assertions)]
     {
-        let window = app.get_webview_window("main").unwrap();
-        window.open_devtools();
+        app.get_webview_window("main")
+            .map(|window| window.open_devtools())
+            .or_else(|| {
+                eprintln!("dev: failed to open dev tools");
+                None
+            });
     }
 
     // a builder for `FmtSubscriber`.
@@ -29,13 +33,11 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Setup surreal database.
     let path_resolver = app.path();
 
-    let mut path = path_resolver
-        .app_config_dir()
-        .expect("unknown app config path");
+    let mut path = path_resolver.app_config_dir()?;
 
     path.push("store");
 
-    let mut data_dir = path_resolver.app_data_dir().expect("unknown app data path");
+    let mut data_dir = path_resolver.app_data_dir()?;
 
     data_dir.push("backups");
 
@@ -43,9 +45,12 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db: surrealdb::Surreal<surrealdb::engine::local::Db> = surrealdb::Surreal::init();
         db.connect::<surrealdb::engine::local::RocksDb>(path)
             .await
-            .unwrap();
+            .map_err(|error| error.to_string())?;
 
-        db.use_ns("user").use_db("accounts").await.unwrap();
+        db.use_ns("user")
+            .use_db("accounts")
+            .await
+            .map_err(|error| error.to_string())?;
 
         // FIXME: move db seeding to an install script.
         let result: Result<Option<Record>, surrealdb::Error> = db
@@ -57,7 +62,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
             Ok(_) | Err(surrealdb::Error::Db(surrealdb::error::Db::RecordExists { .. })) => {}
             _ => {
                 tracing::error!("failed to initialize settings");
-                return Err("failed to initialize settings");
+                return Err("failed to initialize settings".to_string());
             }
         }
 
@@ -95,5 +100,5 @@ pub fn run() {
         ])
         .setup(setup)
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .expect("error while running application");
 }

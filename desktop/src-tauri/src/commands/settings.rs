@@ -6,12 +6,22 @@ use thunes_cli::{settings::Settings, Record};
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_settings(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-) -> Result<Settings, ()> {
+) -> Result<Settings, String> {
     let database = database.lock().await;
 
-    let settings: Option<Settings> = database.select(("settings", "main")).await.unwrap();
+    let settings: Option<Settings> =
+        database
+            .select(("settings", "main"))
+            .await
+            .map_err(|error| {
+                tracing::error!(%error, "database error");
+                "failed to get settings".to_string()
+            })?;
 
-    Ok(settings.unwrap())
+    settings.ok_or_else(|| {
+        tracing::error!("settings record not found");
+        "settings not found".to_string()
+    })
 }
 
 #[tauri::command]
@@ -27,7 +37,10 @@ pub async fn save_settings(
         .update(("settings", "main"))
         .merge(settings)
         .await
-        .unwrap();
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to save settings".to_string()
+        })?;
 
     Ok(())
 }
@@ -40,10 +53,10 @@ pub async fn backup_import(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    database
-        .import(path)
-        .await
-        .map_err(|error| error.to_string())
+    database.import(path).await.map_err(|error| {
+        tracing::error!(%error, "database error");
+        "failed to import data".to_string()
+    })
 }
 
 #[tauri::command]
@@ -55,8 +68,14 @@ pub async fn backup_export(
     let settings: Settings = database
         .select(("settings", "main"))
         .await
-        .unwrap()
-        .unwrap();
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to export settings".to_string()
+        })?
+        .ok_or_else(|| {
+            tracing::error!("settings record not found");
+            "settings not found for exportation".to_string()
+        })?;
 
     let mut path = settings.backups_path;
 
@@ -70,8 +89,8 @@ pub async fn backup_export(
             .expect("failed to format"),
     );
 
-    database
-        .export(path)
-        .await
-        .map_err(|error| error.to_string())
+    database.export(path).await.map_err(|error| {
+        tracing::error!(%error, "database error");
+        "failed to export data".to_string()
+    })
 }
