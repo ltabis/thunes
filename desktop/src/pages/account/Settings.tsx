@@ -3,23 +3,27 @@ import { useAccount } from "../../contexts/Account";
 import { Account } from "../../../../cli/bindings/Account";
 import { useEffect, useState } from "react";
 import { getAccount, updateAccount } from "../../api";
+import { useDispatchSnackbar } from "../../contexts/Snackbar";
 
 export default function Settings() {
   const account = useAccount()!;
+  const dispatchSnackbar = useDispatchSnackbar()!;
   const [form, setForm] = useState<Account>();
 
   useEffect(() => {
     getAccount(account.id)
       .then(setForm)
-      .catch((error) => console.error(error));
-  }, [account]);
+      .catch((error) => dispatchSnackbar({ type: "open", message: error }));
+  }, [account, dispatchSnackbar]);
 
   if (!form) return <></>;
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const updatedAccount = { ...form, [event.target.id]: event.target.value };
     setForm(updatedAccount);
-    updateAccount(updatedAccount).catch((error) => console.error(error));
+    updateAccount(updatedAccount).catch((error) =>
+      dispatchSnackbar({ type: "open", message: error })
+    );
   };
 
   return (

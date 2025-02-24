@@ -17,6 +17,7 @@ import { useDispatchSettings, useSettings } from "../contexts/Settings";
 import { ReactNode } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { ExportBackup, ImportBackup } from "../api";
+import { useDispatchSnackbar } from "../contexts/Snackbar";
 
 function SettingDescription({ children }: { children: ReactNode }) {
   return (
@@ -57,7 +58,8 @@ const SETTINGS_GRID_PADDING = 5;
 
 export default function Settings() {
   const settings = useSettings();
-  const dispatch = useDispatchSettings()!;
+  const dispatchSettings = useDispatchSettings()!;
+  const dispatchSnackbar = useDispatchSnackbar()!;
 
   const handleBackupDirectoryPath = async () => {
     const backups_path = await open({
@@ -67,7 +69,7 @@ export default function Settings() {
     });
 
     if (backups_path && settings) {
-      dispatch({
+      dispatchSettings({
         type: "update",
         settings: {
           ...settings,
@@ -96,7 +98,7 @@ export default function Settings() {
               value={settings.theme}
               label="Theme"
               onChange={(event: SelectChangeEvent) => {
-                dispatch({
+                dispatchSettings({
                   type: "update",
                   settings: {
                     ...settings,
@@ -140,7 +142,9 @@ export default function Settings() {
             variant="contained"
             onClick={async () => {
               ExportBackup()
-                .catch((error) => console.error(error))
+                .catch((error) =>
+                  dispatchSnackbar({ type: "open", message: error })
+                )
                 .then(() => console.info("backup done"));
             }}
           >
@@ -166,7 +170,9 @@ export default function Settings() {
                 directory: false,
               });
               if (path) {
-                ImportBackup(path).catch((error) => console.error(error));
+                ImportBackup(path).catch((error) =>
+                  dispatchSnackbar({ type: "open", message: error })
+                );
               }
             }}
           >
@@ -183,7 +189,7 @@ export default function Settings() {
 
       <Button
         variant="contained"
-        onClick={() => dispatch({ type: "save" })}
+        onClick={() => dispatchSettings({ type: "save" })}
         sx={{ m: 1 }}
       >
         Save settings

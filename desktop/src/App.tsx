@@ -23,10 +23,12 @@ import { AccountProvider } from "./contexts/Account";
 import { getSettings } from "./api";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { SnackbarProvider, useDispatchSnackbar } from "./contexts/Snackbar";
 
 function Layout() {
   const settings = useSettings();
-  const dispatch = useDispatchSettings()!;
+  const dispatchSettings = useDispatchSettings()!;
+  const dispatchSnackbar = useDispatchSnackbar()!;
   const navigate = useNavigate();
   const drawerWidth = 240;
 
@@ -53,11 +55,11 @@ function Layout() {
 
   useEffect(() => {
     getSettings()
-      .then((settings) => dispatch({ type: "update", settings }))
-      .catch((error) => {
-        console.error(error);
-      });
-  }, [dispatch]);
+      .then((settings) => dispatchSettings({ type: "update", settings }))
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  }, [dispatchSettings, dispatchSnackbar]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -65,61 +67,63 @@ function Layout() {
         theme={settings?.theme === "dark" ? darkTheme : lightTheme}
       >
         <CssBaseline />
-        <AccountProvider>
-          <Box sx={{ display: "flex" }}>
-            <Drawer
-              sx={{
-                width: drawerWidth,
-                flexShrink: 0,
-                "& .MuiDrawer-paper": {
+        <SnackbarProvider>
+          <AccountProvider>
+            <Box sx={{ display: "flex" }}>
+              <Drawer
+                sx={{
                   width: drawerWidth,
-                  boxSizing: "border-box",
-                },
-              }}
-              variant="permanent"
-              anchor="left"
-            >
-              <List sx={{ flex: 2 }}>
-                {topItems.map((item) => (
-                  <ListItem
-                    key={item.label}
-                    disablePadding
-                    sx={{ display: "block" }}
-                  >
-                    <ListItemButton onClick={() => navigate(item.path)}>
-                      <ListItemIcon>
-                        {React.createElement(item.icon)}
-                      </ListItemIcon>
-                      <ListItemText primary={item.label} />
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
-              <List>
-                {bottomItems.map((item) => (
-                  <ListItem
-                    key={item.label}
-                    disablePadding
-                    sx={{ display: "block" }}
-                  >
-                    <ListItemButton onClick={() => navigate(item.path)}>
-                      <ListItemIcon>
-                        {React.createElement(item.icon)}
-                      </ListItemIcon>
-                      <ListItemText primary={item.label} />
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
-            </Drawer>
-            <Box
-              component="main"
-              sx={{ flexGrow: 1, bgcolor: "background.default", p: 3 }}
-            >
-              <Outlet></Outlet>
+                  flexShrink: 0,
+                  "& .MuiDrawer-paper": {
+                    width: drawerWidth,
+                    boxSizing: "border-box",
+                  },
+                }}
+                variant="permanent"
+                anchor="left"
+              >
+                <List sx={{ flex: 2 }}>
+                  {topItems.map((item) => (
+                    <ListItem
+                      key={item.label}
+                      disablePadding
+                      sx={{ display: "block" }}
+                    >
+                      <ListItemButton onClick={() => navigate(item.path)}>
+                        <ListItemIcon>
+                          {React.createElement(item.icon)}
+                        </ListItemIcon>
+                        <ListItemText primary={item.label} />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                </List>
+                <List>
+                  {bottomItems.map((item) => (
+                    <ListItem
+                      key={item.label}
+                      disablePadding
+                      sx={{ display: "block" }}
+                    >
+                      <ListItemButton onClick={() => navigate(item.path)}>
+                        <ListItemIcon>
+                          {React.createElement(item.icon)}
+                        </ListItemIcon>
+                        <ListItemText primary={item.label} />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                </List>
+              </Drawer>
+              <Box
+                component="main"
+                sx={{ flexGrow: 1, bgcolor: "background.default", p: 3 }}
+              >
+                <Outlet></Outlet>
+              </Box>
             </Box>
-          </Box>
-        </AccountProvider>
+          </AccountProvider>
+        </SnackbarProvider>
       </ThemeProvider>
     </LocalizationProvider>
   );

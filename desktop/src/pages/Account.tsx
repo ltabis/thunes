@@ -45,6 +45,7 @@ import {
 } from "../api";
 import { Account } from "../../../cli/bindings/Account";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
+import { useDispatchSnackbar } from "../contexts/Snackbar";
 
 function DeleteAccountDialog({
   open,
@@ -56,7 +57,8 @@ function DeleteAccountDialog({
   handleUpdateAccounts: (account: RecordId) => void;
 }) {
   const account = useAccount()!;
-  const dispatch = useDispatchAccount()!;
+  const dispatchAccount = useDispatchAccount()!;
+  const dispatchSnackbar = useDispatchSnackbar()!;
 
   const handleCloseForm = () => {
     setOpen(false);
@@ -67,12 +69,14 @@ function DeleteAccountDialog({
       .then(() => {
         handleCloseForm();
         handleUpdateAccounts(account.id);
-        dispatch({
+        dispatchAccount({
           type: "select",
           account: { id: EMPTY_RECORD_ID, name: "" },
         });
       })
-      .catch((error) => console.error(error));
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
   };
 
   return (
@@ -98,7 +102,8 @@ function AddAccountDialog({
   handleUpdateAccounts: (account: RecordId) => void;
 }) {
   const account = useAccount()!;
-  const dispatch = useDispatchAccount()!;
+  const dispatchAccount = useDispatchAccount()!;
+  const dispatchSnackbar = useDispatchSnackbar()!;
   const [form, setForm] = useState<
     Omit<Account, "id" | "transaction_grid_sort_model">
   >({
@@ -116,9 +121,11 @@ function AddAccountDialog({
         handleCloseForm();
         handleUpdateAccounts(account.id);
         // FIXME: does not work.
-        dispatch({ type: "select", account });
+        dispatchAccount({ type: "select", account });
       })
-      .catch((error) => console.error(error));
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
   };
 
   return (
@@ -174,7 +181,6 @@ function AddAccountDialog({
 }
 
 export function Layout() {
-  // TODO: generalize Snackbar errors.
   const selected = useAccount();
   const dispatch = useDispatchAccount()!;
 
