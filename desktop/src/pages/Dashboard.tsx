@@ -14,20 +14,19 @@ import Grid from "@mui/material/Grid2";
 import { useNavigate } from "react-router-dom";
 import { useDispatchAccount } from "../contexts/Account";
 import { getAllBalance } from "../api";
+import { useDispatchSnackbar } from "../contexts/Snackbar";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const dispatch = useDispatchAccount()!;
+  const dispatchAccount = useDispatchAccount()!;
+  const dispatchSnackbar = useDispatchSnackbar()!;
   const [currencies, setCurrencies] = useState<CurrencyBalance[] | null>(null);
 
-  const getBalances = async () =>
+  useEffect(() => {
     getAllBalance()
       .then(setCurrencies)
-      .catch((error) => console.error("failed to get balances", error));
-
-  useEffect(() => {
-    getBalances();
-  }, []);
+      .catch((error) => dispatchSnackbar({ type: "open", message: error }));
+  }, [dispatchSnackbar]);
 
   return (
     <Paper elevation={0} sx={{ height: "100%" }}>
@@ -74,7 +73,7 @@ export default function Dashboard() {
                   ]}
                   onItemClick={(_event, account) => {
                     const currentAccount = accounts[account.dataIndex].account;
-                    dispatch({
+                    dispatchAccount({
                       type: "select",
                       account: {
                         id: currentAccount.id,

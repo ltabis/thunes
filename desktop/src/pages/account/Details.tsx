@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 import { useAccount } from "../../contexts/Account";
 import { PieChart } from "@mui/x-charts";
 import { getBalance, getCurrency } from "../../api";
+import { useDispatchSnackbar } from "../../contexts/Snackbar";
 
 export default function Details() {
   const account = useAccount()!;
+  const dispatchSnackbar = useDispatchSnackbar()!;
   const [currency, setCurrency] = useState<string | null>(null);
   const [balance, setBalance] = useState(0.0);
   const [balanceNeeds, setBalanceNeeds] = useState(0.0);
@@ -17,16 +19,22 @@ export default function Details() {
     getBalance(account.id).then(setBalance);
 
     // TODO: get balances for the current month.
-    getBalance(account.id, { tag: "needs" }).then((balance) =>
-      setBalanceNeeds((balance as number) * -1)
-    );
-    getBalance(account.id, { tag: "wants" }).then((balance) =>
-      setBalanceWants((balance as number) * -1)
-    );
-    getBalance(account.id, { tag: "savings" }).then((balance) =>
-      setBalanceSavings((balance as number) * -1)
-    );
-  }, [account]);
+    getBalance(account.id, { tag: "needs" })
+      .then((balance) => setBalanceNeeds((balance as number) * -1))
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+    getBalance(account.id, { tag: "wants" })
+      .then((balance) => setBalanceWants((balance as number) * -1))
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+    getBalance(account.id, { tag: "savings" })
+      .then((balance) => setBalanceSavings((balance as number) * -1))
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  }, [account, dispatchSnackbar]);
 
   return (
     <>

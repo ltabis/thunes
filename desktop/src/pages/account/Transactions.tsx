@@ -51,6 +51,7 @@ import {
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
 import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers";
+import { useDispatchSnackbar } from "../../contexts/Snackbar";
 
 const filterFloat = (value: string) =>
   /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value.replace(",", "."))
@@ -67,6 +68,7 @@ function AddTransactionDialog({
   handleUpdateTransactions: (account: AccountIdentifiers) => void;
 }) {
   const account = useAccount()!;
+  const dispatchSnackbar = useDispatchSnackbar()!;
   // Note: omit amount float value to enable the user to enter a floating point character.
   const [form, setForm] = useState<
     Omit<Transaction, "amount" | "date"> & { amount: string; date: Dayjs }
@@ -95,7 +97,7 @@ function AddTransactionDialog({
         handleCloseForm();
         handleUpdateTransactions(account);
       })
-      .catch((error) => console.error(error));
+      .catch((error) => dispatchSnackbar({ type: "open", message: error }));
   };
 
   return (
@@ -172,12 +174,12 @@ function AddTransactionDialog({
 export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
   const { id, value, field } = props;
   const apiRef = useGridApiContext();
+  const dispatchSnackbar = useDispatchSnackbar()!;
 
   const handleChange = (newTags: Tag[]) => {
     // FIXME: only add new tags.
     addTags(newTags).catch((error) =>
-      // FIXME: show error to client.
-      console.error("failed to store tags", error)
+      dispatchSnackbar({ type: "open", message: error })
     );
     apiRef.current.setEditCellValue({ id, field, value: newTags });
   };
@@ -187,6 +189,7 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
 
 export default function Transactions() {
   const accountIdentifiers = useAccount()!;
+  const dispatchSnackbar = useDispatchSnackbar()!;
   const [account, setAccount] = useState<Account>();
   const [open, setOpen] = useState(false);
   const [currency, setCurrency] = useState<string | null>(null);
@@ -287,8 +290,8 @@ export default function Transactions() {
   useEffect(() => {
     getAccount(accountIdentifiers.id)
       .then(setAccount)
-      .catch((error) => console.error(error));
-  }, [accountIdentifiers]);
+      .catch((error) => dispatchSnackbar({ type: "open", message: error }));
+  }, [accountIdentifiers, dispatchSnackbar]);
 
   return (
     <Paper elevation={0}>
@@ -342,7 +345,7 @@ export default function Transactions() {
             checkboxSelection
             processRowUpdate={handleRowUpdate}
             onProcessRowUpdateError={(error) =>
-              console.error("update error", error)
+              dispatchSnackbar({ type: "open", message: error })
             }
             sortModel={
               // Cast to undefined in case the model is null since `sortModel`
