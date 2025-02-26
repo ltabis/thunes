@@ -33,7 +33,6 @@ import {
 } from "../contexts/Account";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Transactions from "./account/Transactions";
-import Details from "./account/Details";
 import { MouseEvent, SyntheticEvent } from "react";
 import Settings from "./account/Settings";
 import {
@@ -291,7 +290,6 @@ export function Layout() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
           {accountIsSelected(selected) && (
             <Tabs onChange={handleTabChange} value={tab} variant="fullWidth">
-              <Tab label="Details"></Tab>
               <Tab label="Transactions"></Tab>
               <Tab label="Settings"></Tab>
             </Tabs>
@@ -323,12 +321,9 @@ export function Layout() {
       {accountIsSelected(selected) && (
         <>
           <div hidden={tab !== 0}>
-            <Details />
-          </div>
-          <div hidden={tab !== 1}>
             <Transactions />
           </div>
-          <div hidden={tab !== 2}>
+          <div hidden={tab !== 1}>
             <Settings />
           </div>
         </>
