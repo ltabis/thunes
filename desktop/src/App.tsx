@@ -20,7 +20,6 @@ import React, { useEffect } from "react";
 import Settings from "./pages/Settings";
 import { darkTheme, lightTheme } from "./Themes";
 import { useDispatchSettings, useSettings } from "./contexts/Settings";
-import { AccountProvider } from "./contexts/Account";
 import { getSettings } from "./api";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -74,61 +73,59 @@ function Layout() {
       >
         <CssBaseline />
         <SnackbarProvider>
-          <AccountProvider>
-            <Box sx={{ display: "flex" }}>
-              <Drawer
-                sx={{
+          <Box sx={{ display: "flex" }}>
+            <Drawer
+              sx={{
+                width: drawerWidth,
+                flexShrink: 0,
+                "& .MuiDrawer-paper": {
                   width: drawerWidth,
-                  flexShrink: 0,
-                  "& .MuiDrawer-paper": {
-                    width: drawerWidth,
-                    boxSizing: "border-box",
-                  },
-                }}
-                variant="permanent"
-                anchor="left"
-              >
-                <List sx={{ flex: 2 }}>
-                  {topItems.map((item) => (
-                    <ListItem
-                      key={item.label}
-                      disablePadding
-                      sx={{ display: "block" }}
-                    >
-                      <ListItemButton onClick={() => navigate(item.path)}>
-                        <ListItemIcon>
-                          {React.createElement(item.icon)}
-                        </ListItemIcon>
-                        <ListItemText primary={item.label} />
-                      </ListItemButton>
-                    </ListItem>
-                  ))}
-                </List>
-                <List>
-                  {bottomItems.map((item) => (
-                    <ListItem
-                      key={item.label}
-                      disablePadding
-                      sx={{ display: "block" }}
-                    >
-                      <ListItemButton onClick={() => navigate(item.path)}>
-                        <ListItemIcon>
-                          {React.createElement(item.icon)}
-                        </ListItemIcon>
-                        <ListItemText primary={item.label} />
-                      </ListItemButton>
-                    </ListItem>
-                  ))}
-                </List>
-              </Drawer>
-              <Box
-                component="main"
-                sx={{ flexGrow: 1, bgcolor: "background.default", p: 3 }}
-              >
-                <Outlet></Outlet>
-              </Box>
+                  boxSizing: "border-box",
+                },
+              }}
+              variant="permanent"
+              anchor="left"
+            >
+              <List sx={{ flex: 2 }}>
+                {topItems.map((item) => (
+                  <ListItem
+                    key={item.label}
+                    disablePadding
+                    sx={{ display: "block" }}
+                  >
+                    <ListItemButton onClick={() => navigate(item.path)}>
+                      <ListItemIcon>
+                        {React.createElement(item.icon)}
+                      </ListItemIcon>
+                      <ListItemText primary={item.label} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
+              <List>
+                {bottomItems.map((item) => (
+                  <ListItem
+                    key={item.label}
+                    disablePadding
+                    sx={{ display: "block" }}
+                  >
+                    <ListItemButton onClick={() => navigate(item.path)}>
+                      <ListItemIcon>
+                        {React.createElement(item.icon)}
+                      </ListItemIcon>
+                      <ListItemText primary={item.label} />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </List>
+            </Drawer>
+            <Box
+              component="main"
+              sx={{ flexGrow: 1, bgcolor: "background.default", p: 3 }}
+            >
+              <Outlet></Outlet>
             </Box>
-          </AccountProvider>
+          </Box>
         </SnackbarProvider>
       </ThemeProvider>
     </LocalizationProvider>
@@ -140,8 +137,8 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
-        <Route path="account" element={<Account />} />
-        <Route path="budget" element={<Budget />} />
+        <Route path="account/:id?" element={<Account />} />
+        <Route path="budget/:id?" element={<Budget />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

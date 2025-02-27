@@ -1,20 +1,18 @@
 import { Paper, Stack, TextField } from "@mui/material";
-import { useAccount } from "../../contexts/Account";
 import { Account } from "../../../../cli/bindings/Account";
 import { useEffect, useState } from "react";
-import { getAccount, updateAccount } from "../../api";
+import { getAccount, RecordId, updateAccount } from "../../api";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 
-export default function Settings() {
-  const account = useAccount()!;
+export default function Settings({ accountId }: { accountId: RecordId }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [form, setForm] = useState<Account>();
 
   useEffect(() => {
-    getAccount(account.id)
+    getAccount(accountId)
       .then(setForm)
-      .catch((error) => dispatchSnackbar({ type: "open", message: error }));
-  }, [account, dispatchSnackbar]);
+      .catch((error) => dispatchSnackbar({ type: "open", severity: "error", message: error }));
+  }, [accountId, dispatchSnackbar]);
 
   if (!form) return <></>;
 
@@ -22,7 +20,7 @@ export default function Settings() {
     const updatedAccount = { ...form, [event.target.id]: event.target.value };
     setForm(updatedAccount);
     updateAccount(updatedAccount).catch((error) =>
-      dispatchSnackbar({ type: "open", message: error })
+      dispatchSnackbar({ type: "open", severity: "error", message: error })
     );
   };
 

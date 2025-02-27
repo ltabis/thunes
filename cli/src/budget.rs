@@ -50,6 +50,27 @@ impl Budget {
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct BudgetIdentifiers {
+    pub name: String,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub id: surrealdb::RecordId,
+}
+
+pub async fn list(db: &Surreal<Db>) -> Result<Vec<BudgetIdentifiers>, surrealdb::Error> {
+    let budgets: Vec<Budget> = db.select("budget").await?;
+
+    Ok(budgets
+        .into_iter()
+        .map(|budget| BudgetIdentifiers {
+            name: budget.data.name,
+            id: budget.id,
+        })
+        .collect())
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
 #[derive(Debug, serde::Deserialize)]
 pub struct CreateSplitBudgetOptions {
     pub name: String,

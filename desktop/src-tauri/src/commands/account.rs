@@ -12,6 +12,42 @@ pub type Accounts = std::collections::HashMap<String, Account>;
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn list_accounts(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+) -> Result<Vec<AccountIdentifiers>, String> {
+    let database = database.lock().await;
+
+    thunes_cli::list_account(&database).await.map_err(|error| {
+        tracing::error!(%error, "database error");
+        "failed to list accounts".to_string()
+    })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn add_account(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    options: thunes_cli::account::AddAccountOptions,
+) -> Result<Account, String> {
+    let database = database.lock().await;
+
+    thunes_cli::account::create(&database, options)
+        .await
+        .map_err(|error| match error {
+            ThunesError::Database(error) => {
+                tracing::error!(%error, "database error");
+                "failed to add account".to_string()
+            }
+            // Note: should not happen. See the function internals.
+            ThunesError::RecordNotFound => {
+                tracing::error!("account not found after creation");
+                "failed to create account".to_string()
+            }
+        })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_account(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account_id: RecordId,
@@ -45,42 +81,6 @@ pub async fn update_account(
         .map_err(|error| {
             tracing::error!(%error, "database error");
             "failed to update account".to_string()
-        })
-}
-
-#[tauri::command]
-#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
-pub async fn list_accounts(
-    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-) -> Result<Vec<AccountIdentifiers>, String> {
-    let database = database.lock().await;
-
-    thunes_cli::list_account(&database).await.map_err(|error| {
-        tracing::error!(%error, "database error");
-        "failed to list accounts".to_string()
-    })
-}
-
-#[tauri::command]
-#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
-pub async fn add_account(
-    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    options: thunes_cli::account::AddAccountOptions,
-) -> Result<Account, String> {
-    let database = database.lock().await;
-
-    thunes_cli::account::create(&database, options)
-        .await
-        .map_err(|error| match error {
-            ThunesError::Database(error) => {
-                tracing::error!(%error, "database error");
-                "failed to add account".to_string()
-            }
-            // Note: should not happen. See the function internals.
-            ThunesError::RecordNotFound => {
-                tracing::error!("account not found after creation");
-                "failed to create account".to_string()
-            }
         })
 }
 

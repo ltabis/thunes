@@ -41,5 +41,6 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
 export const useAccount = () => useContext(AccountContext);
 export const useDispatchAccount = () => useContext(AccountDispatchContext);
-export const accountIsSelected = (selected: AccountIdentifiers | null) =>
-  selected && selected.id.id.String !== "";
+export const accountIsSelected = (selected: string | undefined): boolean =>
+  selected !== undefined && selected !== "";
+

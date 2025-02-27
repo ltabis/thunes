@@ -45,6 +45,7 @@ import {
   getBalance,
   getCurrency,
   getTransactions,
+  RecordId,
   updateAccount,
   updateTransaction,
 } from "../../api";
@@ -97,7 +98,7 @@ function AddTransactionDialog({
         handleCloseForm();
         handleUpdateTransactions(account);
       })
-      .catch((error) => dispatchSnackbar({ type: "open", message: error }));
+      .catch((error) => dispatchSnackbar({ type: "open", severity: "error", message: error }));
   };
 
   return (
@@ -179,7 +180,7 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
   const handleChange = (newTags: Tag[]) => {
     // FIXME: only add new tags.
     addTags(newTags).catch((error) =>
-      dispatchSnackbar({ type: "open", message: error })
+      dispatchSnackbar({ type: "open", severity: "error", message: error })
     );
     apiRef.current.setEditCellValue({ id, field, value: newTags });
   };
@@ -187,8 +188,7 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
   return <EditTags value={value} handleChange={handleChange} />;
 }
 
-export default function Transactions() {
-  const accountIdentifiers = useAccount()!;
+export default function Transactions({ accountId }: { accountId: RecordId }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [account, setAccount] = useState<Account>();
   const [open, setOpen] = useState(false);
@@ -260,15 +260,15 @@ export default function Transactions() {
 
   const handleRowUpdate = (transaction: TransactionWithId) => {
     updateTransaction(transaction);
-    handleUpdateTransactions(accountIdentifiers);
+    handleUpdateTransactions(accountId);
     return transaction;
   };
 
-  const handleUpdateTransactions = (account: AccountIdentifiers) => {
-    getTransactions(account.id).then(setTransactions);
-    getTransactions(account.id).then(setSparklineTransactions);
-    getCurrency(account.id).then(setCurrency);
-    getBalance(account.id).then(setBalance);
+  const handleUpdateTransactions = async (accountId: RecordId) => {
+    setTransactions(await getTransactions(accountId));
+    setSparklineTransactions(await getTransactions(accountId));
+    setCurrency(await getCurrency(accountId));
+    setBalance(await getBalance(accountId));
   };
 
   const handleSortModelChange = (sortModel: GridSortModel) => {
@@ -284,14 +284,15 @@ export default function Transactions() {
   };
 
   useEffect(() => {
-    handleUpdateTransactions(accountIdentifiers);
-  }, [accountIdentifiers]);
+    handleUpdateTransactions(accountId)
+      .catch((error) => dispatchSnackbar({ type: "open", severity: "error", message: error }));
+  }, [accountId, dispatchSnackbar]);
 
   useEffect(() => {
-    getAccount(accountIdentifiers.id)
+    getAccount(accountId)
       .then(setAccount)
-      .catch((error) => dispatchSnackbar({ type: "open", message: error }));
-  }, [accountIdentifiers, dispatchSnackbar]);
+      .catch((error) => dispatchSnackbar({ type: "open", severity: "error", message: error }));
+  }, [accountId, dispatchSnackbar]);
 
   return (
     <Paper elevation={0}>
@@ -345,14 +346,14 @@ export default function Transactions() {
             checkboxSelection
             processRowUpdate={handleRowUpdate}
             onProcessRowUpdateError={(error) =>
-              dispatchSnackbar({ type: "open", message: error })
+              dispatchSnackbar({ type: "open", severity: "error", message: error })
             }
             sortModel={
               // Cast to undefined in case the model is null since `sortModel`
               // does not handle null.
               (account?.transaction_grid_sort_model ?? undefined) as
-                | GridSortModel
-                | undefined
+              | GridSortModel
+              | undefined
             }
             onSortModelChange={handleSortModelChange}
           />
@@ -382,7 +383,7 @@ export default function Transactions() {
       <AddTransactionDialog
         open={open}
         setOpen={setOpen}
-        handleUpdateTransactions={handleUpdateTransactions}
+        handleUpdateTransactions={(identifiers) => handleUpdateTransactions(identifiers.id)}
       />
     </Paper>
   );

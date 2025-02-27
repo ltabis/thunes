@@ -28,6 +28,7 @@ import {
 } from "react";
 import {
   accountIsSelected,
+  AccountProvider,
   useAccount,
   useDispatchAccount,
 } from "../contexts/Account";
@@ -45,6 +46,8 @@ import {
 import { Account } from "../../../cli/bindings/Account";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
+import { useParams } from "react-router-dom";
+import { useAccountNavigate } from "../hooks/accounts";
 
 function DeleteAccountDialog({
   open,
@@ -179,14 +182,13 @@ function AddAccountDialog({
   );
 }
 
-export function Layout() {
-  const selected = useAccount();
-  const dispatch = useDispatchAccount()!;
+export function Layout({ id }: { id: string | undefined }) {
+  const navigate = useAccountNavigate();
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openFailure, setOpenFailure] = useState("");
-  const [accounts, setAccounts] = useState<AccountIdentifiers[]>();
+  const [accounts, setAccounts] = useState<Map<string, AccountIdentifiers>>();
   const [accountAnchorEl, setAccountAnchorEl] = useState<null | HTMLElement>(
     null
   );
@@ -220,10 +222,8 @@ export function Layout() {
   };
 
   const handleSelectAccount = async (account: AccountIdentifiers) =>
-    dispatch({
-      type: "select",
-      account,
-    });
+    navigate(account);
+
 
   const handleTabChange = (_event: SyntheticEvent, newTab: number) => {
     setTab(newTab);
@@ -231,7 +231,7 @@ export function Layout() {
 
   const handleUpdateAccounts = () => {
     listAccounts()
-      .then(setAccounts)
+      .then((accounts) => setAccounts(new Map(accounts.map(account => [account.id.id.String, account]))))
       .catch((error) => setOpenFailure(error));
   };
 
@@ -253,8 +253,8 @@ export function Layout() {
                 onClick={handleClickAccount}
                 variant="contained"
               >
-                {accountIsSelected(selected)
-                  ? selected!.name
+                {accountIsSelected(id)
+                  ? accounts.get(id!)!.name
                   : "Select account"}
               </Button>
               <Menu
@@ -266,12 +266,12 @@ export function Layout() {
                   "aria-labelledby": "basic-button",
                 }}
               >
-                {accounts
+                {Array.from(accounts.values())
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map((account) => (
                     <MenuItem
                       key={account.name}
-                      selected={account.id === selected?.id}
+                      selected={account.id.id.String === id}
                       onClick={() => handleSelectAccount(account)}
                     >
                       {account.name}
@@ -288,7 +288,7 @@ export function Layout() {
           )}
 
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
-          {accountIsSelected(selected) && (
+          {accountIsSelected(id) && (
             <Tabs onChange={handleTabChange} value={tab} variant="fullWidth">
               <Tab label="Transactions"></Tab>
               <Tab label="Settings"></Tab>
@@ -318,13 +318,13 @@ export function Layout() {
 
       <Divider sx={{ margin: 2 }} />
 
-      {accountIsSelected(selected) && (
+      {accountIsSelected(id) && (
         <>
           <div hidden={tab !== 0}>
-            <Transactions />
+            <Transactions accountId={accounts!.get(id!)!.id} />
           </div>
           <div hidden={tab !== 1}>
-            <Settings />
+            <Settings accountId={accounts!.get(id!)!.id} />
           </div>
         </>
       )}
@@ -360,4 +360,12 @@ export function Layout() {
   );
 }
 
-export default Layout;
+export default function () {
+  const { id } = useParams();
+
+  return (
+    <AccountProvider>
+      <Layout id={id} />
+    </AccountProvider>
+  );
+};

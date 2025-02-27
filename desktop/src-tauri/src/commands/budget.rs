@@ -1,8 +1,21 @@
 use surrealdb::engine::local::Db;
 use surrealdb::{RecordId, Surreal};
 use tauri::State;
-use thunes_cli::budget::Budget;
+use thunes_cli::budget::{Budget, BudgetIdentifiers};
 use thunes_cli::Error as ThunesError;
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn list_budget(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+) -> Result<Vec<BudgetIdentifiers>, String> {
+    let database = database.lock().await;
+
+    thunes_cli::budget::list(&database).await.map_err(|error| {
+        tracing::error!(%error, "database error");
+        "failed to list budgets".to_string()
+    })
+}
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]

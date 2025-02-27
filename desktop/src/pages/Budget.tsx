@@ -18,43 +18,45 @@ import {
   useState,
 } from "react";
 import {
-  accountIsSelected,
-  useAccount,
-  useDispatchAccount,
-} from "../contexts/Account";
+  budgetIsSelected,
+  useBudget,
+  useDispatchBudget,
+} from "../contexts/Budget";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import Transactions from "./account/Transactions";
 import { MouseEvent, SyntheticEvent } from "react";
-import Settings from "./account/Settings";
 import {
-  listAccounts,
+  listBudgets,
 } from "../api";
-import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
+import { BudgetIdentifiers } from "../../../cli/bindings/BudgetIdentifiers";
+
+function Budget() {
+  return <></>
+}
 
 export function Layout() {
-  const selected = useAccount();
-  const dispatch = useDispatchAccount()!;
+  const selected = useBudget();
+  const dispatch = useDispatchBudget()!;
 
   const [openFailure, setOpenFailure] = useState("");
-  const [accounts, setAccounts] = useState<AccountIdentifiers[]>();
-  const [accountAnchorEl, setAccountAnchorEl] = useState<null | HTMLElement>(
+  const [budgets, setBudgets] = useState<BudgetIdentifiers[]>();
+  const [budgetAnchorEl, setBudgetAnchorEl] = useState<null | HTMLElement>(
     null
   );
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(
     null
   );
 
-  const openAccountMenu = Boolean(accountAnchorEl);
+  const openBudgetMenu = Boolean(budgetAnchorEl);
   const openSettingsMenu = Boolean(settingsAnchorEl);
   const [tab, setTab] = useState(0);
 
-  const handleClickAccount = (event: MouseEvent<HTMLElement>) =>
-    setAccountAnchorEl(event.currentTarget);
+  const handleClickBudget = (event: MouseEvent<HTMLElement>) =>
+    setBudgetAnchorEl(event.currentTarget);
   const handleClickSettings = (event: MouseEvent<HTMLElement>) =>
     setSettingsAnchorEl(event.currentTarget);
 
   const handleClose = () => {
-    setAccountAnchorEl(null);
+    setBudgetAnchorEl(null);
     setSettingsAnchorEl(null);
   };
 
@@ -69,68 +71,68 @@ export function Layout() {
     setOpenFailure("");
   };
 
-  const handleSelectAccount = async (account: AccountIdentifiers) =>
+  const handleSelectBudget = async (budget: BudgetIdentifiers) =>
     dispatch({
       type: "select",
-      account,
+      budget,
     });
 
   const handleTabChange = (_event: SyntheticEvent, newTab: number) => {
     setTab(newTab);
   };
 
-  const handleUpdateAccounts = () => {
-    listAccounts()
-      .then(setAccounts)
+  const handleUpdateBudgets = () => {
+    listBudgets()
+      .then(setBudgets)
       .catch((error) => setOpenFailure(error));
   };
 
   useEffect(() => {
-    handleUpdateAccounts();
+    handleUpdateBudgets();
   }, []);
 
   return (
     <>
       <AppBar position="static">
         <Toolbar>
-          {accounts ? (
+          {budgets ? (
             <>
               <Button
                 id="basic-button"
-                aria-controls={openAccountMenu ? "basic-menu" : undefined}
+                aria-controls={openBudgetMenu ? "basic-menu" : undefined}
                 aria-haspopup="true"
-                aria-expanded={openAccountMenu ? "true" : undefined}
-                onClick={handleClickAccount}
+                aria-expanded={openBudgetMenu ? "true" : undefined}
+                onClick={handleClickBudget}
                 variant="contained"
               >
-                {accountIsSelected(selected)
+                {budgetIsSelected(selected)
                   ? selected!.name
                   : "Select budget"}
               </Button>
               <Menu
                 id="basic-menu"
-                anchorEl={accountAnchorEl}
-                open={openAccountMenu}
+                anchorEl={budgetAnchorEl}
+                open={openBudgetMenu}
                 onClose={handleClose}
                 MenuListProps={{
                   "aria-labelledby": "basic-button",
                 }}
               >
-                {accounts
+                {budgets
                   .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((account) => (
+                  .map((budget) => (
                     <MenuItem
-                      key={account.name}
-                      selected={account.id === selected?.id}
-                      onClick={() => handleSelectAccount(account)}
+                      key={budget.name}
+                      selected={budget.id === selected?.id}
+                      onClick={() => handleSelectBudget(budget)}
                     >
-                      {account.name}
+                      {budget.name}
                     </MenuItem>
                   ))}
                 <Divider />
-                <MenuItem onClick={() => setOpenAddDialog(true)}>
-                  Create account
-                </MenuItem>
+                {/* <MenuItem onClick={() => setOpenAddDialog(true)}>
+                  Create budget
+                </MenuItem> */}
               </Menu>
             </>
           ) : (
@@ -138,7 +140,7 @@ export function Layout() {
           )}
 
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
-          {accountIsSelected(selected) && (
+          {budgetIsSelected(selected) && (
             <Tabs onChange={handleTabChange} value={tab} variant="fullWidth">
               <Tab label="Transactions"></Tab>
               <Tab label="Settings"></Tab>
@@ -146,7 +148,7 @@ export function Layout() {
           )}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
 
-          {/* TODO: account actions */}
+          {/* TODO: budget actions */}
           <IconButton aria-label="delete" onClick={handleClickSettings}>
             <MoreVertIcon />
           </IconButton>
@@ -159,24 +161,19 @@ export function Layout() {
               "aria-labelledby": "basic-button",
             }}
           >
-            <MenuItem onClick={() => setOpenDeleteDialog(true)}>
+            {/* <MenuItem onClick={() => setOpenDeleteDialog(true)}>
               Delete
-            </MenuItem>
+            </MenuItem> */}
           </Menu>
         </Toolbar>
       </AppBar>
 
       <Divider sx={{ margin: 2 }} />
 
-      {accountIsSelected(selected) && (
-        <>
-          <div hidden={tab !== 0}>
-            <Transactions />
-          </div>
-          <div hidden={tab !== 1}>
-            <Settings />
-          </div>
-        </>
+      {budgetIsSelected(selected) && (
+        <div hidden={tab !== 1}>
+          <Budget />
+        </div>
       )}
 
       <Snackbar
@@ -191,7 +188,7 @@ export function Layout() {
           variant="filled"
           sx={{ width: "100%" }}
         >
-          failed to open the account: {openFailure}
+          failed to open the budget: {openFailure}
         </Alert>
       </Snackbar>
 

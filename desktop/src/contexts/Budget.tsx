@@ -5,19 +5,18 @@ import {
   useContext,
   useReducer,
 } from "react";
-import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
+import { BudgetIdentifiers } from "../../../cli/bindings/BudgetIdentifiers";
 import { EMPTY_RECORD_ID } from "../api";
 
-// TODO: replace by budget identifier.
-export type Action = { type: "select"; budget: AccountIdentifiers };
+export type Action = { type: "select"; budget: BudgetIdentifiers };
 
-const BudgetContext = createContext<AccountIdentifiers | null>(null);
+const BudgetContext = createContext<BudgetIdentifiers | null>(null);
 const BudgetDispatchContext = createContext<Dispatch<Action> | null>(null);
 
 export function budgetReducer(
-  _budget: AccountIdentifiers,
+  _budget: BudgetIdentifiers,
   action: Action
-): AccountIdentifiers {
+): BudgetIdentifiers {
   switch (action.type) {
     case "select": {
       return action.budget;
@@ -25,11 +24,11 @@ export function budgetReducer(
   }
 }
 
-export function budgetProvider({ children }: { children: ReactNode }) {
+export function BudgetProvider({ children }: { children: ReactNode }) {
   const [settings, dispatch] = useReducer(budgetReducer, {
     id: EMPTY_RECORD_ID,
     name: "",
-  } as AccountIdentifiers);
+  } as BudgetIdentifiers);
 
   return (
     <BudgetContext.Provider value={settings}>
@@ -42,5 +41,5 @@ export function budgetProvider({ children }: { children: ReactNode }) {
 
 export const useBudget = () => useContext(BudgetContext);
 export const useDispatchBudget = () => useContext(BudgetDispatchContext);
-export const budgetIsSelected = (selected: AccountIdentifiers | null) =>
+export const budgetIsSelected = (selected: BudgetIdentifiers | null) =>
   selected && selected.id.id.String !== "";

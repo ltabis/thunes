@@ -11,6 +11,7 @@ import { AddAccountOptions } from "../../../cli/bindings/AddAccountOptions";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { CreateSplitBudgetOptions } from "../../../cli/bindings/CreateSplitBudgetOptions";
 import { Budget } from "../../../cli/bindings/Budget";
+import { BudgetIdentifiers } from "../../../cli/bindings/BudgetIdentifiers";
 
 // TODO: could this be automated ?
 
@@ -35,6 +36,7 @@ export const deleteAccount = (accountId: RecordId): Promise<void> => invoke("del
 export const updateAccount = (account: Account): Promise<void> => invoke("update_account", { account });
 
 // Budgets
+export const listBudgets = (): Promise<BudgetIdentifiers[]> => invoke("list_budgets");
 export const addBudget = (options: CreateSplitBudgetOptions): Promise<void> => invoke("add_budget", { options });
 export const getBudget = (budgetId: RecordId): Promise<Budget> => invoke("get_budget", { budgetId });
 export const updateBudget = (budget: Budget): Promise<void> => invoke("update_budget", { budget });
