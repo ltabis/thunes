@@ -26,12 +26,6 @@ import {
   useEffect,
   useState,
 } from "react";
-import {
-  accountIsSelected,
-  AccountProvider,
-  useAccount,
-  useDispatchAccount,
-} from "../contexts/Account";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Transactions from "./account/Transactions";
 import { MouseEvent, SyntheticEvent } from "react";
@@ -39,7 +33,6 @@ import Settings from "./account/Settings";
 import {
   addAccount,
   deleteAccount,
-  EMPTY_RECORD_ID,
   listAccounts,
   RecordId,
 } from "../api";
@@ -50,16 +43,17 @@ import { useParams } from "react-router-dom";
 import { useAccountNavigate } from "../hooks/accounts";
 
 function DeleteAccountDialog({
+  accountId,
   open,
   setOpen,
   handleUpdateAccounts,
 }: {
+  accountId: AccountIdentifiers,
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
   handleUpdateAccounts: (account: RecordId) => void;
 }) {
-  const account = useAccount()!;
-  const dispatchAccount = useDispatchAccount()!;
+  const navigate = useAccountNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
 
   const handleCloseForm = () => {
@@ -67,14 +61,11 @@ function DeleteAccountDialog({
   };
 
   const handleDeleteAccount = async () => {
-    deleteAccount(account.id)
+    deleteAccount(accountId.id)
       .then(() => {
         handleCloseForm();
-        handleUpdateAccounts(account.id);
-        dispatchAccount({
-          type: "select",
-          account: { id: EMPTY_RECORD_ID, name: "" },
-        });
+        handleUpdateAccounts(accountId.id);
+        navigate();
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -84,7 +75,7 @@ function DeleteAccountDialog({
   return (
     <Dialog open={open} onClose={handleCloseForm}>
       <DialogTitle>
-        Are you sure you want to delete the {account.name} account ?
+        Are you sure you want to delete the {accountId.name} account ?
       </DialogTitle>
       <DialogActions>
         <Button onClick={handleCloseForm}>Cancel</Button>
@@ -103,8 +94,7 @@ function AddAccountDialog({
   setOpen: Dispatch<SetStateAction<boolean>>;
   handleUpdateAccounts: (account: RecordId) => void;
 }) {
-  const account = useAccount()!;
-  const dispatchAccount = useDispatchAccount()!;
+  const navigate = useAccountNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [form, setForm] = useState<
     Omit<Account, "id" | "transaction_grid_sort_model">
@@ -119,11 +109,10 @@ function AddAccountDialog({
 
   const handleAccountSubmission = async () => {
     addAccount(form)
-      .then(() => {
+      .then((account) => {
         handleCloseForm();
         handleUpdateAccounts(account.id);
-        // FIXME: does not work.
-        dispatchAccount({ type: "select", account });
+        navigate({ id: account.id, name: account.name });
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -200,6 +189,8 @@ export function Layout({ id }: { id: string | undefined }) {
   const openSettingsMenu = Boolean(settingsAnchorEl);
   const [tab, setTab] = useState(0);
 
+  const getAccountIdentifiers = () => id && accounts ? accounts.get(id) : undefined;
+
   const handleClickAccount = (event: MouseEvent<HTMLElement>) =>
     setAccountAnchorEl(event.currentTarget);
   const handleClickSettings = (event: MouseEvent<HTMLElement>) =>
@@ -223,7 +214,6 @@ export function Layout({ id }: { id: string | undefined }) {
 
   const handleSelectAccount = async (account: AccountIdentifiers) =>
     navigate(account);
-
 
   const handleTabChange = (_event: SyntheticEvent, newTab: number) => {
     setTab(newTab);
@@ -253,8 +243,8 @@ export function Layout({ id }: { id: string | undefined }) {
                 onClick={handleClickAccount}
                 variant="contained"
               >
-                {accountIsSelected(id)
-                  ? accounts.get(id!)!.name
+                {id && accounts
+                  ? getAccountIdentifiers()!.name
                   : "Select account"}
               </Button>
               <Menu
@@ -288,7 +278,7 @@ export function Layout({ id }: { id: string | undefined }) {
           )}
 
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
-          {accountIsSelected(id) && (
+          {getAccountIdentifiers() && (
             <Tabs onChange={handleTabChange} value={tab} variant="fullWidth">
               <Tab label="Transactions"></Tab>
               <Tab label="Settings"></Tab>
@@ -318,7 +308,7 @@ export function Layout({ id }: { id: string | undefined }) {
 
       <Divider sx={{ margin: 2 }} />
 
-      {accountIsSelected(id) && (
+      {getAccountIdentifiers() && (
         <>
           <div hidden={tab !== 0}>
             <Transactions accountId={accounts!.get(id!)!.id} />
@@ -351,11 +341,15 @@ export function Layout({ id }: { id: string | undefined }) {
         handleUpdateAccounts={handleUpdateAccounts}
       />
 
-      <DeleteAccountDialog
-        open={openDeleteDialog}
-        setOpen={setOpenDeleteDialog}
-        handleUpdateAccounts={handleUpdateAccounts}
-      />
+      {
+        id && accounts &&
+        <DeleteAccountDialog
+          accountId={getAccountIdentifiers()!}
+          open={openDeleteDialog}
+          setOpen={setOpenDeleteDialog}
+          handleUpdateAccounts={handleUpdateAccounts}
+        />
+      }
     </>
   );
 }
@@ -364,8 +358,6 @@ export default function () {
   const { id } = useParams();
 
   return (
-    <AccountProvider>
-      <Layout id={id} />
-    </AccountProvider>
+    <Layout id={id} />
   );
 };

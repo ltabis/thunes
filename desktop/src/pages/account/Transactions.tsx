@@ -25,7 +25,6 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import { Transaction } from "../../../../cli/bindings/Transaction";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
-import { useAccount } from "../../contexts/Account";
 import {
   DataGrid,
   GridColDef,
@@ -51,7 +50,6 @@ import {
 } from "../../api";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
-import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 
 const filterFloat = (value: string) =>
@@ -60,15 +58,16 @@ const filterFloat = (value: string) =>
     : NaN;
 
 function AddTransactionDialog({
+  accountId,
   open,
   setOpen,
   handleUpdateTransactions,
 }: {
+  accountId: RecordId,
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateTransactions: (account: AccountIdentifiers) => void;
+  handleUpdateTransactions: (accountId: RecordId) => void;
 }) {
-  const account = useAccount()!;
   const dispatchSnackbar = useDispatchSnackbar()!;
   // Note: omit amount float value to enable the user to enter a floating point character.
   const [form, setForm] = useState<
@@ -89,14 +88,14 @@ function AddTransactionDialog({
   const handleTransactionSubmission = async () => {
     const amount = filterFloat(form.amount);
 
-    addTransaction(account.id, {
+    addTransaction(accountId, {
       ...form,
       amount,
       date: form.date.toISOString(),
     })
       .then(() => {
         handleCloseForm();
-        handleUpdateTransactions(account);
+        handleUpdateTransactions(accountId);
       })
       .catch((error) => dispatchSnackbar({ type: "open", severity: "error", message: error }));
   };
@@ -381,9 +380,10 @@ export default function Transactions({ accountId }: { accountId: RecordId }) {
       </Fab>
 
       <AddTransactionDialog
+        accountId={accountId}
         open={open}
         setOpen={setOpen}
-        handleUpdateTransactions={(identifiers) => handleUpdateTransactions(identifiers.id)}
+        handleUpdateTransactions={handleUpdateTransactions}
       />
     </Paper>
   );

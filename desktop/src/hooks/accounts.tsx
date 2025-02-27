@@ -4,7 +4,11 @@ import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 export function useAccountNavigate() {
     const navigate = useNavigate();
 
-    return (account: AccountIdentifiers) => {
-        navigate(`/account/${account.id.id.String}`)
+    return (account?: AccountIdentifiers) => {
+        if (account) {
+            navigate(`/account/${account.id.id.String}`);
+        } else {
+            navigate("/account");
+        }
     }
 }

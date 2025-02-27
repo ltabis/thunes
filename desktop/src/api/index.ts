@@ -30,7 +30,7 @@ export const updateTransaction = (transaction: TransactionWithId): Promise<void>
 // Accounts.
 export const listAccounts = (): Promise<AccountIdentifiers[]> => invoke("list_accounts");
 export const getAccount = (accountId: RecordId): Promise<Account> => invoke("get_account", { accountId });
-export const addAccount = (options: AddAccountOptions): Promise<void> => invoke("add_account", { options });
+export const addAccount = (options: AddAccountOptions): Promise<Account> => invoke("add_account", { options });
 export const deleteAccount = (accountId: RecordId): Promise<void> => invoke("delete_account", { accountId });
 // TODO: Make this Partial<Account>
 export const updateAccount = (account: Account): Promise<void> => invoke("update_account", { account });
