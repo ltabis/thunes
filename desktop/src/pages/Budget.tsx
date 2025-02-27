@@ -1,7 +1,9 @@
 import {
   Alert,
   AppBar,
+  Autocomplete,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -28,11 +30,19 @@ import {
 } from "react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { MouseEvent, SyntheticEvent } from "react";
-import { addBudget, deleteBudget, listBudgets, RecordId } from "../api";
+import {
+  addBudget,
+  deleteBudget,
+  listAccounts,
+  listBudgets,
+  RecordId,
+} from "../api";
 import { BudgetIdentifiers } from "../../../cli/bindings/BudgetIdentifiers";
 import { useBudgetNavigate } from "../hooks/budget";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
 import { CreateSplitBudgetOptions } from "../../../cli/bindings/CreateSplitBudgetOptions";
+import { filterFloat } from "../utils";
+import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 
 function DeleteBudgetDialog({
   budget,
@@ -88,9 +98,16 @@ function AddBudgetDialog({
 }) {
   const navigate = useBudgetNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [form, setForm] = useState<CreateSplitBudgetOptions>({
+  const [accounts, setAccounts] = useState<AccountIdentifiers[]>();
+
+  const [form, setForm] = useState<
+    Omit<CreateSplitBudgetOptions, "income" | "accounts"> & {
+      income: string;
+      accounts: AccountIdentifiers[];
+    }
+  >({
     name: "",
-    income: 0,
+    income: "0",
     accounts: [],
   });
 
@@ -98,8 +115,17 @@ function AddBudgetDialog({
     setOpen(false);
   };
 
+  const handleValidAmount = () => isNaN(filterFloat(form.income));
+
   const handleBudgetSubmission = async () => {
-    addBudget(form)
+    const income = filterFloat(form.income);
+    const accounts = form.accounts.map((account) => account.id);
+
+    addBudget({
+      ...form,
+      income,
+      accounts,
+    })
       .then((budget) => {
         handleCloseForm();
         handleUpdateBudgets(budget.id);
@@ -109,6 +135,14 @@ function AddBudgetDialog({
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
   };
+
+  useEffect(() => {
+    listAccounts()
+      .then(setAccounts)
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  }, [dispatchSnackbar]);
 
   return (
     <Dialog
@@ -136,13 +170,60 @@ function AddBudgetDialog({
               onChange={(name) => setForm({ ...form, name: name.target.value })}
             />
           </Grid2>
+          <Grid2 size={3}>
+            <TextField
+              id="budget-income"
+              label="Income"
+              name="income"
+              slotProps={{
+                inputLabel: {
+                  shrink: true,
+                },
+              }}
+              value={form.income}
+              onChange={(income) =>
+                setForm({ ...form, income: income.target.value })
+              }
+              error={handleValidAmount()}
+              helperText={handleValidAmount() && "Not a valid amount"}
+            />
+          </Grid2>
         </Grid2>
+        <Autocomplete
+          multiple
+          selectOnFocus
+          handleHomeEndKeys
+          clearOnBlur
+          disablePortal
+          disableCloseOnSelect
+          value={form.accounts}
+          options={accounts ?? []}
+          getOptionLabel={(account) => account.name}
+          renderInput={(params) => <TextField {...params} label="Accounts" />}
+          renderOption={(props, option) => {
+            const { key, id, ...optionProps } = props;
+            return (
+              <MenuItem
+                key={`${key}-${id}`}
+                value={option.name}
+                {...optionProps}
+              >
+                <Chip label={option.name} />
+              </MenuItem>
+            );
+          }}
+          onChange={(_event, newAccounts) =>
+            setForm({ ...form, accounts: newAccounts })
+          }
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCloseForm}>Cancel</Button>
         <Button
           disabled={
-            form.income === 0 || form.name === "" || form.accounts.length === 0
+            form.income === "0" ||
+            form.name === "" ||
+            form.accounts.length === 0
           }
           type="submit"
         >

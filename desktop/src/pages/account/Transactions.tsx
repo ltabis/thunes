@@ -51,11 +51,7 @@ import {
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
-
-const filterFloat = (value: string) =>
-  /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value.replace(",", "."))
-    ? Number(value.replace(",", "."))
-    : NaN;
+import { filterFloat } from "../../utils";
 
 function AddTransactionDialog({
   accountId,
@@ -63,7 +59,7 @@ function AddTransactionDialog({
   setOpen,
   handleUpdateTransactions,
 }: {
-  accountId: RecordId,
+  accountId: RecordId;
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
   handleUpdateTransactions: (accountId: RecordId) => void;
@@ -97,7 +93,9 @@ function AddTransactionDialog({
         handleCloseForm();
         handleUpdateTransactions(accountId);
       })
-      .catch((error) => dispatchSnackbar({ type: "open", severity: "error", message: error }));
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
   };
 
   return (
@@ -283,14 +281,17 @@ export default function Transactions({ accountId }: { accountId: RecordId }) {
   };
 
   useEffect(() => {
-    handleUpdateTransactions(accountId)
-      .catch((error) => dispatchSnackbar({ type: "open", severity: "error", message: error }));
+    handleUpdateTransactions(accountId).catch((error) =>
+      dispatchSnackbar({ type: "open", severity: "error", message: error })
+    );
   }, [accountId, dispatchSnackbar]);
 
   useEffect(() => {
     getAccount(accountId)
       .then(setAccount)
-      .catch((error) => dispatchSnackbar({ type: "open", severity: "error", message: error }));
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
   }, [accountId, dispatchSnackbar]);
 
   return (
@@ -345,14 +346,18 @@ export default function Transactions({ accountId }: { accountId: RecordId }) {
             checkboxSelection
             processRowUpdate={handleRowUpdate}
             onProcessRowUpdateError={(error) =>
-              dispatchSnackbar({ type: "open", severity: "error", message: error })
+              dispatchSnackbar({
+                type: "open",
+                severity: "error",
+                message: error,
+              })
             }
             sortModel={
               // Cast to undefined in case the model is null since `sortModel`
               // does not handle null.
               (account?.transaction_grid_sort_model ?? undefined) as
-              | GridSortModel
-              | undefined
+                | GridSortModel
+                | undefined
             }
             onSortModelChange={handleSortModelChange}
           />
