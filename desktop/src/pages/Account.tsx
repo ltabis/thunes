@@ -30,12 +30,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Transactions from "./account/Transactions";
 import { MouseEvent, SyntheticEvent } from "react";
 import Settings from "./account/Settings";
-import {
-  addAccount,
-  deleteAccount,
-  listAccounts,
-  RecordId,
-} from "../api";
+import { addAccount, deleteAccount, listAccounts, RecordId } from "../api";
 import { Account } from "../../../cli/bindings/Account";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
@@ -43,12 +38,12 @@ import { useParams } from "react-router-dom";
 import { useAccountNavigate } from "../hooks/accounts";
 
 function DeleteAccountDialog({
-  accountId,
+  account,
   open,
   setOpen,
   handleUpdateAccounts,
 }: {
-  accountId: AccountIdentifiers,
+  account: AccountIdentifiers;
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
   handleUpdateAccounts: (account: RecordId) => void;
@@ -61,10 +56,10 @@ function DeleteAccountDialog({
   };
 
   const handleDeleteAccount = async () => {
-    deleteAccount(accountId.id)
+    deleteAccount(account.id)
       .then(() => {
         handleCloseForm();
-        handleUpdateAccounts(accountId.id);
+        handleUpdateAccounts(account.id);
         navigate();
       })
       .catch((error) =>
@@ -75,7 +70,7 @@ function DeleteAccountDialog({
   return (
     <Dialog open={open} onClose={handleCloseForm}>
       <DialogTitle>
-        Are you sure you want to delete the {accountId.name} account ?
+        Are you sure you want to delete the {account.name} account ?
       </DialogTitle>
       <DialogActions>
         <Button onClick={handleCloseForm}>Cancel</Button>
@@ -189,7 +184,8 @@ export function Layout({ id }: { id: string | undefined }) {
   const openSettingsMenu = Boolean(settingsAnchorEl);
   const [tab, setTab] = useState(0);
 
-  const getAccountIdentifiers = () => id && accounts ? accounts.get(id) : undefined;
+  const getAccountIdentifiers = () =>
+    id && accounts ? accounts.get(id) : undefined;
 
   const handleClickAccount = (event: MouseEvent<HTMLElement>) =>
     setAccountAnchorEl(event.currentTarget);
@@ -221,7 +217,11 @@ export function Layout({ id }: { id: string | undefined }) {
 
   const handleUpdateAccounts = () => {
     listAccounts()
-      .then((accounts) => setAccounts(new Map(accounts.map(account => [account.id.id.String, account]))))
+      .then((accounts) =>
+        setAccounts(
+          new Map(accounts.map((account) => [account.id.id.String, account]))
+        )
+      )
       .catch((error) => setOpenFailure(error));
   };
 
@@ -267,7 +267,7 @@ export function Layout({ id }: { id: string | undefined }) {
                       {account.name}
                     </MenuItem>
                   ))}
-                <Divider />
+                {accounts.size !== 0 && <Divider />}
                 <MenuItem onClick={() => setOpenAddDialog(true)}>
                   Create account
                 </MenuItem>
@@ -341,15 +341,14 @@ export function Layout({ id }: { id: string | undefined }) {
         handleUpdateAccounts={handleUpdateAccounts}
       />
 
-      {
-        id && accounts &&
+      {id && accounts && (
         <DeleteAccountDialog
-          accountId={getAccountIdentifiers()!}
+          account={getAccountIdentifiers()!}
           open={openDeleteDialog}
           setOpen={setOpenDeleteDialog}
           handleUpdateAccounts={handleUpdateAccounts}
         />
-      }
+      )}
     </>
   );
 }
@@ -357,7 +356,5 @@ export function Layout({ id }: { id: string | undefined }) {
 export default function () {
   const { id } = useParams();
 
-  return (
-    <Layout id={id} />
-  );
-};
+  return <Layout id={id} />;
+}

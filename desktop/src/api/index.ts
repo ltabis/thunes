@@ -37,7 +37,7 @@ export const updateAccount = (account: Account): Promise<void> => invoke("update
 
 // Budgets
 export const listBudgets = (): Promise<BudgetIdentifiers[]> => invoke("list_budgets");
-export const addBudget = (options: CreateSplitBudgetOptions): Promise<void> => invoke("add_budget", { options });
+export const addBudget = (options: CreateSplitBudgetOptions): Promise<Budget> => invoke("add_budget", { options });
 export const getBudget = (budgetId: RecordId): Promise<Budget> => invoke("get_budget", { budgetId });
 export const updateBudget = (budget: Budget): Promise<void> => invoke("update_budget", { budget });
 export const deleteBudget = (budgetId: RecordId): Promise<void> => invoke("delete_budget", { budgetId });

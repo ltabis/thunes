@@ -6,7 +6,7 @@ use thunes_cli::Error as ThunesError;
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
-pub async fn list_budget(
+pub async fn list_budgets(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
 ) -> Result<Vec<BudgetIdentifiers>, String> {
     let database = database.lock().await;
