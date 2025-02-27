@@ -4,13 +4,11 @@ use tauri::State;
 use thunes_cli::account::Account;
 use thunes_cli::transaction::TransactionWithId;
 use thunes_cli::{
-    AccountIdentifiers, AddAccountOptions, AddTransactionOptions, BalanceOptions, CurrencyBalance,
+    AccountIdentifiers, AddTransactionOptions, BalanceOptions, CurrencyBalance,
     Error as ThunesError, GetTransactionOptions,
 };
 
 pub type Accounts = std::collections::HashMap<String, Account>;
-
-// TODO: Make errors understandable by users.
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
@@ -20,7 +18,7 @@ pub async fn get_account(
 ) -> Result<Account, String> {
     let database = database.lock().await;
 
-    thunes_cli::get_account(&database, account_id)
+    thunes_cli::account::read(&database, account_id)
         .await
         .map_err(|error| match error {
             ThunesError::Database(error) => {
@@ -42,7 +40,7 @@ pub async fn update_account(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    thunes_cli::update_account(&database, account)
+    thunes_cli::account::update(&database, account)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -67,11 +65,11 @@ pub async fn list_accounts(
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn add_account(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    options: AddAccountOptions,
+    options: thunes_cli::account::AddAccountOptions,
 ) -> Result<Account, String> {
     let database = database.lock().await;
 
-    thunes_cli::add_account(&database, options)
+    thunes_cli::account::create(&database, options)
         .await
         .map_err(|error| match error {
             ThunesError::Database(error) => {
@@ -94,7 +92,7 @@ pub async fn delete_account(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    thunes_cli::delete_account(&database, account_id)
+    thunes_cli::account::delete(&database, account_id)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");

@@ -3,6 +3,7 @@ use surrealdb::{engine::local::Db, RecordId, Surreal};
 use transaction::{Tag, TransactionWithId};
 
 pub mod account;
+pub mod budget;
 pub mod script;
 pub mod settings;
 pub mod transaction;
@@ -96,16 +97,6 @@ pub async fn balance(
     sum.ok_or(Error::RecordNotFound)
 }
 
-pub async fn get_account(db: &Surreal<Db>, account_id: RecordId) -> Result<Account, Error> {
-    let account: Option<Account> = db
-        .query("SELECT * FROM account WHERE id = $account_id")
-        .bind(("account_id", account_id))
-        .await?
-        .take(0)?;
-
-    account.ok_or(Error::RecordNotFound)
-}
-
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -125,52 +116,6 @@ pub async fn list_account(db: &Surreal<Db>) -> Result<Vec<AccountIdentifiers>, s
             id: account.id,
         })
         .collect())
-}
-
-#[derive(ts_rs::TS)]
-#[ts(export)]
-#[derive(Debug, serde::Deserialize)]
-pub struct AddAccountOptions {
-    pub name: String,
-    pub currency: String,
-}
-
-pub async fn add_account(db: &Surreal<Db>, options: AddAccountOptions) -> Result<Account, Error> {
-    let x: Option<account::Account> = db
-        .create("account")
-        .content(serde_json::json!({
-            "name": options.name,
-            "currency": options.currency,
-            "transaction_grid_sort_model": []
-        }))
-        .await?;
-
-    // Note: could probably expect here, because the create function does not change
-    //       the return value of the CREATE statement.
-    x.ok_or(Error::RecordNotFound)
-}
-
-pub async fn delete_account(
-    db: &Surreal<Db>,
-    account_id: RecordId,
-) -> Result<(), surrealdb::Error> {
-    db.query(
-        r#"
-    DELETE account WHERE id = $account_id;
-    DELETE transaction WHERE account = $account_id;"#,
-    )
-    .bind(("account_id", account_id))
-    .await
-    .map(|_| ())
-}
-
-pub async fn update_account(db: &Surreal<Db>, account: Account) -> Result<(), surrealdb::Error> {
-    let _: Option<Record> = db
-        .update(("account", account.id.key().clone()))
-        .merge(account)
-        .await?;
-
-    Ok(())
 }
 
 pub async fn get_currency(db: &Surreal<Db>, account_id: RecordId) -> Result<String, Error> {

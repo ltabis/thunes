@@ -9,6 +9,8 @@ import { Settings } from "../../../cli/bindings/Settings";
 import { CurrencyBalance } from "../../../cli/bindings/CurrencyBalance";
 import { AddAccountOptions } from "../../../cli/bindings/AddAccountOptions";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
+import { CreateSplitBudgetOptions } from "../../../cli/bindings/CreateSplitBudgetOptions";
+import { Budget } from "../../../cli/bindings/Budget";
 
 // TODO: could this be automated ?
 
@@ -31,6 +33,12 @@ export const addAccount = (options: AddAccountOptions): Promise<void> => invoke(
 export const deleteAccount = (accountId: RecordId): Promise<void> => invoke("delete_account", { accountId });
 // TODO: Make this Partial<Account>
 export const updateAccount = (account: Account): Promise<void> => invoke("update_account", { account });
+
+// Budgets
+export const addBudget = (options: CreateSplitBudgetOptions): Promise<void> => invoke("add_budget", { options });
+export const getBudget = (budgetId: RecordId): Promise<Budget> => invoke("get_budget", { budgetId });
+export const updateBudget = (budget: Budget): Promise<void> => invoke("update_budget", { budget });
+export const deleteBudget = (budgetId: RecordId): Promise<void> => invoke("delete_budget", { budgetId });
 
 // Settings.
 export const getSettings = (): Promise<Settings> => invoke("get_settings");

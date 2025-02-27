@@ -3,6 +3,7 @@ use thunes_cli::{settings::Settings, Record};
 
 pub mod commands {
     pub mod account;
+    pub mod budget;
     pub mod settings;
     pub mod tags;
 }
