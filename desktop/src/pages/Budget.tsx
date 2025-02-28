@@ -11,12 +11,12 @@ import {
   Divider,
   Grid2,
   IconButton,
+  InputLabel,
   Menu,
   MenuItem,
+  Select,
   Snackbar,
   SnackbarCloseReason,
-  Tab,
-  Tabs,
   TextField,
   Toolbar,
   Typography,
@@ -33,7 +33,8 @@ import { MouseEvent, SyntheticEvent } from "react";
 import {
   addBudget,
   deleteBudget,
-  listAccounts,
+  getBudget,
+  listAccountsWithDetails,
   listBudgets,
   RecordId,
 } from "../api";
@@ -43,6 +44,9 @@ import { useDispatchSnackbar } from "../contexts/Snackbar";
 import { CreateSplitBudgetOptions } from "../../../cli/bindings/CreateSplitBudgetOptions";
 import { filterFloat } from "../utils";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
+import { useParams } from "react-router-dom";
+import { Budget } from "../../../cli/bindings/Budget";
+import { Account } from "../../../cli/bindings/Account";
 
 function DeleteBudgetDialog({
   budget,
@@ -98,7 +102,7 @@ function AddBudgetDialog({
 }) {
   const navigate = useBudgetNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [accounts, setAccounts] = useState<AccountIdentifiers[]>();
+  const [accounts, setAccounts] = useState<Account[]>();
 
   const [form, setForm] = useState<
     Omit<CreateSplitBudgetOptions, "income" | "accounts"> & {
@@ -108,8 +112,16 @@ function AddBudgetDialog({
   >({
     name: "",
     income: "0",
+    currency: "",
     accounts: [],
   });
+
+  const getCurrencies = (accounts: Account[]) =>
+    Array.from(new Set(accounts.map((account) => account.currency)).values());
+
+  // FIXME: filter using the backend.
+  const filterAccountByCurrency = (accounts: Account[], currency: string) =>
+    accounts.filter((account) => account.currency === currency);
 
   const handleCloseForm = () => {
     setOpen(false);
@@ -137,7 +149,7 @@ function AddBudgetDialog({
   };
 
   useEffect(() => {
-    listAccounts()
+    listAccountsWithDetails()
       .then(setAccounts)
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -189,33 +201,64 @@ function AddBudgetDialog({
             />
           </Grid2>
         </Grid2>
-        <Autocomplete
-          multiple
-          selectOnFocus
-          handleHomeEndKeys
-          clearOnBlur
-          disablePortal
-          disableCloseOnSelect
-          value={form.accounts}
-          options={accounts ?? []}
-          getOptionLabel={(account) => account.name}
-          renderInput={(params) => <TextField {...params} label="Accounts" />}
-          renderOption={(props, option) => {
-            const { key, id, ...optionProps } = props;
-            return (
-              <MenuItem
-                key={`${key}-${id}`}
-                value={option.name}
-                {...optionProps}
+        {accounts && (
+          <Grid2 container spacing={2} sx={{ margin: 1 }}>
+            <Grid2 size={5}>
+              <InputLabel>Currency</InputLabel>
+              <Select
+                value={form.currency}
+                label="Age"
+                onChange={(currency) =>
+                  setForm({ ...form, currency: currency.target.value })
+                }
               >
-                <Chip label={option.name} />
-              </MenuItem>
-            );
-          }}
-          onChange={(_event, newAccounts) =>
-            setForm({ ...form, accounts: newAccounts })
-          }
-        />
+                {getCurrencies(accounts).map((currency, id) => (
+                  <MenuItem key={`${currency}-${id}`} value={currency}>
+                    {currency}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Grid2>
+
+            <Grid2 size={5}>
+              {form.currency !== "" && (
+                <Autocomplete
+                  multiple
+                  selectOnFocus
+                  handleHomeEndKeys
+                  clearOnBlur
+                  disablePortal
+                  disableCloseOnSelect
+                  value={form.accounts}
+                  options={
+                    accounts
+                      ? filterAccountByCurrency(accounts, form.currency)
+                      : []
+                  }
+                  getOptionLabel={(account) => account.name}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Accounts" />
+                  )}
+                  renderOption={(props, option) => {
+                    const { key, id, ...optionProps } = props;
+                    return (
+                      <MenuItem
+                        key={`${key}-${id}`}
+                        value={option.name}
+                        {...optionProps}
+                      >
+                        <Chip label={option.name} />
+                      </MenuItem>
+                    );
+                  }}
+                  onChange={(_event, newAccounts) =>
+                    setForm({ ...form, accounts: newAccounts })
+                  }
+                />
+              )}
+            </Grid2>
+          </Grid2>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCloseForm}>Cancel</Button>
@@ -234,9 +277,41 @@ function AddBudgetDialog({
   );
 }
 
-// TODO:
-function Details() {
-  return <></>;
+function Details({ budget }: { budget: BudgetIdentifiers }) {
+  const dispatchSnackbar = useDispatchSnackbar()!;
+  const [details, setDetails] = useState<Budget>();
+
+  useEffect(() => {
+    getBudget(budget.id)
+      .then(setDetails)
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  }, [budget.id, dispatchSnackbar]);
+
+  return (
+    <>
+      <Grid2 container spacing={1} alignItems="center">
+        <Grid2 size={1}>
+          <Typography variant="h2">{budget.name}</Typography>
+        </Grid2>
+        <Grid2 size={1}>
+          {details && (
+            <Typography variant="h5" sx={{ opacity: 0.7 }}>
+              {details.type}
+            </Typography>
+          )}
+        </Grid2>
+        <Grid2 size={5}>
+          {details && (
+            <Typography variant="h4">
+              {details.income} {details.currency}
+            </Typography>
+          )}
+        </Grid2>
+      </Grid2>
+    </>
+  );
 }
 
 export function Layout({ id }: { id: string | undefined }) {
@@ -255,7 +330,6 @@ export function Layout({ id }: { id: string | undefined }) {
 
   const openBudgetMenu = Boolean(budgetAnchorEl);
   const openSettingsMenu = Boolean(settingsAnchorEl);
-  const [tab, setTab] = useState(0);
 
   const getBudgetIdentifiers = () =>
     id && budgets ? budgets.get(id) : undefined;
@@ -283,10 +357,6 @@ export function Layout({ id }: { id: string | undefined }) {
 
   const handleSelectBudget = async (budget: BudgetIdentifiers) =>
     navigate(budget);
-
-  const handleTabChange = (_event: SyntheticEvent, newTab: number) => {
-    setTab(newTab);
-  };
 
   const handleUpdateBudgets = () => {
     listBudgets()
@@ -349,13 +419,6 @@ export function Layout({ id }: { id: string | undefined }) {
           )}
 
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
-          {getBudgetIdentifiers() && (
-            <Tabs onChange={handleTabChange} value={tab} variant="fullWidth">
-              <Tab label="Transactions"></Tab>
-              <Tab label="Settings"></Tab>
-            </Tabs>
-          )}
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
 
           {/* TODO: budget actions */}
           <IconButton aria-label="delete" onClick={handleClickSettings}>
@@ -379,11 +442,7 @@ export function Layout({ id }: { id: string | undefined }) {
 
       <Divider sx={{ margin: 2 }} />
 
-      {getBudgetIdentifiers() && (
-        <div hidden={tab !== 1}>
-          <Details />
-        </div>
-      )}
+      {getBudgetIdentifiers() && <Details budget={getBudgetIdentifiers()!} />}
 
       <Snackbar
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
@@ -419,4 +478,8 @@ export function Layout({ id }: { id: string | undefined }) {
   );
 }
 
-export default Layout;
+export default function () {
+  const { id } = useParams();
+
+  return <Layout id={id} />;
+}

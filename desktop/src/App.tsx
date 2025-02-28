@@ -12,7 +12,7 @@ import {
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import SettingsIcon from "@mui/icons-material/Settings";
-import PieChartIcon from '@mui/icons-material/PieChart';
+import PieChartIcon from "@mui/icons-material/PieChart";
 import Account from "./pages/Account";
 import { Route, Routes, Outlet, useNavigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";

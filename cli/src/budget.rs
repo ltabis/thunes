@@ -21,6 +21,7 @@ pub struct Budget {
     pub name: String,
     pub r#type: Type,
     pub income: f64,
+    pub currency: String,
     pub accounts: Vec<Account>,
 }
 
@@ -54,6 +55,7 @@ pub async fn list(db: &Surreal<Db>) -> Result<Vec<BudgetIdentifiers>, surrealdb:
 pub struct CreateSplitBudgetOptions {
     pub name: String,
     pub income: f64,
+    pub currency: String,
     #[ts(type = "{ tb: string, id: { String: string }}[]")]
     pub accounts: Vec<surrealdb::RecordId>,
 }
@@ -67,6 +69,7 @@ pub async fn create_split(
         name = $name,
         type = $type,
         income = $income,
+        currency = $currency,
         accounts = $accounts);
     RETURN SELECT * FROM $budget.id FETCH accounts"#;
 
@@ -75,6 +78,7 @@ pub async fn create_split(
         .bind(("name", options.name))
         .bind(("type", Type::Split))
         .bind(("income", options.income))
+        .bind(("currency", options.currency))
         .bind(("accounts", options.accounts))
         .await?
         .take(1)?;

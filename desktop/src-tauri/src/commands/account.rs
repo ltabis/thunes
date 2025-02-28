@@ -17,10 +17,25 @@ pub async fn list_accounts(
 ) -> Result<Vec<AccountIdentifiers>, String> {
     let database = database.lock().await;
 
-    thunes_cli::list_account(&database).await.map_err(|error| {
+    thunes_cli::list_accounts(&database).await.map_err(|error| {
         tracing::error!(%error, "database error");
         "failed to list accounts".to_string()
     })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn list_accounts_with_details(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+) -> Result<Vec<Account>, String> {
+    let database = database.lock().await;
+
+    thunes_cli::list_accounts_with_details(&database)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to list accounts".to_string()
+        })
 }
 
 #[tauri::command]

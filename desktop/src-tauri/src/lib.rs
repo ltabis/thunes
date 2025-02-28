@@ -84,6 +84,7 @@ pub fn run() {
             commands::account::get_account,
             commands::account::update_account,
             commands::account::list_accounts,
+            commands::account::list_accounts_with_details,
             commands::account::add_account,
             commands::account::delete_account,
             commands::account::get_transactions,

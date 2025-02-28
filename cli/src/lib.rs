@@ -106,7 +106,7 @@ pub struct AccountIdentifiers {
     pub id: RecordId,
 }
 
-pub async fn list_account(db: &Surreal<Db>) -> Result<Vec<AccountIdentifiers>, surrealdb::Error> {
+pub async fn list_accounts(db: &Surreal<Db>) -> Result<Vec<AccountIdentifiers>, surrealdb::Error> {
     let accounts: Vec<Account> = db.select("account").await?;
 
     Ok(accounts
@@ -116,6 +116,12 @@ pub async fn list_account(db: &Surreal<Db>) -> Result<Vec<AccountIdentifiers>, s
             id: account.id,
         })
         .collect())
+}
+
+pub async fn list_accounts_with_details(
+    db: &Surreal<Db>,
+) -> Result<Vec<Account>, surrealdb::Error> {
+    db.select("account").await
 }
 
 pub async fn get_currency(db: &Surreal<Db>, account_id: RecordId) -> Result<String, Error> {
