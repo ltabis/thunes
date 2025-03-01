@@ -266,7 +266,7 @@ pub async fn get_transactions(
         }
     }
 
-    query.push_str(" ORDER BY date");
+    query.push_str(" ORDER BY date DESC");
 
     let transactions: Vec<TransactionWithId> = db
         .query(query)

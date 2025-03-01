@@ -1,17 +1,19 @@
 import {
+  Avatar,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Fab,
   Grid2,
+  List,
   ListItem,
+  ListItemAvatar,
+  ListItemText,
   Paper,
   Skeleton,
-  Stack,
   TextField,
   Typography,
 } from "@mui/material";
@@ -27,9 +29,6 @@ import { Transaction } from "../../../../cli/bindings/Transaction";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
 import { useAccount } from "../../contexts/Account";
 import {
-  DataGrid,
-  GridColDef,
-  GridRenderCellParams,
   GridRenderEditCellParams,
   GridSortModel,
   useGridApiContext,
@@ -203,54 +202,54 @@ export default function Transactions() {
   >(null);
   const [balance, setBalance] = useState(0.0);
 
-  const columns: GridColDef[] = [
-    {
-      field: "description",
-      headerName: "Description",
-      minWidth: 500,
-      editable: true,
-    },
-    {
-      field: "date",
-      headerName: "Date",
-      type: "dateTime",
-      minWidth: 175,
-      valueGetter: (value) => new Date(value),
-      editable: true,
-    },
-    {
-      field: "tags",
-      type: "custom",
-      headerName: "Tags",
-      minWidth: 200,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      renderCell: (params: GridRenderCellParams<any, Tag[]>) => (
-        <Stack direction="row">
-          {params.value?.map((item) => {
-            return (
-              <ListItem
-                sx={{
-                  paddingLeft: 0,
-                  paddingRight: 0,
-                  marginLeft: 0.3,
-                  marginRight: 0.3,
-                }}
-                key={item.label}
-              >
-                <Chip variant="outlined" label={item.label} />
-              </ListItem>
-            );
-          })}
-        </Stack>
-      ),
-      renderEditCell: (params) => <EditTagsTable {...params} />,
-      editable: true,
-    },
-    // TODO: add color
-    { field: "amount", headerName: "Amount", type: "number", editable: true },
-  ];
+  // const columns: GridColDef[] = [
+  //   {
+  //     field: "description",
+  //     headerName: "Description",
+  //     minWidth: 500,
+  //     editable: true,
+  //   },
+  //   {
+  //     field: "date",
+  //     headerName: "Date",
+  //     type: "dateTime",
+  //     minWidth: 175,
+  //     valueGetter: (value) => new Date(value),
+  //     editable: true,
+  //   },
+  //   {
+  //     field: "tags",
+  //     type: "custom",
+  //     headerName: "Tags",
+  //     minWidth: 200,
+  //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  //     renderCell: (params: GridRenderCellParams<any, Tag[]>) => (
+  //       <Stack direction="row">
+  //         {params.value?.map((item) => {
+  //           return (
+  //             <ListItem
+  //               sx={{
+  //                 paddingLeft: 0,
+  //                 paddingRight: 0,
+  //                 marginLeft: 0.3,
+  //                 marginRight: 0.3,
+  //               }}
+  //               key={item.label}
+  //             >
+  //               <Chip variant="outlined" label={item.label} />
+  //             </ListItem>
+  //           );
+  //         })}
+  //       </Stack>
+  //     ),
+  //     renderEditCell: (params) => <EditTagsTable {...params} />,
+  //     editable: true,
+  //   },
+  //   // TODO: add color
+  //   { field: "amount", headerName: "Amount", type: "number", editable: true },
+  // ];
 
-  const paginationModel = { page: 0, pageSize: 10 };
+  // const paginationModel = { page: 0, pageSize: 10 };
 
   function getRowId(row: TransactionWithId) {
     return row.id.id.String;
@@ -340,7 +339,28 @@ export default function Transactions() {
               valueFormatter: (value) => value.toISOString().slice(0, 10),
             }}
           />
-          <DataGrid
+          <List sx={{ width: "100%", bgcolor: "background.paper" }}>
+            {transactions.map((transaction) => (
+              <ListItem
+                key={transaction.id.id.String}
+                secondaryAction={
+                  <Typography variant="body1">
+                    {`${transaction.amount}`}
+                  </Typography>
+                }
+              >
+                <ListItemAvatar>
+                  <Avatar>{/* <ImageIcon /> */}</Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                  primary={transaction.description}
+                  // TODO: format date.
+                  secondary={transaction.date}
+                />
+              </ListItem>
+            ))}
+          </List>
+          {/* <DataGrid
             rows={transactions}
             columns={columns}
             getRowId={getRowId}
@@ -363,7 +383,7 @@ export default function Transactions() {
                 | undefined
             }
             onSortModelChange={handleSortModelChange}
-          />
+          /> */}
         </Box>
       ) : (
         <>
