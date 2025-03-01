@@ -1,7 +1,11 @@
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   AppBar,
   Autocomplete,
+  Box,
   Button,
   Chip,
   Dialog,
@@ -12,13 +16,18 @@ import {
   Grid2,
   IconButton,
   InputLabel,
+  ListItem,
   Menu,
   MenuItem,
+  Paper,
   Select,
   Snackbar,
   SnackbarCloseReason,
+  Tab,
+  Tabs,
   TextField,
   Toolbar,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import {
@@ -28,7 +37,6 @@ import {
   useEffect,
   useState,
 } from "react";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { MouseEvent, SyntheticEvent } from "react";
 import {
   addBudget,
@@ -47,6 +55,10 @@ import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { useParams } from "react-router-dom";
 import { Budget } from "../../../cli/bindings/Budget";
 import { Account } from "../../../cli/bindings/Account";
+import { GridRowModesModel, GridRowsProp } from "@mui/x-data-grid";
+import { PieChart } from "@mui/x-charts";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 function DeleteBudgetDialog({
   budget,
@@ -277,6 +289,182 @@ function AddBudgetDialog({
   );
 }
 
+function DistributionBar({
+  partitions,
+}: {
+  partitions: { name: string; color: string; percentage: number }[];
+}) {
+  const MAX_SIZE = 300;
+
+  return (
+    <Box
+      sx={{
+        width: MAX_SIZE,
+        height: 25,
+        borderRadius: 1,
+        bgcolor: "grey",
+      }}
+    >
+      <Grid2 container alignItems="center">
+        {partitions.map((partition) => (
+          <Tooltip
+            title={`${partition.name} (${partition.percentage}%)`}
+            key={partition.name}
+          >
+            <Box
+              sx={{
+                width: MAX_SIZE * (partition.percentage / 100),
+                height: 25,
+                bgcolor: partition.color,
+              }}
+            />
+          </Tooltip>
+        ))}
+      </Grid2>
+    </Box>
+  );
+}
+
+declare module "@mui/x-data-grid" {
+  interface ToolbarPropsOverrides {
+    setRows: (newRows: (oldRows: GridRowsProp) => GridRowsProp) => void;
+    setRowModesModel: (
+      newModel: (oldModel: GridRowModesModel) => GridRowModesModel
+    ) => void;
+  }
+}
+
+// function Type({ budget }: { budget: Budget }) {
+//   switch (budget.data.type) {
+//     case "split": {
+//       const tagGrid: GridColDef[] = [
+//         { field: "name", headerName: "Name", editable: true },
+//         {
+//           field: "allocation",
+//           headerName: "Allocation",
+//           type: "number",
+//         },
+//       ];
+
+//       return (
+//         <>
+//           <Grid2 container spacing={1} alignItems="center">
+//             {/* TODO: use associated tags to compute allocation */}
+//             <DistributionBar partitions={budget.data.content.categories} />
+//             <Typography variant="h4">
+//               {budget.income} Allocated (Poor/Good)
+//             </Typography>
+//           </Grid2>
+//           <Grid2 container spacing={1} alignItems="center">
+//             {budget.data.content.categories.map((category) => (
+//               <Grid2 size={3} key={category.name}>
+//                 <Card>
+//                   <CardHeader
+//                     title={
+//                       <>
+//                         <Grid2 container spacing={2} alignItems="center">
+//                           <Typography variant="h4">{category.name}</Typography>
+//                           <Typography variant="h5" sx={{ opacity: 0.7 }}>
+//                             {category.percentage}%
+//                           </Typography>
+//                         </Grid2>
+//                       </>
+//                     }
+//                   ></CardHeader>
+//                   <CardContent>
+//                     <DataGrid
+//                       density="compact"
+//                       rows={category.tags}
+//                       columns={tagGrid}
+//                       hideFooter
+//                     />
+//                   </CardContent>
+//                 </Card>
+//               </Grid2>
+//             ))}
+//           </Grid2>
+//         </>
+//       );
+//     }
+//   }
+// }
+
+function Split({ budget }: { budget: Budget }) {
+  const [index, setIndex] = useState(0);
+
+  return (
+    <>
+      <Grid2 container spacing={1} alignItems="center">
+        {/* TODO: use associated tags to compute allocation */}
+        {/* <DistributionBar partitions={budget.data.content.categories} /> */}
+        <Typography variant="h4">
+          {budget.income} Allocated (Poor/Good)
+        </Typography>
+      </Grid2>
+
+      <Divider sx={{ m: 5 }} />
+
+      <Grid2 container spacing={1} justifyContent="center">
+        <Grid2 size={5}>
+          <Tabs
+            value={index}
+            variant="scrollable"
+            scrollButtons="auto"
+            centered
+            onChange={(_en, value) => setIndex(value)}
+          >
+            {budget.data.content.categories.map((category) => (
+              <Tab label={category.name} />
+            ))}
+          </Tabs>
+
+          {budget.data.content.categories.map((category) =>
+            category.tags.map((tag) => (
+              <ListItem key={tag.name}>
+                {tag.name} ({tag.allocation})
+              </ListItem>
+            ))
+          )}
+        </Grid2>
+        <Grid2 size={5}>
+          <PieChart
+            series={[
+              {
+                arcLabel: (item) => `${item.label} (${item.value}%)`,
+                arcLabelMinAngle: 35,
+                data: budget.data.content.categories.map((category) => ({
+                  label: category.name,
+                  value: category.percentage,
+                  color: category.color,
+                })),
+                highlightScope: { fade: "global", highlight: "item" },
+                faded: {
+                  innerRadius: 30,
+                  additionalRadius: -30,
+                  color: "gray",
+                },
+                innerRadius: 30,
+                outerRadius: 150,
+                paddingAngle: 1,
+                cornerRadius: 5,
+              },
+            ]}
+            height={400}
+          />
+        </Grid2>
+      </Grid2>
+    </>
+  );
+}
+
+function Type({ budget }: { budget: Budget }) {
+  switch (budget.data.type) {
+    case "split": {
+      return <Split budget={budget} />;
+    }
+  }
+}
+
 function Details({ budget }: { budget: BudgetIdentifiers }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [details, setDetails] = useState<Budget>();
@@ -298,7 +486,7 @@ function Details({ budget }: { budget: BudgetIdentifiers }) {
         <Grid2 size={1}>
           {details && (
             <Typography variant="h5" sx={{ opacity: 0.7 }}>
-              {details.type}
+              {details.data.type}
             </Typography>
           )}
         </Grid2>
@@ -310,6 +498,11 @@ function Details({ budget }: { budget: BudgetIdentifiers }) {
           )}
         </Grid2>
       </Grid2>
+      {details && (
+        <Paper elevation={5} sx={{ margin: 2 }}>
+          <Type budget={details} />
+        </Paper>
+      )}
     </>
   );
 }

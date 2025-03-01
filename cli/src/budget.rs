@@ -6,10 +6,56 @@ use surrealdb::Surreal;
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "lowercase")]
+pub struct Tag {
+    // FIXME: use real tag id.
+    pub name: String,
+    pub allocation: f64,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Category {
+    pub name: String,
+    pub percentage: f64,
+    pub tags: Vec<Tag>,
+    pub color: String,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "type", content = "content", rename_all = "lowercase")]
 pub enum Type {
-    Split,
+    Split { categories: Vec<Category> },
     // ZeroBased,
+}
+
+impl Type {
+    pub fn default_split() -> Self {
+        Self::Split {
+            categories: vec![
+                Category {
+                    name: "Needs".into(),
+                    percentage: 50.0,
+                    tags: vec![],
+                    color: "red".into(),
+                },
+                Category {
+                    name: "Wants".into(),
+                    percentage: 30.0,
+                    tags: vec![],
+                    color: "yellow".into(),
+                },
+                Category {
+                    name: "Investments".into(),
+                    percentage: 20.0,
+                    tags: vec![],
+                    color: "blue".into(),
+                },
+            ],
+        }
+    }
 }
 
 #[derive(ts_rs::TS)]
@@ -19,7 +65,8 @@ pub struct Budget {
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub id: surrealdb::RecordId,
     pub name: String,
-    pub r#type: Type,
+    // FIXME: Can't use serde(flatten) here.
+    pub data: Type,
     pub income: f64,
     pub currency: String,
     pub accounts: Vec<Account>,
@@ -67,7 +114,7 @@ pub async fn create_split(
     let query = r#"
     LET $budget = (CREATE budget SET
         name = $name,
-        type = $type,
+        data = $data,
         income = $income,
         currency = $currency,
         accounts = $accounts);
@@ -76,7 +123,7 @@ pub async fn create_split(
     let budget: Option<Budget> = db
         .query(query)
         .bind(("name", options.name))
-        .bind(("type", Type::Split))
+        .bind(("data", Type::default_split()))
         .bind(("income", options.income))
         .bind(("currency", options.currency))
         .bind(("accounts", options.accounts))

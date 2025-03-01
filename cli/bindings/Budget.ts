@@ -2,4 +2,4 @@
 import type { Account } from "./Account";
 import type { Type } from "./Type";
 
-export type Budget = { id: { tb: string, id: { String: string }}, name: string, type: Type, income: number, currency: string, accounts: Array<Account>, };
+export type Budget = { id: { tb: string, id: { String: string }}, name: string, data: Type, income: number, currency: string, accounts: Array<Account>, };
