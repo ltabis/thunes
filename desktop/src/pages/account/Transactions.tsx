@@ -97,7 +97,9 @@ function AddTransactionDialog({
         handleCloseForm();
         handleUpdateTransactions(account);
       })
-      .catch((error) => dispatchSnackbar({ type: "open", message: error }));
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
   };
 
   return (
@@ -179,7 +181,7 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
   const handleChange = (newTags: Tag[]) => {
     // FIXME: only add new tags.
     addTags(newTags).catch((error) =>
-      dispatchSnackbar({ type: "open", message: error })
+      dispatchSnackbar({ type: "open", severity: "error", message: error })
     );
     apiRef.current.setEditCellValue({ id, field, value: newTags });
   };
@@ -290,7 +292,9 @@ export default function Transactions() {
   useEffect(() => {
     getAccount(accountIdentifiers.id)
       .then(setAccount)
-      .catch((error) => dispatchSnackbar({ type: "open", message: error }));
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
   }, [accountIdentifiers, dispatchSnackbar]);
 
   return (
@@ -345,7 +349,11 @@ export default function Transactions() {
             checkboxSelection
             processRowUpdate={handleRowUpdate}
             onProcessRowUpdateError={(error) =>
-              dispatchSnackbar({ type: "open", message: error })
+              dispatchSnackbar({
+                type: "open",
+                severity: "error",
+                message: error,
+              })
             }
             sortModel={
               // Cast to undefined in case the model is null since `sortModel`
