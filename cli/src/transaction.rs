@@ -26,6 +26,8 @@ pub struct Transaction {
     pub amount: f64,
     pub description: String,
     pub tags: Vec<Tag>,
+    #[ts(type = "{ tb: string, id: { String: string }}", optional)]
+    pub category: Option<surrealdb::RecordId>,
 }
 
 #[derive(ts_rs::TS)]
