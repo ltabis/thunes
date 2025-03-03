@@ -3,6 +3,7 @@ use surrealdb::{engine::local::Db, RecordId, Surreal};
 use transaction::{Tag, TransactionWithId};
 
 pub mod account;
+pub mod category;
 pub mod script;
 pub mod settings;
 pub mod transaction;

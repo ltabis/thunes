@@ -24,6 +24,13 @@ export const getTransactions = (accountId: RecordId, options?: GetTransactionOpt
 export const addTransaction = (accountId: RecordId, options: AddTransactionOptions): Promise<void> => invoke("add_transaction", { accountId, options });
 export const updateTransaction = (transaction: TransactionWithId): Promise<void> => invoke("update_transaction", { transaction });
 
+// Categories.
+// TODO:
+export const getCategory = (categoryId: RecordId): Promise<TransactionWithId[]> => invoke("get_category", { categoryId });
+export const addCategory = (categoryId: RecordId, options: AddCategoryOptions): Promise<void> => invoke("add_category", { categoryId, options });
+export const updateCategory = (transaction: TransactionWithId): Promise<void> => invoke("update_category", { transaction });
+export const deleteCategory = (categoryId: RecordId): Promise<void> => invoke("delete_category", { categoryId });
+
 // Accounts.
 export const listAccounts = (): Promise<AccountIdentifiers[]> => invoke("list_accounts");
 export const getAccount = (accountId: RecordId): Promise<Account> => invoke("get_account", { accountId });
