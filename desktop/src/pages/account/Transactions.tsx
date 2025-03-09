@@ -7,12 +7,20 @@ import {
   DialogContent,
   DialogTitle,
   Fab,
+  FormControl,
   Grid2,
+  InputLabel,
   List,
   ListItem,
   ListItemAvatar,
+  ListItemButton,
+  ListItemIcon,
   ListItemText,
+  MenuItem,
+  MenuList,
   Paper,
+  Select,
+  SelectChangeEvent,
   Skeleton,
   TextField,
   Typography,
@@ -40,11 +48,13 @@ import { SparkLineChart } from "@mui/x-charts";
 import {
   addTags,
   addTransaction,
+  EMPTY_RECORD_ID,
   getAccount,
   getBalance,
   getCategories,
   getCurrency,
   getTransactions,
+  RecordId,
   updateAccount,
   updateTransaction,
 } from "../../api";
@@ -54,6 +64,7 @@ import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers"
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { categoryIconToMuiIcon } from "../../utils/icons";
 import { Category } from "../../../../cli/bindings/Category";
+import { CategoryWithId } from "../../../../cli/bindings/CategoryWithId";
 
 const filterFloat = (value: string) =>
   /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value.replace(",", "."))
@@ -71,14 +82,28 @@ function AddTransactionDialog({
 }) {
   const account = useAccount()!;
   const dispatchSnackbar = useDispatchSnackbar()!;
+  const [categories, setCategories] = useState<Map<
+    string,
+    CategoryWithId
+  > | null>(null);
   // Note: omit amount float value to enable the user to enter a floating point character.
   const [form, setForm] = useState<
-    Omit<Transaction, "amount" | "date"> & { amount: string; date: Dayjs }
+    Omit<Transaction, "amount" | "date"> & {
+      amount: string;
+      date: Dayjs;
+      category: CategoryWithId;
+    }
   >({
     amount: "0",
     description: "",
     tags: [],
     date: dayjs(),
+    category: {
+      id: EMPTY_RECORD_ID,
+      icon: "other",
+      name: "Other",
+      color: "grey",
+    },
   });
 
   const handleCloseForm = () => {
@@ -103,6 +128,20 @@ function AddTransactionDialog({
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
   };
+
+  useEffect(() => {
+    getCategories()
+      .then((categories) =>
+        setCategories(
+          new Map(
+            categories.map((category) => [category.id.id.String, category])
+          )
+        )
+      )
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  }, [dispatchSnackbar]);
 
   return (
     <Dialog
@@ -162,6 +201,52 @@ function AddTransactionDialog({
               handleChange={(tags) => setForm({ ...form, tags })}
             />
           </Grid2>
+          <Grid2 size={8}>
+            {categories && (
+              <FormControl fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={form.category.id.id.String}
+                  label="Category"
+                  onChange={(category) =>
+                    setForm({
+                      ...form,
+                      category: categories.get(category.target.value)!,
+                    })
+                  }
+                  renderValue={(selected) => {
+                    const category = categories.get(selected)!;
+                    return (
+                      <MenuItem>
+                        <ListItemAvatar>
+                          {categoryIconToMuiIcon(
+                            category,
+                            categories.get("default")!
+                          )}
+                        </ListItemAvatar>
+                        <ListItemText primary={category.name} />
+                      </MenuItem>
+                    );
+                  }}
+                >
+                  {Array.from(categories.values()).map((category) => (
+                    <MenuItem
+                      key={category.id.id.String}
+                      value={category.id.id.String}
+                    >
+                      <ListItemAvatar>
+                        {categoryIconToMuiIcon(
+                          category,
+                          categories.get("default")!
+                        )}
+                      </ListItemAvatar>
+                      <ListItemText primary={category.name} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </Grid2>
         </Grid2>
       </DialogContent>
       <DialogActions>
@@ -197,7 +282,7 @@ export default function Transactions() {
   const [account, setAccount] = useState<Account>();
   const [open, setOpen] = useState(false);
   // FIXME: Pull the category directly from the transaction.
-  const [categories, seCategories] = useState<Map<string, Category> | null>(
+  const [categories, setCategories] = useState<Map<string, Category> | null>(
     null
   );
   const [currency, setCurrency] = useState<string | null>(null);
@@ -294,7 +379,7 @@ export default function Transactions() {
   useEffect(() => {
     getCategories()
       .then((categories) =>
-        seCategories(
+        setCategories(
           new Map(
             categories.map((category) => [category.id.id.String, category])
           )

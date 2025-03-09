@@ -143,7 +143,11 @@ export default function Settings() {
             onClick={async () => {
               ExportBackup()
                 .catch((error) =>
-                  dispatchSnackbar({ type: "open", message: error })
+                  dispatchSnackbar({
+                    type: "open",
+                    severity: "error",
+                    message: error,
+                  })
                 )
                 .then(() => console.info("backup done"));
             }}
@@ -171,7 +175,11 @@ export default function Settings() {
               });
               if (path) {
                 ImportBackup(path).catch((error) =>
-                  dispatchSnackbar({ type: "open", message: error })
+                  dispatchSnackbar({
+                    type: "open",
+                    severity: "error",
+                    message: error,
+                  })
                 );
               }
             }}
