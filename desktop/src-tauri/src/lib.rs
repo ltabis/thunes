@@ -1,8 +1,9 @@
 use tauri::{App, Manager};
-use thunes_cli::{settings::Settings, Record};
+use thunes_cli::{category::Icon, settings::Settings, Record};
 
 pub mod commands {
     pub mod account;
+    pub mod categories;
     pub mod settings;
     pub mod tags;
 }
@@ -53,16 +54,101 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
             .map_err(|error| error.to_string())?;
 
         // FIXME: move db seeding to an install script.
-        let result: Result<Option<Record>, surrealdb::Error> = db
-            .insert(("settings", "main"))
-            .content(Settings::new(data_dir))
-            .await;
+        // Categories
+        {
+            let result: Result<Vec<Record>, surrealdb::Error> = db
+                .insert("category")
+                .content(vec![
+                    thunes_cli::category::Category {
+                        name: "Transport".to_string(),
+                        icon: Icon::Transport,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Accommodation".to_string(),
+                        icon: Icon::Accommodation,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Subscription".to_string(),
+                        icon: Icon::Subscription,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Car".to_string(),
+                        icon: Icon::Car,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Other".to_string(),
+                        icon: Icon::Other,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Gift & Donations".to_string(),
+                        icon: Icon::GiftAndDonations,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Savings".to_string(),
+                        icon: Icon::Savings,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Education & Family".to_string(),
+                        icon: Icon::EducationAndFamily,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Loan".to_string(),
+                        icon: Icon::Loan,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Professional Fee".to_string(),
+                        icon: Icon::ProfessionalFee,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Taxes".to_string(),
+                        icon: Icon::Taxes,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Spare-time Activities".to_string(),
+                        icon: Icon::SpareTimeActivities,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Internal Movements".to_string(),
+                        icon: Icon::InternalMovements,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Cash Withdrawal".to_string(),
+                        icon: Icon::CashWithdrawal,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Health".to_string(),
+                        icon: Icon::Health,
+                    },
+                    thunes_cli::category::Category {
+                        name: "Everyday Life".to_string(),
+                        icon: Icon::EverydayLife,
+                    },
+                ])
+                .await;
 
-        match result {
-            Ok(_) | Err(surrealdb::Error::Db(surrealdb::error::Db::RecordExists { .. })) => {}
-            _ => {
-                tracing::error!("failed to initialize settings");
-                return Err("failed to initialize settings".to_string());
+            match result {
+                Ok(_) | Err(surrealdb::Error::Db(surrealdb::error::Db::RecordExists { .. })) => {}
+                _ => {
+                    tracing::error!("failed to initialize categories");
+                    return Err("failed to initialize categories".to_string());
+                }
+            }
+        }
+
+        // FIXME: move db seeding to an install script.
+        // Settings.
+        {
+            let result: Result<Option<Record>, surrealdb::Error> = db
+                .insert(("settings", "main"))
+                .content(Settings::new(data_dir))
+                .await;
+
+            match result {
+                Ok(_) | Err(surrealdb::Error::Db(surrealdb::error::Db::RecordExists { .. })) => {}
+                _ => {
+                    tracing::error!("failed to initialize settings");
+                    return Err("failed to initialize settings".to_string());
+                }
             }
         }
 
@@ -93,6 +179,7 @@ pub fn run() {
             commands::account::update_transaction,
             commands::tags::get_tags,
             commands::tags::add_tags,
+            commands::categories::get_categories,
             commands::settings::get_settings,
             commands::settings::save_settings,
             commands::settings::backup_export,
