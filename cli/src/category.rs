@@ -27,6 +27,7 @@ pub enum Icon {
 pub struct Category {
     pub name: String,
     pub icon: Icon,
+    pub color: String,
 }
 
 #[derive(ts_rs::TS)]

@@ -196,6 +196,7 @@ export default function Transactions() {
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [account, setAccount] = useState<Account>();
   const [open, setOpen] = useState(false);
+  // FIXME: Pull the category directly from the transaction.
   const [categories, seCategories] = useState<Map<string, Category> | null>(
     null
   );
@@ -370,13 +371,14 @@ export default function Transactions() {
                 }
               >
                 <ListItemAvatar>
-                  <Avatar>
-                    {categories &&
-                      transaction.category &&
-                      categoryIconToMuiIcon(
-                        categories.get(transaction.category.id.String)!.icon
-                      )}
-                  </Avatar>
+                  {categories &&
+                    categoryIconToMuiIcon(
+                      transaction.category
+                        ? categories.get(transaction.category.id.String)
+                        : undefined,
+                      // FIXME: Find a way to make it safe.
+                      categories.get("other")!
+                    )}
                 </ListItemAvatar>
                 <ListItemText
                   primary={transaction.description}

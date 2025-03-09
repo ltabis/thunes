@@ -68,6 +68,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Transport".to_string(),
                             icon: Icon::Transport,
+                            color: "yellow".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -75,6 +76,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Accommodation".to_string(),
                             icon: Icon::Accommodation,
+                            color: "orange".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -82,6 +84,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Subscription".to_string(),
                             icon: Icon::Subscription,
+                            color: "blue".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -89,6 +92,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Car".to_string(),
                             icon: Icon::Car,
+                            color: "yellow".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -96,6 +100,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Other".to_string(),
                             icon: Icon::Other,
+                            color: "grey".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -103,6 +108,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Gift & Donations".to_string(),
                             icon: Icon::GiftAndDonations,
+                            color: "orange".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -110,6 +116,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Savings".to_string(),
                             icon: Icon::Savings,
+                            color: "red".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -117,6 +124,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Education & Family".to_string(),
                             icon: Icon::EducationAndFamily,
+                            color: "pink".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -124,6 +132,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Loan".to_string(),
                             icon: Icon::Loan,
+                            color: "red".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -131,6 +140,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Professional Fee".to_string(),
                             icon: Icon::ProfessionalFee,
+                            color: "blue".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -138,6 +148,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Taxes".to_string(),
                             icon: Icon::Taxes,
+                            color: "red".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -145,6 +156,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Spare-time Activities".to_string(),
                             icon: Icon::SpareTimeActivities,
+                            color: "pink".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -152,6 +164,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Internal Movements".to_string(),
                             icon: Icon::InternalMovements,
+                            color: "blue".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -159,6 +172,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Cash Withdrawal".to_string(),
                             icon: Icon::CashWithdrawal,
+                            color: "green".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -166,6 +180,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Health".to_string(),
                             icon: Icon::Health,
+                            color: "green".to_string(),
                         },
                     },
                     CategoryWithId {
@@ -173,6 +188,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
                         data: Category {
                             name: "Everyday Life".to_string(),
                             icon: Icon::EverydayLife,
+                            color: "blue".to_string(),
                         },
                     },
                 ])
