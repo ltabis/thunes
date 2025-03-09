@@ -365,9 +365,15 @@ export default function Transactions() {
               <ListItem
                 key={transaction.id.id.String}
                 secondaryAction={
-                  <Typography variant="body1">
-                    {`${transaction.amount}`}
-                  </Typography>
+                  transaction.amount > 0 ? (
+                    <Typography variant="body1" color="success">
+                      {`+ ${transaction.amount} ${currency}`}
+                    </Typography>
+                  ) : (
+                    <Typography variant="body1">
+                      {`- ${transaction.amount * -1} ${currency}`}
+                    </Typography>
+                  )
                 }
               >
                 <ListItemAvatar>
@@ -421,7 +427,7 @@ export default function Transactions() {
         </>
       )}
 
-      {/* TODO: Add transfer option between two accounts */}
+      {/* FIXME: button should stick to the end of the page */}
       <Fab
         color="primary"
         aria-label="add"
