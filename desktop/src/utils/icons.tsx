@@ -44,36 +44,36 @@ export function categoryIconToMuiIcon(
 function getMuiIcon(icon: Icon) {
   switch (icon) {
     case "transport":
-      return <AirplanemodeActiveIcon />;
+      return <AirplanemodeActiveIcon fontSize="small" />;
     case "accommodation":
-      return <HomeIcon />;
+      return <HomeIcon fontSize="small" />;
     case "subscription":
-      return <LoyaltyIcon />;
+      return <LoyaltyIcon fontSize="small" />;
     case "car":
-      return <DirectionsCarIcon />;
+      return <DirectionsCarIcon fontSize="small" />;
     case "other":
-      return <AccountBalanceWalletIcon />;
+      return <AccountBalanceWalletIcon fontSize="small" />;
     case "giftanddonations":
-      return <VolunteerActivismIcon />;
+      return <VolunteerActivismIcon fontSize="small" />;
     case "savings":
-      return <SavingsIcon />;
+      return <SavingsIcon fontSize="small" />;
     case "educationandfamily":
-      return <FamilyRestroomIcon />;
+      return <FamilyRestroomIcon fontSize="small" />;
     case "loan":
-      return <CreditScoreIcon />;
+      return <CreditScoreIcon fontSize="small" />;
     case "professionalfee":
-      return <BusinessCenterIcon />;
+      return <BusinessCenterIcon fontSize="small" />;
     case "taxes":
-      return <ReceiptLongIcon />;
+      return <ReceiptLongIcon fontSize="small" />;
     case "sparetimeactivities":
-      return <VideogameAssetIcon />;
+      return <VideogameAssetIcon fontSize="small" />;
     case "internalmovements":
-      return <SwapHorizIcon />;
+      return <SwapHorizIcon fontSize="small" />;
     case "cashwithdrawal":
-      return <AccountBalanceIcon />;
+      return <AccountBalanceIcon fontSize="small" />;
     case "health":
-      return <HealthAndSafetyIcon />;
+      return <HealthAndSafetyIcon fontSize="small" />;
     case "everydaylife":
-      return <LocalGroceryStoreIcon />;
+      return <LocalGroceryStoreIcon fontSize="small" />;
   }
 }
