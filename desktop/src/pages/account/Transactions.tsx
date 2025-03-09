@@ -97,6 +97,8 @@ function AddTransactionDialog({
     amount: "0",
     description: "",
     tags: [],
+    // FIXME: should be re-run every time the UI is opened because it will
+    //        keep the current date and time between two transactions otherwise.
     date: dayjs(),
     category: {
       id: EMPTY_RECORD_ID,
@@ -114,9 +116,12 @@ function AddTransactionDialog({
 
   const handleTransactionSubmission = async () => {
     const amount = filterFloat(form.amount);
+    const category =
+      form.category.id !== EMPTY_RECORD_ID ? form.category.id : undefined;
 
     addTransaction(account.id, {
       ...form,
+      category,
       amount,
       date: form.date.toISOString(),
     })
