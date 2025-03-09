@@ -5,6 +5,20 @@
 pub enum Icon {
     Transport,
     Accommodation,
+    Subscription,
+    Car,
+    Other,
+    GiftAndDonations,
+    Savings,
+    EducationAndFamily,
+    Loan,
+    ProfessionalFee,
+    Taxes,
+    SpareTimeActivities,
+    InternalMovements,
+    CashWithdrawal,
+    Health,
+    EverydayLife,
 }
 
 #[derive(ts_rs::TS)]
@@ -12,7 +26,7 @@ pub enum Icon {
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Category {
     pub name: String,
-    pub icon: Icon, // ??
+    pub icon: Icon,
 }
 
 #[derive(ts_rs::TS)]

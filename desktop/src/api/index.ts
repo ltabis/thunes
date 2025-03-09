@@ -9,6 +9,7 @@ import { Settings } from "../../../cli/bindings/Settings";
 import { CurrencyBalance } from "../../../cli/bindings/CurrencyBalance";
 import { AddAccountOptions } from "../../../cli/bindings/AddAccountOptions";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
+import { CategoryWithId } from "../../../cli/bindings/CategoryWithId";
 
 // TODO: could this be automated ?
 
@@ -26,10 +27,10 @@ export const updateTransaction = (transaction: TransactionWithId): Promise<void>
 
 // Categories.
 // TODO:
-export const getCategory = (categoryId: RecordId): Promise<TransactionWithId[]> => invoke("get_category", { categoryId });
-export const addCategory = (categoryId: RecordId, options: AddCategoryOptions): Promise<void> => invoke("add_category", { categoryId, options });
-export const updateCategory = (transaction: TransactionWithId): Promise<void> => invoke("update_category", { transaction });
-export const deleteCategory = (categoryId: RecordId): Promise<void> => invoke("delete_category", { categoryId });
+export const getCategories = (): Promise<CategoryWithId[]> => invoke("get_categories");
+// export const addCategory = (categoryId: RecordId, options: AddCategoryOptions): Promise<void> => invoke("add_category", { categoryId, options });
+// export const updateCategory = (transaction: TransactionWithId): Promise<void> => invoke("update_category", { transaction });
+// export const deleteCategory = (categoryId: RecordId): Promise<void> => invoke("delete_category", { categoryId });
 
 // Accounts.
 export const listAccounts = (): Promise<AccountIdentifiers[]> => invoke("list_accounts");

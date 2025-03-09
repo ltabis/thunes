@@ -42,6 +42,7 @@ import {
   addTransaction,
   getAccount,
   getBalance,
+  getCategories,
   getCurrency,
   getTransactions,
   updateAccount,
@@ -51,6 +52,8 @@ import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
 import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
+import { categoryIconToMuiIcon } from "../../utils/icons";
+import { Category } from "../../../../cli/bindings/Category";
 
 const filterFloat = (value: string) =>
   /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value.replace(",", "."))
@@ -193,6 +196,9 @@ export default function Transactions() {
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [account, setAccount] = useState<Account>();
   const [open, setOpen] = useState(false);
+  const [categories, seCategories] = useState<Map<string, Category> | null>(
+    null
+  );
   const [currency, setCurrency] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<TransactionWithId[] | null>(
     null
@@ -285,6 +291,20 @@ export default function Transactions() {
   };
 
   useEffect(() => {
+    getCategories()
+      .then((categories) =>
+        seCategories(
+          new Map(
+            categories.map((category) => [category.id.id.String, category])
+          )
+        )
+      )
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  }, [dispatchSnackbar]);
+
+  useEffect(() => {
     handleUpdateTransactions(accountIdentifiers);
   }, [accountIdentifiers]);
 
@@ -350,7 +370,13 @@ export default function Transactions() {
                 }
               >
                 <ListItemAvatar>
-                  <Avatar>{/* <ImageIcon /> */}</Avatar>
+                  <Avatar>
+                    {categories &&
+                      transaction.category &&
+                      categoryIconToMuiIcon(
+                        categories.get(transaction.category.id.String)!.icon
+                      )}
+                  </Avatar>
                 </ListItemAvatar>
                 <ListItemText
                   primary={transaction.description}

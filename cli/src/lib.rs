@@ -1,4 +1,5 @@
 use account::Account;
+use category::CategoryWithId;
 use surrealdb::{engine::local::Db, RecordId, Surreal};
 use transaction::{Tag, TransactionWithId};
 
@@ -337,4 +338,8 @@ pub async fn add_tags(db: &Surreal<Db>, tags: Vec<Tag>) -> Result<(), surrealdb:
     }
 
     Ok(())
+}
+
+pub async fn get_categories(db: &Surreal<Db>) -> Result<Vec<CategoryWithId>, surrealdb::Error> {
+    db.select("category").await
 }
