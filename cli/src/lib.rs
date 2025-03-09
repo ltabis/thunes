@@ -193,6 +193,8 @@ pub async fn get_currency(db: &Surreal<Db>, account_id: RecordId) -> Result<Stri
 #[derive(Default, Debug, serde::Deserialize)]
 pub struct AddTransactionOptions {
     pub amount: f64,
+    #[ts(type = "{ tb: string, id: { String: string }}", optional)]
+    pub category: Option<surrealdb::RecordId>,
     pub description: String,
     pub tags: Vec<Tag>,
     #[ts(as = "Option<String>", optional)]
@@ -206,7 +208,8 @@ pub async fn add_transaction(
 ) -> Result<(), surrealdb::Error> {
     let query = r#"
     CREATE transaction SET
-        date = $date,
+        date = <datetime>$date,
+        category = $category,
         amount = $amount,
         description = $description,
         tags = $tags,
@@ -214,6 +217,7 @@ pub async fn add_transaction(
 
     db.query(query)
         .bind(("date", options.date.unwrap_or_else(chrono::Utc::now)))
+        .bind(("category", options.category))
         .bind(("amount", options.amount))
         .bind(("description", options.description))
         .bind(("tags", serde_json::json!(options.tags)))
