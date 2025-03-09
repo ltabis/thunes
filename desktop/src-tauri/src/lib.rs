@@ -1,5 +1,9 @@
 use tauri::{App, Manager};
-use thunes_cli::{category::Icon, settings::Settings, Record};
+use thunes_cli::{
+    category::{Category, CategoryWithId, Icon},
+    settings::Settings,
+    Record,
+};
 
 pub mod commands {
     pub mod account;
@@ -59,69 +63,117 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
             let result: Result<Vec<Record>, surrealdb::Error> = db
                 .insert("category")
                 .content(vec![
-                    thunes_cli::category::Category {
-                        name: "Transport".to_string(),
-                        icon: Icon::Transport,
+                    CategoryWithId {
+                        id: ("category", "transport").into(),
+                        data: Category {
+                            name: "Transport".to_string(),
+                            icon: Icon::Transport,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Accommodation".to_string(),
-                        icon: Icon::Accommodation,
+                    CategoryWithId {
+                        id: ("category", "accommodation").into(),
+                        data: Category {
+                            name: "Accommodation".to_string(),
+                            icon: Icon::Accommodation,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Subscription".to_string(),
-                        icon: Icon::Subscription,
+                    CategoryWithId {
+                        id: ("category", "subscription").into(),
+                        data: Category {
+                            name: "Subscription".to_string(),
+                            icon: Icon::Subscription,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Car".to_string(),
-                        icon: Icon::Car,
+                    CategoryWithId {
+                        id: ("category", "car").into(),
+                        data: Category {
+                            name: "Car".to_string(),
+                            icon: Icon::Car,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Other".to_string(),
-                        icon: Icon::Other,
+                    CategoryWithId {
+                        id: ("category", "other").into(),
+                        data: Category {
+                            name: "Other".to_string(),
+                            icon: Icon::Other,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Gift & Donations".to_string(),
-                        icon: Icon::GiftAndDonations,
+                    CategoryWithId {
+                        id: ("category", "gift-and-donations").into(),
+                        data: Category {
+                            name: "Gift & Donations".to_string(),
+                            icon: Icon::GiftAndDonations,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Savings".to_string(),
-                        icon: Icon::Savings,
+                    CategoryWithId {
+                        id: ("category", "savings").into(),
+                        data: Category {
+                            name: "Savings".to_string(),
+                            icon: Icon::Savings,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Education & Family".to_string(),
-                        icon: Icon::EducationAndFamily,
+                    CategoryWithId {
+                        id: ("category", "education-and-family").into(),
+                        data: Category {
+                            name: "Education & Family".to_string(),
+                            icon: Icon::EducationAndFamily,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Loan".to_string(),
-                        icon: Icon::Loan,
+                    CategoryWithId {
+                        id: ("category", "loan").into(),
+                        data: Category {
+                            name: "Loan".to_string(),
+                            icon: Icon::Loan,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Professional Fee".to_string(),
-                        icon: Icon::ProfessionalFee,
+                    CategoryWithId {
+                        id: ("category", "professional-fee").into(),
+                        data: Category {
+                            name: "Professional Fee".to_string(),
+                            icon: Icon::ProfessionalFee,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Taxes".to_string(),
-                        icon: Icon::Taxes,
+                    CategoryWithId {
+                        id: ("category", "taxes").into(),
+                        data: Category {
+                            name: "Taxes".to_string(),
+                            icon: Icon::Taxes,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Spare-time Activities".to_string(),
-                        icon: Icon::SpareTimeActivities,
+                    CategoryWithId {
+                        id: ("category", "spare-time-activities").into(),
+                        data: Category {
+                            name: "Spare-time Activities".to_string(),
+                            icon: Icon::SpareTimeActivities,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Internal Movements".to_string(),
-                        icon: Icon::InternalMovements,
+                    CategoryWithId {
+                        id: ("category", "internal-movements").into(),
+                        data: Category {
+                            name: "Internal Movements".to_string(),
+                            icon: Icon::InternalMovements,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Cash Withdrawal".to_string(),
-                        icon: Icon::CashWithdrawal,
+                    CategoryWithId {
+                        id: ("category", "cash-withdrawal").into(),
+                        data: Category {
+                            name: "Cash Withdrawal".to_string(),
+                            icon: Icon::CashWithdrawal,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Health".to_string(),
-                        icon: Icon::Health,
+                    CategoryWithId {
+                        id: ("category", "health").into(),
+                        data: Category {
+                            name: "Health".to_string(),
+                            icon: Icon::Health,
+                        },
                     },
-                    thunes_cli::category::Category {
-                        name: "Everyday Life".to_string(),
-                        icon: Icon::EverydayLife,
+                    CategoryWithId {
+                        id: ("category", "everyday-life").into(),
+                        data: Category {
+                            name: "Everyday Life".to_string(),
+                            icon: Icon::EverydayLife,
+                        },
                     },
                 ])
                 .await;
