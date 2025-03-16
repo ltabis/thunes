@@ -1,24 +1,15 @@
 use crate::account::Account;
-use crate::Error;
+use crate::{transaction, Error};
 use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 
 #[derive(ts_rs::TS)]
-#[ts(export)]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Tag {
-    // FIXME: use real tag id.
-    pub name: String,
-    pub allocation: f64,
-}
-
-#[derive(ts_rs::TS)]
-#[ts(export)]
+#[ts(export, rename = "BudgetCategory")]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Category {
     pub name: String,
     pub percentage: f64,
-    pub tags: Vec<Tag>,
+    pub transaction_categories: Vec<transaction::Category>,
     pub color: String,
 }
 
@@ -38,19 +29,19 @@ impl Type {
                 Category {
                     name: "Needs".into(),
                     percentage: 50.0,
-                    tags: vec![],
+                    transaction_categories: vec![],
                     color: "red".into(),
                 },
                 Category {
                     name: "Wants".into(),
                     percentage: 30.0,
-                    tags: vec![],
+                    transaction_categories: vec![],
                     color: "yellow".into(),
                 },
                 Category {
                     name: "Investments".into(),
                     percentage: 20.0,
-                    tags: vec![],
+                    transaction_categories: vec![],
                     color: "blue".into(),
                 },
             ],

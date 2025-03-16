@@ -6,10 +6,19 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Drawer,
   Fab,
+  FormControl,
   Grid2,
+  InputLabel,
+  List,
   ListItem,
+  ListItemAvatar,
+  ListItemButton,
+  ListItemText,
+  MenuItem,
   Paper,
+  Select,
   Skeleton,
   Stack,
   TextField,
@@ -25,33 +34,188 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import { Transaction } from "../../../../cli/bindings/Transaction";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
-import {
-  DataGrid,
-  GridColDef,
-  GridRenderCellParams,
-  GridRenderEditCellParams,
-  GridSortModel,
-  useGridApiContext,
-} from "@mui/x-data-grid";
+import { GridRenderEditCellParams, useGridApiContext } from "@mui/x-data-grid";
 import { EditTags } from "./Tags";
 import { Tag } from "../../../../cli/bindings/Tag";
-import { Account } from "../../../../cli/bindings/Account";
 import { SparkLineChart } from "@mui/x-charts";
 import {
   addTags,
   addTransaction,
-  getAccount,
+  EMPTY_RECORD_ID,
   getBalance,
+  getCategories,
   getCurrency,
   getTransactions,
   RecordId,
-  updateAccount,
   updateTransaction,
 } from "../../api";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { filterFloat } from "../../utils";
+import { categoryIconToMuiIcon } from "../../utils/icons";
+import { CategoryWithId } from "../../../../cli/bindings/CategoryWithId";
+
+function EditTransactionDrawer({
+  accountId,
+  transaction,
+  close,
+  handleUpdateTransactions,
+}: {
+  accountId: RecordId;
+  transaction: TransactionWithId;
+  close: () => void;
+  handleUpdateTransactions: (account: RecordId) => void;
+}) {
+  const dispatchSnackbar = useDispatchSnackbar()!;
+  const [categories, setCategories] = useState<Map<
+    string,
+    CategoryWithId
+  > | null>(null);
+  // Note: omit amount float value to enable the user to enter a floating point character.
+  const [form, setForm] = useState<
+    Omit<TransactionWithId, "amount" | "date" | "category"> & {
+      amount: string;
+      date: Dayjs;
+      category: RecordId;
+    }
+  >({
+    ...transaction,
+    amount: transaction.amount.toString(),
+    date: dayjs(transaction.date),
+    category: transaction.category,
+  });
+
+  const handleCloseForm = () => {
+    close();
+  };
+
+  const handleValidAmount = () => isNaN(filterFloat(form.amount));
+
+  const handleTransactionSubmission = async () => {
+    const amount = filterFloat(form.amount);
+
+    // FIXME: set other category by default.
+
+    updateTransaction({
+      ...form,
+      amount,
+      date: form.date.toISOString(),
+    })
+      .then(() => {
+        handleCloseForm();
+        handleUpdateTransactions(accountId);
+      })
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  };
+
+  useEffect(() => {
+    getCategories()
+      .then((categories) =>
+        setCategories(
+          new Map(
+            categories.map((category) => [category.id.id.String, category])
+          )
+        )
+      )
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  }, [dispatchSnackbar]);
+
+  return (
+    <Drawer open={true} onClose={handleCloseForm} anchor="right">
+      <DialogTitle>Update transaction</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2}>
+          <TextField
+            id="transaction-description"
+            label="Description"
+            name="description"
+            value={form.description}
+            onChange={(description) =>
+              setForm({ ...form, description: description.target.value })
+            }
+          />
+          <TextField
+            id="transaction-amount"
+            label="Amount"
+            name="amount"
+            slotProps={{
+              inputLabel: {
+                shrink: true,
+              },
+            }}
+            value={form.amount}
+            onChange={(amount) =>
+              setForm({ ...form, amount: amount.target.value })
+            }
+            error={handleValidAmount()}
+            helperText={handleValidAmount() && "Not a valid amount"}
+          />
+          <DatePicker
+            value={form.date}
+            onChange={(date) => date && setForm({ ...form, date })}
+          />
+          <EditTags
+            value={form.tags}
+            handleChange={(tags) => setForm({ ...form, tags })}
+          />
+          {categories && (
+            <FormControl fullWidth>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={form.category?.id.String}
+                label="Category"
+                onChange={(category) =>
+                  setForm({
+                    ...form,
+                    category:
+                      categories.get(category.target.value)?.id ??
+                      form.category,
+                  })
+                }
+                renderValue={(selected) => {
+                  const category = categories.get(selected)!;
+                  return (
+                    <MenuItem>
+                      <ListItemAvatar>
+                        {categoryIconToMuiIcon(category)}
+                      </ListItemAvatar>
+                      <ListItemText primary={category.name} />
+                    </MenuItem>
+                  );
+                }}
+              >
+                {Array.from(categories.values()).map((category) => (
+                  <MenuItem
+                    key={category.id.id.String}
+                    value={category.id.id.String}
+                  >
+                    <ListItemAvatar>
+                      {categoryIconToMuiIcon(category)}
+                    </ListItemAvatar>
+                    <ListItemText primary={category.name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button
+          disabled={handleValidAmount()}
+          onClick={handleTransactionSubmission}
+        >
+          Update
+        </Button>
+      </DialogActions>
+    </Drawer>
+  );
+}
 
 function AddTransactionDialog({
   accountId,
@@ -65,14 +229,25 @@ function AddTransactionDialog({
   handleUpdateTransactions: (accountId: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
+  const [categories, setCategories] = useState<Map<
+    string,
+    CategoryWithId
+  > | null>(null);
   // Note: omit amount float value to enable the user to enter a floating point character.
   const [form, setForm] = useState<
-    Omit<Transaction, "amount" | "date"> & { amount: string; date: Dayjs }
+    Omit<Transaction, "amount" | "date"> & {
+      amount: string;
+      date: Dayjs;
+      category: RecordId;
+    }
   >({
     amount: "0",
     description: "",
     tags: [],
+    // FIXME: should be re-run every time the UI is opened because it will
+    //        keep the current date and time between two transactions otherwise.
     date: dayjs(),
+    category: EMPTY_RECORD_ID,
   });
 
   const handleCloseForm = () => {
@@ -83,9 +258,12 @@ function AddTransactionDialog({
 
   const handleTransactionSubmission = async () => {
     const amount = filterFloat(form.amount);
+    const category =
+      form.category !== EMPTY_RECORD_ID ? form.category : undefined;
 
     addTransaction(accountId, {
       ...form,
+      category,
       amount,
       date: form.date.toISOString(),
     })
@@ -97,6 +275,20 @@ function AddTransactionDialog({
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
   };
+
+  useEffect(() => {
+    getCategories()
+      .then((categories) =>
+        setCategories(
+          new Map(
+            categories.map((category) => [category.id.id.String, category])
+          )
+        )
+      )
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  }, [dispatchSnackbar]);
 
   return (
     <Dialog
@@ -156,6 +348,46 @@ function AddTransactionDialog({
               handleChange={(tags) => setForm({ ...form, tags })}
             />
           </Grid2>
+          <Grid2 size={8}>
+            {categories && (
+              <FormControl fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={form.category.id.String}
+                  label="Category"
+                  onChange={(category) =>
+                    setForm({
+                      ...form,
+                      category: categories.get(category.target.value)!.id,
+                    })
+                  }
+                  renderValue={(selected) => {
+                    const category = categories.get(selected)!;
+                    return (
+                      <MenuItem>
+                        <ListItemAvatar>
+                          {categoryIconToMuiIcon(category)}
+                        </ListItemAvatar>
+                        <ListItemText primary={category.name} />
+                      </MenuItem>
+                    );
+                  }}
+                >
+                  {Array.from(categories.values()).map((category) => (
+                    <MenuItem
+                      key={category.id.id.String}
+                      value={category.id.id.String}
+                    >
+                      <ListItemAvatar>
+                        {categoryIconToMuiIcon(category)}
+                      </ListItemAvatar>
+                      <ListItemText primary={category.name} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </Grid2>
         </Grid2>
       </DialogContent>
       <DialogActions>
@@ -187,111 +419,51 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
 
 export default function Transactions({ accountId }: { accountId: RecordId }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [account, setAccount] = useState<Account>();
   const [open, setOpen] = useState(false);
+  // FIXME: Pull the category directly from the transaction.
+  const [categories, setCategories] = useState<Map<
+    string,
+    CategoryWithId
+  > | null>(null);
   const [currency, setCurrency] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<TransactionWithId[] | null>(
     null
   );
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<TransactionWithId | null>(null);
   const [sparklineTransactions, setSparklineTransactions] = useState<
     TransactionWithId[] | null
   >(null);
   const [balance, setBalance] = useState(0.0);
-
-  const columns: GridColDef[] = [
-    {
-      field: "description",
-      headerName: "Description",
-      minWidth: 500,
-      editable: true,
-    },
-    {
-      field: "date",
-      headerName: "Date",
-      type: "dateTime",
-      minWidth: 175,
-      valueGetter: (value) => new Date(value),
-      editable: true,
-    },
-    {
-      field: "tags",
-      type: "custom",
-      headerName: "Tags",
-      minWidth: 200,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      renderCell: (params: GridRenderCellParams<any, Tag[]>) => (
-        <Stack direction="row">
-          {params.value?.map((item) => {
-            return (
-              <ListItem
-                sx={{
-                  paddingLeft: 0,
-                  paddingRight: 0,
-                  marginLeft: 0.3,
-                  marginRight: 0.3,
-                }}
-                key={item.label}
-              >
-                <Chip variant="outlined" label={item.label} />
-              </ListItem>
-            );
-          })}
-        </Stack>
-      ),
-      renderEditCell: (params) => <EditTagsTable {...params} />,
-      editable: true,
-    },
-    // TODO: add color
-    { field: "amount", headerName: "Amount", type: "number", editable: true },
-  ];
-
-  const paginationModel = { page: 0, pageSize: 10 };
-
-  function getRowId(row: TransactionWithId) {
-    return row.id.id.String;
-  }
-
   const handleOpenForm = () => {
     setOpen(true);
   };
 
-  const handleRowUpdate = (transaction: TransactionWithId) => {
-    updateTransaction(transaction);
-    handleUpdateTransactions(accountId);
-    return transaction;
+  const handleUpdateTransactions = async (account: RecordId) => {
+    await getTransactions(account).then(setTransactions);
+    await getTransactions(account).then(setSparklineTransactions);
+    await getCurrency(account).then(setCurrency);
+    await getBalance(account).then(setBalance);
   };
 
-  const handleUpdateTransactions = async (accountId: RecordId) => {
-    setTransactions(await getTransactions(accountId));
-    setSparklineTransactions(await getTransactions(accountId));
-    setCurrency(await getCurrency(accountId));
-    setBalance(await getBalance(accountId));
-  };
-
-  const handleSortModelChange = (sortModel: GridSortModel) => {
-    if (account) {
-      const newAccount = {
-        ...account,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction_grid_sort_model: sortModel as any,
-      };
-      setAccount(newAccount);
-      updateAccount(newAccount);
-    }
-  };
+  useEffect(() => {
+    getCategories()
+      .then((categories) =>
+        setCategories(
+          new Map(
+            categories.map((category) => [category.id.id.String, category])
+          )
+        )
+      )
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  }, [dispatchSnackbar]);
 
   useEffect(() => {
     handleUpdateTransactions(accountId).catch((error) =>
       dispatchSnackbar({ type: "open", severity: "error", message: error })
     );
-  }, [accountId, dispatchSnackbar]);
-
-  useEffect(() => {
-    getAccount(accountId)
-      .then(setAccount)
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
   }, [accountId, dispatchSnackbar]);
 
   return (
@@ -337,30 +509,52 @@ export default function Transactions({ accountId }: { accountId: RecordId }) {
               valueFormatter: (value) => value.toISOString().slice(0, 10),
             }}
           />
-          <DataGrid
-            rows={transactions}
-            columns={columns}
-            getRowId={getRowId}
-            initialState={{ pagination: { paginationModel } }}
-            pageSizeOptions={[5, 10, 25, 50, 100]}
-            checkboxSelection
-            processRowUpdate={handleRowUpdate}
-            onProcessRowUpdateError={(error) =>
-              dispatchSnackbar({
-                type: "open",
-                severity: "error",
-                message: error,
-              })
-            }
-            sortModel={
-              // Cast to undefined in case the model is null since `sortModel`
-              // does not handle null.
-              (account?.transaction_grid_sort_model ?? undefined) as
-                | GridSortModel
-                | undefined
-            }
-            onSortModelChange={handleSortModelChange}
-          />
+          <List sx={{ width: "100%", bgcolor: "background.paper" }}>
+            {transactions.map((transaction) => (
+              <ListItemButton
+                onClick={() => setSelectedTransaction(transaction)}
+                key={transaction.id.id.String}
+              >
+                <ListItem
+                  secondaryAction={
+                    transaction.amount > 0 ? (
+                      <Typography variant="body1" color="success">
+                        {`+ ${transaction.amount} ${currency}`}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body1">
+                        {`- ${transaction.amount * -1} ${currency}`}
+                      </Typography>
+                    )
+                  }
+                >
+                  <ListItemAvatar>
+                    {categories &&
+                      categoryIconToMuiIcon(
+                        categories.get(transaction.category.id.String)!
+                      )}
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={transaction.description}
+                    secondary={dayjs(transaction.date).format("DD MMMM YYYY")}
+                  />
+                  <ListItemText
+                    primary={
+                      <Stack direction="row" spacing={1}>
+                        {transaction.tags.map((tag) => (
+                          <Chip
+                            key={tag.label}
+                            label={tag.label}
+                            sx={{ backgroundColor: tag.color }}
+                          />
+                        ))}
+                      </Stack>
+                    }
+                  />
+                </ListItem>
+              </ListItemButton>
+            ))}
+          </List>
         </Box>
       ) : (
         <>
@@ -370,7 +564,7 @@ export default function Transactions({ accountId }: { accountId: RecordId }) {
         </>
       )}
 
-      {/* TODO: Add transfer option between two accounts */}
+      {/* FIXME: button should stick to the end of the page */}
       <Fab
         color="primary"
         aria-label="add"
@@ -384,12 +578,22 @@ export default function Transactions({ accountId }: { accountId: RecordId }) {
         <AddIcon />
       </Fab>
 
+      {/* TODO: Remove in favor of a drawer */}
       <AddTransactionDialog
         accountId={accountId}
         open={open}
         setOpen={setOpen}
         handleUpdateTransactions={handleUpdateTransactions}
       />
+
+      {selectedTransaction && (
+        <EditTransactionDrawer
+          accountId={accountId}
+          transaction={selectedTransaction}
+          close={() => setSelectedTransaction(null)}
+          handleUpdateTransactions={handleUpdateTransactions}
+        />
+      )}
     </Paper>
   );
 }

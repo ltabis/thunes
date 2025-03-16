@@ -6,6 +6,50 @@ use crate::script::time_helper;
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Icon {
+    Transport,
+    Accommodation,
+    Subscription,
+    Car,
+    Other,
+    GiftAndDonations,
+    Savings,
+    EducationAndFamily,
+    Loan,
+    ProfessionalFee,
+    Taxes,
+    SpareTimeActivities,
+    InternalMovements,
+    CashWithdrawal,
+    Health,
+    EverydayLife,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[ts(export, rename = "TransactionCategory")]
+pub struct Category {
+    pub name: String,
+    pub icon: Icon,
+    pub color: String,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[ts(export, rename = "TransactionCategoryWithId")]
+pub struct CategoryWithId {
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub id: surrealdb::RecordId,
+    #[serde(flatten)]
+    pub data: Category,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Tag {
     pub label: String,
     pub color: Option<String>,
@@ -38,6 +82,8 @@ pub struct TransactionWithId {
     pub id: RecordId,
     #[ts(skip)]
     pub account: RecordId,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub category: surrealdb::RecordId,
 }
 
 #[derive(Clone, Debug, serde::Deserialize, rhai::CustomType)]

@@ -12,6 +12,7 @@ import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { CreateSplitBudgetOptions } from "../../../cli/bindings/CreateSplitBudgetOptions";
 import { Budget } from "../../../cli/bindings/Budget";
 import { BudgetIdentifiers } from "../../../cli/bindings/BudgetIdentifiers";
+import { CategoryWithId } from "../../../cli/bindings/CategoryWithId";
 
 // TODO: could this be automated ?
 
@@ -26,6 +27,13 @@ export const getAllBalance = (): Promise<CurrencyBalance[]> => invoke("get_all_b
 export const getTransactions = (accountId: RecordId, options?: GetTransactionOptions): Promise<TransactionWithId[]> => invoke("get_transactions", { accountId, options });
 export const addTransaction = (accountId: RecordId, options: AddTransactionOptions): Promise<void> => invoke("add_transaction", { accountId, options });
 export const updateTransaction = (transaction: TransactionWithId): Promise<void> => invoke("update_transaction", { transaction });
+
+// Categories.
+// TODO:
+export const getCategories = (): Promise<CategoryWithId[]> => invoke("get_categories");
+// export const addCategory = (categoryId: RecordId, options: AddCategoryOptions): Promise<void> => invoke("add_category", { categoryId, options });
+// export const updateCategory = (transaction: TransactionWithId): Promise<void> => invoke("update_category", { transaction });
+// export const deleteCategory = (categoryId: RecordId): Promise<void> => invoke("delete_category", { categoryId });
 
 // Accounts.
 export const listAccounts = (): Promise<AccountIdentifiers[]> => invoke("list_accounts");
