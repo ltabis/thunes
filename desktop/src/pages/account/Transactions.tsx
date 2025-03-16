@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Box,
   Button,
   Chip,
@@ -16,13 +15,10 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemButton,
-  ListItemIcon,
   ListItemText,
   MenuItem,
-  MenuList,
   Paper,
   Select,
-  SelectChangeEvent,
   Skeleton,
   Stack,
   TextField,
@@ -39,26 +35,19 @@ import AddIcon from "@mui/icons-material/Add";
 import { Transaction } from "../../../../cli/bindings/Transaction";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
 import { useAccount } from "../../contexts/Account";
-import {
-  GridRenderEditCellParams,
-  GridSortModel,
-  useGridApiContext,
-} from "@mui/x-data-grid";
+import { GridRenderEditCellParams, useGridApiContext } from "@mui/x-data-grid";
 import { EditTags } from "./Tags";
 import { Tag } from "../../../../cli/bindings/Tag";
-import { Account } from "../../../../cli/bindings/Account";
 import { SparkLineChart } from "@mui/x-charts";
 import {
   addTags,
   addTransaction,
   EMPTY_RECORD_ID,
-  getAccount,
   getBalance,
   getCategories,
   getCurrency,
   getTransactions,
   RecordId,
-  updateAccount,
   updateTransaction,
 } from "../../api";
 import { DatePicker } from "@mui/x-date-pickers";
@@ -433,7 +422,6 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
 export default function Transactions() {
   const accountIdentifiers = useAccount()!;
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [account, setAccount] = useState<Account>();
   const [open, setOpen] = useState(false);
   // FIXME: Pull the category directly from the transaction.
   const [categories, setCategories] = useState<Map<string, Category> | null>(
@@ -449,68 +437,8 @@ export default function Transactions() {
     TransactionWithId[] | null
   >(null);
   const [balance, setBalance] = useState(0.0);
-
-  // const columns: GridColDef[] = [
-  //   {
-  //     field: "description",
-  //     headerName: "Description",
-  //     minWidth: 500,
-  //     editable: true,
-  //   },
-  //   {
-  //     field: "date",
-  //     headerName: "Date",
-  //     type: "dateTime",
-  //     minWidth: 175,
-  //     valueGetter: (value) => new Date(value),
-  //     editable: true,
-  //   },
-  //   {
-  //     field: "tags",
-  //     type: "custom",
-  //     headerName: "Tags",
-  //     minWidth: 200,
-  //     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  //     renderCell: (params: GridRenderCellParams<any, Tag[]>) => (
-  //       <Stack direction="row">
-  //         {params.value?.map((item) => {
-  //           return (
-  //             <ListItem
-  //               sx={{
-  //                 paddingLeft: 0,
-  //                 paddingRight: 0,
-  //                 marginLeft: 0.3,
-  //                 marginRight: 0.3,
-  //               }}
-  //               key={item.label}
-  //             >
-  //               <Chip variant="outlined" label={item.label} />
-  //             </ListItem>
-  //           );
-  //         })}
-  //       </Stack>
-  //     ),
-  //     renderEditCell: (params) => <EditTagsTable {...params} />,
-  //     editable: true,
-  //   },
-  //   // TODO: add color
-  //   { field: "amount", headerName: "Amount", type: "number", editable: true },
-  // ];
-
-  // const paginationModel = { page: 0, pageSize: 10 };
-
-  function getRowId(row: TransactionWithId) {
-    return row.id.id.String;
-  }
-
   const handleOpenForm = () => {
     setOpen(true);
-  };
-
-  const handleRowUpdate = (transaction: TransactionWithId) => {
-    updateTransaction(transaction);
-    handleUpdateTransactions(accountIdentifiers);
-    return transaction;
   };
 
   const handleUpdateTransactions = (account: AccountIdentifiers) => {
@@ -518,18 +446,6 @@ export default function Transactions() {
     getTransactions(account.id).then(setSparklineTransactions);
     getCurrency(account.id).then(setCurrency);
     getBalance(account.id).then(setBalance);
-  };
-
-  const handleSortModelChange = (sortModel: GridSortModel) => {
-    if (account) {
-      const newAccount = {
-        ...account,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        transaction_grid_sort_model: sortModel as any,
-      };
-      setAccount(newAccount);
-      updateAccount(newAccount);
-    }
   };
 
   useEffect(() => {
@@ -549,14 +465,6 @@ export default function Transactions() {
   useEffect(() => {
     handleUpdateTransactions(accountIdentifiers);
   }, [accountIdentifiers]);
-
-  useEffect(() => {
-    getAccount(accountIdentifiers.id)
-      .then(setAccount)
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-  }, [accountIdentifiers, dispatchSnackbar]);
 
   return (
     <Paper elevation={0}>
