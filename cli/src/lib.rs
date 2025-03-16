@@ -217,7 +217,10 @@ pub async fn add_transaction(
 
     db.query(query)
         .bind(("date", options.date.unwrap_or_else(chrono::Utc::now)))
-        .bind(("category", options.category))
+        .bind((
+            "category",
+            options.category.unwrap_or(("category", "other").into()),
+        ))
         .bind(("amount", options.amount))
         .bind(("description", options.description))
         .bind(("tags", serde_json::json!(options.tags)))
@@ -231,9 +234,21 @@ pub async fn update_transaction(
     db: &Surreal<Db>,
     transaction: TransactionWithId,
 ) -> Result<(), surrealdb::Error> {
-    let _: Option<Record> = db
-        .update(("transaction", transaction.id.key().clone()))
-        .merge(transaction)
+    let query = r#"
+    UPDATE $transaction SET
+        date = <datetime>$date,
+        category = $category,
+        amount = $amount,
+        description = $description,
+        tags = $tags"#;
+
+    db.query(query)
+        .bind(("transaction", transaction.id))
+        .bind(("date", transaction.inner.date))
+        .bind(("category", transaction.category))
+        .bind(("amount", transaction.inner.amount))
+        .bind(("description", transaction.inner.description))
+        .bind(("tags", serde_json::json!(transaction.inner.tags)))
         .await?;
 
     Ok(())

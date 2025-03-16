@@ -38,8 +38,8 @@ pub struct TransactionWithId {
     pub id: RecordId,
     #[ts(skip)]
     pub account: RecordId,
-    #[ts(type = "{ tb: string, id: { String: string }}", optional)]
-    pub category: Option<surrealdb::RecordId>,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub category: surrealdb::RecordId,
 }
 
 #[derive(Clone, Debug, serde::Deserialize, rhai::CustomType)]
