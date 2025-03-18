@@ -55,6 +55,7 @@ import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { filterFloat } from "../../utils";
 import { categoryIconToMuiIcon } from "../../utils/icons";
 import { CategoryWithId } from "../../../../cli/bindings/CategoryWithId";
+import CategorySelector from "../../components/form/CategorySelector";
 
 function EditTransactionDrawer({
   accountId,
@@ -229,10 +230,6 @@ function AddTransactionDialog({
   handleUpdateTransactions: (accountId: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [categories, setCategories] = useState<Map<
-    string,
-    CategoryWithId
-  > | null>(null);
   // Note: omit amount float value to enable the user to enter a floating point character.
   const [form, setForm] = useState<
     Omit<Transaction, "amount" | "date"> & {
@@ -275,20 +272,6 @@ function AddTransactionDialog({
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
   };
-
-  useEffect(() => {
-    getCategories()
-      .then((categories) =>
-        setCategories(
-          new Map(
-            categories.map((category) => [category.id.id.String, category])
-          )
-        )
-      )
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-  }, [dispatchSnackbar]);
 
   return (
     <Dialog
@@ -349,44 +332,15 @@ function AddTransactionDialog({
             />
           </Grid2>
           <Grid2 size={8}>
-            {categories && (
-              <FormControl fullWidth>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={form.category.id.String}
-                  label="Category"
-                  onChange={(category) =>
-                    setForm({
-                      ...form,
-                      category: categories.get(category.target.value)!.id,
-                    })
-                  }
-                  renderValue={(selected) => {
-                    const category = categories.get(selected)!;
-                    return (
-                      <MenuItem>
-                        <ListItemAvatar>
-                          {categoryIconToMuiIcon(category)}
-                        </ListItemAvatar>
-                        <ListItemText primary={category.name} />
-                      </MenuItem>
-                    );
-                  }}
-                >
-                  {Array.from(categories.values()).map((category) => (
-                    <MenuItem
-                      key={category.id.id.String}
-                      value={category.id.id.String}
-                    >
-                      <ListItemAvatar>
-                        {categoryIconToMuiIcon(category)}
-                      </ListItemAvatar>
-                      <ListItemText primary={category.name} />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
+            <CategorySelector
+              category={form.category}
+              onChange={(category) =>
+                setForm({
+                  ...form,
+                  category: category,
+                })
+              }
+            />
           </Grid2>
         </Grid2>
       </DialogContent>
