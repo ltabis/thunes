@@ -465,8 +465,8 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
                           {categoryIconToMuiIcon(allocation.category)}
                         </ListItemAvatar>
                         <ListItemText
-                          primary={allocation.category.name}
-                          secondary={partition.name}
+                          primary={allocation.name}
+                          secondary={`${partition.name} / ${allocation.category.name}`}
                         />
                       </ListItem>
                     </ListItemButton>

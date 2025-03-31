@@ -40,6 +40,7 @@ export function AddAllocationDrawer({
       partition: RecordId;
     }
   >({
+    name: "",
     amount: "0",
     category: EMPTY_RECORD_ID,
     partition: EMPTY_RECORD_ID,
@@ -57,6 +58,7 @@ export function AddAllocationDrawer({
       form.category !== EMPTY_RECORD_ID ? form.category : undefined;
 
     addBudgetAllocation({
+      ...form,
       amount,
       category,
       partition: form.partition,
@@ -75,6 +77,13 @@ export function AddAllocationDrawer({
       <DialogTitle>Add Allocation</DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
+          <TextField
+            id="allocation-name"
+            label="Name"
+            name="name"
+            value={form.name}
+            onChange={(name) => setForm({ ...form, name: name.target.value })}
+          />
           <CategorySelector
             category={form.category}
             onChange={(category) =>
@@ -180,6 +189,13 @@ export function EditAllocationDrawer({
       <DialogTitle>Update Allocation</DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
+          <TextField
+            id="allocation-name"
+            label="Name"
+            name="name"
+            value={form.name}
+            onChange={(name) => setForm({ ...form, name: name.target.value })}
+          />
           <CategorySelector
             category={form.category}
             onChange={(category) =>
