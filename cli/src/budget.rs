@@ -10,6 +10,7 @@ use surrealdb::Surreal;
 pub struct Allocation {
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub id: surrealdb::RecordId,
+    pub name: String,
     pub amount: f64,
     pub category: CategoryWithId,
     #[ts(type = "{ tb: string, id: { String: string }}")]
@@ -219,6 +220,7 @@ pub async fn delete_partition(
 #[ts(export)]
 #[derive(Debug, serde::Deserialize)]
 pub struct CreateAllocationOptions {
+    pub name: String,
     #[ts(type = "{ tb: string, id: { String: string }}", optional)]
     pub category: Option<surrealdb::RecordId>,
     pub amount: f64,
@@ -232,6 +234,7 @@ pub async fn create_allocation(
 ) -> Result<Allocation, Error> {
     let query = r#"
     LET $allocation = (CREATE ONLY allocation SET
+        name      = $name,
         category  = $category,
         amount    = $amount,
         partition = $partition);
@@ -240,6 +243,7 @@ pub async fn create_allocation(
 
     let allocation: Option<Allocation> = db
         .query(query)
+        .bind(("name", options.name))
         .bind(("partition", options.partition))
         .bind((
             "category",
@@ -271,6 +275,7 @@ pub async fn read_allocations(
 pub struct UpdateAllocationOptions {
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub id: surrealdb::RecordId,
+    pub name: String,
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub category: surrealdb::RecordId,
     pub amount: f64,
@@ -284,6 +289,7 @@ pub async fn update_allocation(
 ) -> Result<Allocation, Error> {
     let query = r#"
     UPDATE $allocation SET
+        name  = $name,
         partition = $partition,
         category  = $category,
         amount    = $amount;
@@ -292,6 +298,7 @@ pub async fn update_allocation(
 
     let allocation: Option<Allocation> = db
         .query(query)
+        .bind(("name", options.name))
         .bind(("partition", options.partition))
         .bind(("allocation", options.id))
         .bind(("category", options.category))
