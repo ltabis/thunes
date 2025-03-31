@@ -10,6 +10,7 @@ import {
 import { useState } from "react";
 import {
   addBudgetAllocation,
+  deleteBudgetAllocation,
   EMPTY_RECORD_ID,
   RecordId,
   updateBudgetAllocation,
@@ -163,6 +164,17 @@ export function EditAllocationDrawer({
       );
   };
 
+  const handleAllocationDelete = async () => {
+    deleteBudgetAllocation(allocation.id)
+      .then(() => {
+        onUpdate(allocation);
+        handleCloseForm();
+      })
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  };
+
   return (
     <Drawer open={true} onClose={handleCloseForm} anchor="right">
       <DialogTitle>Update Allocation</DialogTitle>
@@ -208,6 +220,9 @@ export function EditAllocationDrawer({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleAllocationSubmission}>Update</Button>
+        <Button onClick={handleAllocationDelete} color="error">
+          Delete
+        </Button>
       </DialogActions>
     </Drawer>
   );

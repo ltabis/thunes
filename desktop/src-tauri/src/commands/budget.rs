@@ -122,7 +122,7 @@ pub async fn get_budget_partitions(
 ) -> Result<Vec<Partition>, String> {
     let database = database.lock().await;
 
-    thunes_cli::budget::get_partitions(&database, budget_id)
+    thunes_cli::budget::read_partitions(&database, budget_id)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -143,6 +143,22 @@ pub async fn update_budget_partition(
         .map_err(|error| {
             tracing::error!(%error, "database error");
             "failed to update budget partition".to_string()
+        })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn delete_budget_partition(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    partition: surrealdb::RecordId,
+) -> Result<(), String> {
+    let database = database.lock().await;
+
+    thunes_cli::budget::delete_partition(&database, partition)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to delete budget partition".to_string()
         })
 }
 
@@ -170,7 +186,7 @@ pub async fn get_budget_allocations(
 ) -> Result<Vec<Allocation>, String> {
     let database = database.lock().await;
 
-    thunes_cli::budget::get_allocations(&database, partitions)
+    thunes_cli::budget::read_allocations(&database, partitions)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -191,5 +207,21 @@ pub async fn update_budget_allocation(
         .map_err(|error| {
             tracing::error!(%error, "database error");
             "failed to update budget allocation".to_string()
+        })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn delete_budget_allocation(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    allocation: surrealdb::RecordId,
+) -> Result<(), String> {
+    let database = database.lock().await;
+
+    thunes_cli::budget::delete_allocation(&database, allocation)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to delete budget allocation".to_string()
         })
 }

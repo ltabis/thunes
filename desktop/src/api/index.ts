@@ -88,6 +88,8 @@ export const addBudgetPartition = (
   invoke("create_budget_partition", { budgetId, options });
 export const updateBudgetPartition = (options: Partition): Promise<Partition> =>
   invoke("update_budget_partition", { options });
+export const deleteBudgetPartition = (partition: RecordId): Promise<void> =>
+  invoke("delete_budget_partition", { partition });
 export const getBudgetPartitions = (budgetId: RecordId): Promise<Partition[]> =>
   invoke("get_budget_partitions", { budgetId });
 export const addBudgetAllocation = (
@@ -99,6 +101,8 @@ export const getBudgetAllocations = (
 export const updateBudgetAllocation = (
   options: UpdateAllocationOptions
 ): Promise<Allocation> => invoke("update_budget_allocation", { options });
+export const deleteBudgetAllocation = (allocation: RecordId): Promise<void> =>
+  invoke("delete_budget_allocation", { allocation });
 
 // Settings.
 export const getSettings = (): Promise<Settings> => invoke("get_settings");
