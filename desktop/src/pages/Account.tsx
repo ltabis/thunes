@@ -26,38 +26,29 @@ import {
   useEffect,
   useState,
 } from "react";
-import {
-  accountIsSelected,
-  useAccount,
-  useDispatchAccount,
-} from "../contexts/Account";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Transactions from "./account/Transactions";
-import Details from "./account/Details";
 import { MouseEvent, SyntheticEvent } from "react";
 import Settings from "./account/Settings";
-import {
-  addAccount,
-  deleteAccount,
-  EMPTY_RECORD_ID,
-  listAccounts,
-  RecordId,
-} from "../api";
+import { addAccount, deleteAccount, listAccounts, RecordId } from "../api";
 import { Account } from "../../../cli/bindings/Account";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
+import { useParams } from "react-router-dom";
+import { useAccountNavigate } from "../hooks/accounts";
 
 function DeleteAccountDialog({
+  account,
   open,
   setOpen,
   handleUpdateAccounts,
 }: {
+  account: AccountIdentifiers;
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
   handleUpdateAccounts: (account: RecordId) => void;
 }) {
-  const account = useAccount()!;
-  const dispatchAccount = useDispatchAccount()!;
+  const navigate = useAccountNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
 
   const handleCloseForm = () => {
@@ -69,10 +60,7 @@ function DeleteAccountDialog({
       .then(() => {
         handleCloseForm();
         handleUpdateAccounts(account.id);
-        dispatchAccount({
-          type: "select",
-          account: { id: EMPTY_RECORD_ID, name: "" },
-        });
+        navigate();
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -101,8 +89,7 @@ function AddAccountDialog({
   setOpen: Dispatch<SetStateAction<boolean>>;
   handleUpdateAccounts: (account: RecordId) => void;
 }) {
-  const account = useAccount()!;
-  const dispatchAccount = useDispatchAccount()!;
+  const navigate = useAccountNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [form, setForm] = useState<
     Omit<Account, "id" | "transaction_grid_sort_model">
@@ -117,11 +104,10 @@ function AddAccountDialog({
 
   const handleAccountSubmission = async () => {
     addAccount(form)
-      .then(() => {
+      .then((account) => {
         handleCloseForm();
         handleUpdateAccounts(account.id);
-        // FIXME: does not work.
-        dispatchAccount({ type: "select", account });
+        navigate({ id: account.id, name: account.name });
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -180,14 +166,13 @@ function AddAccountDialog({
   );
 }
 
-export function Layout() {
-  const selected = useAccount();
-  const dispatch = useDispatchAccount()!;
+export function Layout({ id }: { id: string | undefined }) {
+  const navigate = useAccountNavigate();
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openFailure, setOpenFailure] = useState("");
-  const [accounts, setAccounts] = useState<AccountIdentifiers[]>();
+  const [accounts, setAccounts] = useState<Map<string, AccountIdentifiers>>();
   const [accountAnchorEl, setAccountAnchorEl] = useState<null | HTMLElement>(
     null
   );
@@ -198,6 +183,9 @@ export function Layout() {
   const openAccountMenu = Boolean(accountAnchorEl);
   const openSettingsMenu = Boolean(settingsAnchorEl);
   const [tab, setTab] = useState(0);
+
+  const getAccountIdentifiers = () =>
+    id && accounts ? accounts.get(id) : undefined;
 
   const handleClickAccount = (event: MouseEvent<HTMLElement>) =>
     setAccountAnchorEl(event.currentTarget);
@@ -221,10 +209,7 @@ export function Layout() {
   };
 
   const handleSelectAccount = async (account: AccountIdentifiers) =>
-    dispatch({
-      type: "select",
-      account,
-    });
+    navigate(account);
 
   const handleTabChange = (_event: SyntheticEvent, newTab: number) => {
     setTab(newTab);
@@ -232,7 +217,11 @@ export function Layout() {
 
   const handleUpdateAccounts = () => {
     listAccounts()
-      .then(setAccounts)
+      .then((accounts) =>
+        setAccounts(
+          new Map(accounts.map((account) => [account.id.id.String, account]))
+        )
+      )
       .catch((error) => setOpenFailure(error));
   };
 
@@ -254,8 +243,8 @@ export function Layout() {
                 onClick={handleClickAccount}
                 variant="contained"
               >
-                {accountIsSelected(selected)
-                  ? selected!.name
+                {id && accounts
+                  ? getAccountIdentifiers()!.name
                   : "Select account"}
               </Button>
               <Menu
@@ -267,18 +256,18 @@ export function Layout() {
                   "aria-labelledby": "basic-button",
                 }}
               >
-                {accounts
+                {Array.from(accounts.values())
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map((account) => (
                     <MenuItem
                       key={account.name}
-                      selected={account.id === selected?.id}
+                      selected={account.id.id.String === id}
                       onClick={() => handleSelectAccount(account)}
                     >
                       {account.name}
                     </MenuItem>
                   ))}
-                <Divider />
+                {accounts.size !== 0 && <Divider />}
                 <MenuItem onClick={() => setOpenAddDialog(true)}>
                   Create account
                 </MenuItem>
@@ -289,9 +278,8 @@ export function Layout() {
           )}
 
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
-          {accountIsSelected(selected) && (
+          {getAccountIdentifiers() && (
             <Tabs onChange={handleTabChange} value={tab} variant="fullWidth">
-              <Tab label="Details"></Tab>
               <Tab label="Transactions"></Tab>
               <Tab label="Settings"></Tab>
             </Tabs>
@@ -320,16 +308,13 @@ export function Layout() {
 
       <Divider sx={{ margin: 2 }} />
 
-      {accountIsSelected(selected) && (
+      {getAccountIdentifiers() && (
         <>
           <div hidden={tab !== 0}>
-            <Details />
+            <Transactions accountId={accounts!.get(id!)!.id} />
           </div>
           <div hidden={tab !== 1}>
-            <Transactions />
-          </div>
-          <div hidden={tab !== 2}>
-            <Settings />
+            <Settings accountId={accounts!.get(id!)!.id} />
           </div>
         </>
       )}
@@ -356,13 +341,20 @@ export function Layout() {
         handleUpdateAccounts={handleUpdateAccounts}
       />
 
-      <DeleteAccountDialog
-        open={openDeleteDialog}
-        setOpen={setOpenDeleteDialog}
-        handleUpdateAccounts={handleUpdateAccounts}
-      />
+      {id && accounts && (
+        <DeleteAccountDialog
+          account={getAccountIdentifiers()!}
+          open={openDeleteDialog}
+          setOpen={setOpenDeleteDialog}
+          handleUpdateAccounts={handleUpdateAccounts}
+        />
+      )}
     </>
   );
 }
 
-export default Layout;
+export default function () {
+  const { id } = useParams();
+
+  return <Layout id={id} />;
+}

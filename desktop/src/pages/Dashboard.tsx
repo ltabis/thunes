@@ -11,21 +11,19 @@ import { PieChart } from "@mui/x-charts";
 import { useEffect, useState } from "react";
 import { CurrencyBalance } from "../../../cli/bindings/CurrencyBalance";
 import Grid from "@mui/material/Grid2";
-import { useNavigate } from "react-router-dom";
-import { useDispatchAccount } from "../contexts/Account";
 import { getAllBalance } from "../api";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
+import { useAccountNavigate } from "../hooks/accounts";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const dispatchAccount = useDispatchAccount()!;
+  const navigate = useAccountNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [currencies, setCurrencies] = useState<CurrencyBalance[] | null>(null);
 
   useEffect(() => {
     getAllBalance()
       .then(setCurrencies)
-      .catch((error) => dispatchSnackbar({ type: "open", message: error }));
+      .catch((error) => dispatchSnackbar({ type: "open", severity: "error", message: error }));
   }, [dispatchSnackbar]);
 
   return (
@@ -73,14 +71,7 @@ export default function Dashboard() {
                   ]}
                   onItemClick={(_event, account) => {
                     const currentAccount = accounts[account.dataIndex].account;
-                    dispatchAccount({
-                      type: "select",
-                      account: {
-                        id: currentAccount.id,
-                        name: currentAccount.name,
-                      },
-                    });
-                    navigate("/account");
+                    navigate(currentAccount);
                   }}
                 />
               </CardContent>

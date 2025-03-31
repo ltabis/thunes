@@ -16,10 +16,12 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import LocalGroceryStoreIcon from "@mui/icons-material/LocalGroceryStore";
 import { Avatar } from "@mui/material";
-import { Category } from "../../../cli/bindings/Category";
+import { TransactionCategory } from "../../../cli/bindings/TransactionCategory";
 
-export function categoryIconToMuiIcon(category: Category) {
-  return (
+export function categoryIconToMuiIcon(
+  category: TransactionCategory | undefined
+) {
+  return category ? (
     <Avatar
       sx={{
         background: category.color,
@@ -27,6 +29,8 @@ export function categoryIconToMuiIcon(category: Category) {
     >
       {getMuiIcon(category.icon)}
     </Avatar>
+  ) : (
+    <Avatar>{getMuiIcon("other")}</Avatar>
   );
 }
 

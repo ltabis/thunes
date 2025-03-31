@@ -1,12 +1,13 @@
 use tauri::{App, Manager};
 use thunes_cli::{
-    category::{Category, CategoryWithId, Icon},
     settings::Settings,
+    transaction::{Category, CategoryWithId, Icon},
     Record,
 };
 
 pub mod commands {
     pub mod account;
+    pub mod budget;
     pub mod categories;
     pub mod settings;
     pub mod tags;
@@ -237,6 +238,7 @@ pub fn run() {
             commands::account::get_account,
             commands::account::update_account,
             commands::account::list_accounts,
+            commands::account::list_accounts_with_details,
             commands::account::add_account,
             commands::account::delete_account,
             commands::account::get_transactions,
@@ -245,6 +247,17 @@ pub fn run() {
             commands::account::get_all_balance,
             commands::account::add_transaction,
             commands::account::update_transaction,
+            commands::budget::list_budgets,
+            commands::budget::add_budget,
+            commands::budget::get_budget,
+            commands::budget::update_budget,
+            commands::budget::delete_budget,
+            commands::budget::create_budget_partition,
+            commands::budget::get_budget_partitions,
+            commands::budget::update_budget_partition,
+            commands::budget::create_budget_allocation,
+            commands::budget::get_budget_allocations,
+            commands::budget::update_budget_allocation,
             commands::tags::get_tags,
             commands::tags::add_tags,
             commands::categories::get_categories,

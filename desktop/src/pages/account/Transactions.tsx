@@ -34,7 +34,6 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import { Transaction } from "../../../../cli/bindings/Transaction";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
-import { useAccount } from "../../contexts/Account";
 import { GridRenderEditCellParams, useGridApiContext } from "@mui/x-data-grid";
 import { EditTags } from "./Tags";
 import { Tag } from "../../../../cli/bindings/Tag";
@@ -52,27 +51,23 @@ import {
 } from "../../api";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
-import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
+import { filterFloat } from "../../utils";
 import { categoryIconToMuiIcon } from "../../utils/icons";
-import { Category } from "../../../../cli/bindings/Category";
 import { CategoryWithId } from "../../../../cli/bindings/CategoryWithId";
-
-const filterFloat = (value: string) =>
-  /^(-|\+)?([0-9]+(\.[0-9]+)?)$/.test(value.replace(",", "."))
-    ? Number(value.replace(",", "."))
-    : NaN;
+import CategorySelector from "../../components/form/CategorySelector";
 
 function EditTransactionDrawer({
+  accountId,
   transaction,
   close,
   handleUpdateTransactions,
 }: {
+  accountId: RecordId;
   transaction: TransactionWithId;
   close: () => void;
-  handleUpdateTransactions: (account: AccountIdentifiers) => void;
+  handleUpdateTransactions: (account: RecordId) => void;
 }) {
-  const account = useAccount()!;
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [categories, setCategories] = useState<Map<
     string,
@@ -110,7 +105,7 @@ function EditTransactionDrawer({
     })
       .then(() => {
         handleCloseForm();
-        handleUpdateTransactions(account);
+        handleUpdateTransactions(accountId);
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -224,20 +219,17 @@ function EditTransactionDrawer({
 }
 
 function AddTransactionDialog({
+  accountId,
   open,
   setOpen,
   handleUpdateTransactions,
 }: {
+  accountId: RecordId;
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateTransactions: (account: AccountIdentifiers) => void;
+  handleUpdateTransactions: (accountId: RecordId) => void;
 }) {
-  const account = useAccount()!;
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [categories, setCategories] = useState<Map<
-    string,
-    CategoryWithId
-  > | null>(null);
   // Note: omit amount float value to enable the user to enter a floating point character.
   const [form, setForm] = useState<
     Omit<Transaction, "amount" | "date"> & {
@@ -263,34 +255,23 @@ function AddTransactionDialog({
 
   const handleTransactionSubmission = async () => {
     const amount = filterFloat(form.amount);
+    const category =
+      form.category !== EMPTY_RECORD_ID ? form.category : undefined;
 
-    addTransaction(account.id, {
+    addTransaction(accountId, {
       ...form,
+      category,
       amount,
       date: form.date.toISOString(),
     })
       .then(() => {
         handleCloseForm();
-        handleUpdateTransactions(account);
+        handleUpdateTransactions(accountId);
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
   };
-
-  useEffect(() => {
-    getCategories()
-      .then((categories) =>
-        setCategories(
-          new Map(
-            categories.map((category) => [category.id.id.String, category])
-          )
-        )
-      )
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-  }, [dispatchSnackbar]);
 
   return (
     <Dialog
@@ -351,44 +332,15 @@ function AddTransactionDialog({
             />
           </Grid2>
           <Grid2 size={8}>
-            {categories && (
-              <FormControl fullWidth>
-                <InputLabel>Category</InputLabel>
-                <Select
-                  value={form.category.id.String}
-                  label="Category"
-                  onChange={(category) =>
-                    setForm({
-                      ...form,
-                      category: categories.get(category.target.value)!.id,
-                    })
-                  }
-                  renderValue={(selected) => {
-                    const category = categories.get(selected)!;
-                    return (
-                      <MenuItem>
-                        <ListItemAvatar>
-                          {categoryIconToMuiIcon(category)}
-                        </ListItemAvatar>
-                        <ListItemText primary={category.name} />
-                      </MenuItem>
-                    );
-                  }}
-                >
-                  {Array.from(categories.values()).map((category) => (
-                    <MenuItem
-                      key={category.id.id.String}
-                      value={category.id.id.String}
-                    >
-                      <ListItemAvatar>
-                        {categoryIconToMuiIcon(category)}
-                      </ListItemAvatar>
-                      <ListItemText primary={category.name} />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
+            <CategorySelector
+              category={form.category}
+              onChange={(category) =>
+                setForm({
+                  ...form,
+                  category: category,
+                })
+              }
+            />
           </Grid2>
         </Grid2>
       </DialogContent>
@@ -419,14 +371,14 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
   return <EditTags value={value} handleChange={handleChange} />;
 }
 
-export default function Transactions() {
-  const accountIdentifiers = useAccount()!;
+export default function Transactions({ accountId }: { accountId: RecordId }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [open, setOpen] = useState(false);
   // FIXME: Pull the category directly from the transaction.
-  const [categories, setCategories] = useState<Map<string, Category> | null>(
-    null
-  );
+  const [categories, setCategories] = useState<Map<
+    string,
+    CategoryWithId
+  > | null>(null);
   const [currency, setCurrency] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<TransactionWithId[] | null>(
     null
@@ -441,11 +393,11 @@ export default function Transactions() {
     setOpen(true);
   };
 
-  const handleUpdateTransactions = (account: AccountIdentifiers) => {
-    getTransactions(account.id).then(setTransactions);
-    getTransactions(account.id).then(setSparklineTransactions);
-    getCurrency(account.id).then(setCurrency);
-    getBalance(account.id).then(setBalance);
+  const handleUpdateTransactions = async (account: RecordId) => {
+    await getTransactions(account).then(setTransactions);
+    await getTransactions(account).then(setSparklineTransactions);
+    await getCurrency(account).then(setCurrency);
+    await getBalance(account).then(setBalance);
   };
 
   useEffect(() => {
@@ -463,8 +415,10 @@ export default function Transactions() {
   }, [dispatchSnackbar]);
 
   useEffect(() => {
-    handleUpdateTransactions(accountIdentifiers);
-  }, [accountIdentifiers]);
+    handleUpdateTransactions(accountId).catch((error) =>
+      dispatchSnackbar({ type: "open", severity: "error", message: error })
+    );
+  }, [accountId, dispatchSnackbar]);
 
   return (
     <Paper elevation={0}>
@@ -580,6 +534,7 @@ export default function Transactions() {
 
       {/* TODO: Remove in favor of a drawer */}
       <AddTransactionDialog
+        accountId={accountId}
         open={open}
         setOpen={setOpen}
         handleUpdateTransactions={handleUpdateTransactions}
@@ -587,6 +542,7 @@ export default function Transactions() {
 
       {selectedTransaction && (
         <EditTransactionDrawer
+          accountId={accountId}
           transaction={selectedTransaction}
           close={() => setSelectedTransaction(null)}
           handleUpdateTransactions={handleUpdateTransactions}
