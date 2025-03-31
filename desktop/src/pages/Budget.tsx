@@ -1,11 +1,7 @@
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Alert,
   AppBar,
   Autocomplete,
-  Box,
   Button,
   Chip,
   Dialog,
@@ -16,18 +12,23 @@ import {
   Grid2,
   IconButton,
   InputLabel,
+  List,
   ListItem,
+  ListItemAvatar,
+  ListItemButton,
+  ListItemText,
   Menu,
   MenuItem,
   Paper,
   Select,
   Snackbar,
   SnackbarCloseReason,
-  Tab,
-  Tabs,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  styled,
   TextField,
   Toolbar,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import {
@@ -42,6 +43,8 @@ import {
   addBudget,
   deleteBudget,
   getBudget,
+  getBudgetAllocations,
+  getBudgetPartitions,
   listAccountsWithDetails,
   listBudgets,
   RecordId,
@@ -55,10 +58,15 @@ import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { useParams } from "react-router-dom";
 import { Budget } from "../../../cli/bindings/Budget";
 import { Account } from "../../../cli/bindings/Account";
-import { GridRowModesModel, GridRowsProp } from "@mui/x-data-grid";
-import { PieChart } from "@mui/x-charts";
+import { PieChart, useDrawingArea } from "@mui/x-charts";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { categoryIconToMuiIcon } from "../utils/icons";
+import { AddAllocationDrawer, EditAllocationDrawer } from "./budget/Allocation";
+import PieChartIcon from "@mui/icons-material/PieChart";
+import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
+import { AddPartitionDrawer, EditPartitionDrawer } from "./budget/Partition";
+import { Partition } from "../../../cli/bindings/Partition";
+import { Allocation } from "../../../cli/bindings/Allocation";
 
 function DeleteBudgetDialog({
   budget,
@@ -289,218 +297,264 @@ function AddBudgetDialog({
   );
 }
 
-function DistributionBar({
-  partitions,
-}: {
-  partitions: { name: string; color: string; percentage: number }[];
-}) {
-  const MAX_SIZE = 300;
+// function DistributionBar({
+//   partitions,
+// }: {
+//   partitions: { name: string; color: string; percentage: number }[];
+// }) {
+//   const MAX_SIZE = 300;
 
-  return (
-    <Box
-      sx={{
-        width: MAX_SIZE,
-        height: 25,
-        borderRadius: 1,
-        bgcolor: "grey",
-      }}
-    >
-      <Grid2 container alignItems="center">
-        {partitions.map((partition) => (
-          <Tooltip
-            title={`${partition.name} (${partition.percentage}%)`}
-            key={partition.name}
-          >
-            <Box
-              sx={{
-                width: MAX_SIZE * (partition.percentage / 100),
-                height: 25,
-                bgcolor: partition.color,
-              }}
-            />
-          </Tooltip>
-        ))}
-      </Grid2>
-    </Box>
-  );
-}
-
-declare module "@mui/x-data-grid" {
-  interface ToolbarPropsOverrides {
-    setRows: (newRows: (oldRows: GridRowsProp) => GridRowsProp) => void;
-    setRowModesModel: (
-      newModel: (oldModel: GridRowModesModel) => GridRowModesModel
-    ) => void;
-  }
-}
-
-// function Type({ budget }: { budget: Budget }) {
-//   switch (budget.data.type) {
-//     case "split": {
-//       const tagGrid: GridColDef[] = [
-//         { field: "name", headerName: "Name", editable: true },
-//         {
-//           field: "allocation",
-//           headerName: "Allocation",
-//           type: "number",
-//         },
-//       ];
-
-//       return (
-//         <>
-//           <Grid2 container spacing={1} alignItems="center">
-//             {/* TODO: use associated tags to compute allocation */}
-//             <DistributionBar partitions={budget.data.content.categories} />
-//             <Typography variant="h4">
-//               {budget.income} Allocated (Poor/Good)
-//             </Typography>
-//           </Grid2>
-//           <Grid2 container spacing={1} alignItems="center">
-//             {budget.data.content.categories.map((category) => (
-//               <Grid2 size={3} key={category.name}>
-//                 <Card>
-//                   <CardHeader
-//                     title={
-//                       <>
-//                         <Grid2 container spacing={2} alignItems="center">
-//                           <Typography variant="h4">{category.name}</Typography>
-//                           <Typography variant="h5" sx={{ opacity: 0.7 }}>
-//                             {category.percentage}%
-//                           </Typography>
-//                         </Grid2>
-//                       </>
-//                     }
-//                   ></CardHeader>
-//                   <CardContent>
-//                     <DataGrid
-//                       density="compact"
-//                       rows={category.tags}
-//                       columns={tagGrid}
-//                       hideFooter
-//                     />
-//                   </CardContent>
-//                 </Card>
-//               </Grid2>
-//             ))}
-//           </Grid2>
-//         </>
-//       );
-//     }
-//   }
+//   return (
+//     <Box
+//       sx={{
+//         width: MAX_SIZE,
+//         height: 25,
+//         borderRadius: 1,
+//         bgcolor: "grey",
+//       }}
+//     >
+//       <Grid2 container alignItems="center">
+//         {partitions.map((partition) => (
+//           <Tooltip
+//             title={`${partition.name} (${partition.percentage}%)`}
+//             key={partition.name}
+//           >
+//             <Box
+//               sx={{
+//                 width: MAX_SIZE * (partition.percentage / 100),
+//                 height: 25,
+//                 bgcolor: partition.color,
+//               }}
+//             />
+//           </Tooltip>
+//         ))}
+//       </Grid2>
+//     </Box>
+//   );
 // }
 
-function Split({ budget }: { budget: Budget }) {
-  const [index, setIndex] = useState(0);
+const computeBudgetUnallocated = (budget: Budget, allocations: Allocation[]) =>
+  budget.income - allocations.reduce((acc, curr) => acc + curr.amount, 0);
 
+function computeBudgetPieData(
+  budget: Budget,
+  partitions: Partition[],
+  allocations: Allocation[]
+) {
+  let total_allocated = 0;
+  const data = partitions.map((partition) => {
+    const allocationsForPartition = allocations.filter(
+      (allocation) => allocation.partition.id.String === partition.id.id.String
+    );
+    const value = allocationsForPartition
+      .map((allocation) => allocation.amount)
+      .reduce((acc, curr) => acc + curr, 0);
+
+    total_allocated += value;
+
+    return {
+      label: partition.name,
+      value,
+      color: partition.color,
+    };
+  });
+
+  return [
+    ...data,
+    {
+      label: "Not allocated",
+      value: budget.income - total_allocated,
+      color: "white",
+    },
+  ];
+}
+
+const StyledText = styled("text")(({ theme }) => ({
+  fill: theme.palette.text.primary,
+  textAnchor: "middle",
+  dominantBaseline: "central",
+  fontSize: 20,
+}));
+
+function PieCenterLabel({ children }: { children: React.ReactNode }) {
+  const { width, height, left, top } = useDrawingArea();
   return (
-    <>
-      <Grid2 container spacing={1} alignItems="center">
-        {/* TODO: use associated tags to compute allocation */}
-        {/* <DistributionBar partitions={budget.data.content.categories} /> */}
-        <Typography variant="h4">
-          {budget.income} Allocated (Poor/Good)
-        </Typography>
-      </Grid2>
-
-      <Divider sx={{ m: 5 }} />
-
-      <Grid2 container spacing={1} justifyContent="center">
-        <Grid2 size={5}>
-          <Tabs
-            value={index}
-            variant="scrollable"
-            scrollButtons="auto"
-            centered
-            onChange={(_en, value) => setIndex(value)}
-          >
-            {budget.data.content.categories.map((category) => (
-              <Tab label={category.name} />
-            ))}
-          </Tabs>
-
-          {budget.data.content.categories.map((category) =>
-            category.tags.map((tag) => (
-              <ListItem key={tag.name}>
-                {tag.name} ({tag.allocation})
-              </ListItem>
-            ))
-          )}
-        </Grid2>
-        <Grid2 size={5}>
-          <PieChart
-            series={[
-              {
-                arcLabel: (item) => `${item.label} (${item.value}%)`,
-                arcLabelMinAngle: 35,
-                data: budget.data.content.categories.map((category) => ({
-                  label: category.name,
-                  value: category.percentage,
-                  color: category.color,
-                })),
-                highlightScope: { fade: "global", highlight: "item" },
-                faded: {
-                  innerRadius: 30,
-                  additionalRadius: -30,
-                  color: "gray",
-                },
-                innerRadius: 30,
-                outerRadius: 150,
-                paddingAngle: 1,
-                cornerRadius: 5,
-              },
-            ]}
-            height={400}
-          />
-        </Grid2>
-      </Grid2>
-    </>
+    <StyledText x={left + width / 2} y={top + height / 2}>
+      {children}
+    </StyledText>
   );
 }
 
-function Type({ budget }: { budget: Budget }) {
-  switch (budget.data.type) {
-    case "split": {
-      return <Split budget={budget} />;
-    }
-  }
-}
-
-function Details({ budget }: { budget: BudgetIdentifiers }) {
+function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [details, setDetails] = useState<Budget>();
+  const [budget, setBudget] = useState<Budget>();
+  const [partitions, setPartitions] = useState<Partition[]>([]);
+  const [allocations, setAllocations] = useState<Allocation[]>([]);
+  const [editPartition, setEditPartition] = useState<Partition | null>(null);
+  const [editAllocation, setEditAllocation] = useState<Allocation | null>(null);
+  const [addPartition, setAddPartition] = useState(false);
+  const [addAllocation, setAddAllocation] = useState(false);
 
   useEffect(() => {
-    getBudget(budget.id)
-      .then(setDetails)
+    getBudget(identifiers.id)
+      .then((budget) => {
+        setBudget(budget);
+        getBudgetPartitions(budget.id)
+          .then((partitions) => {
+            setPartitions(partitions);
+            getBudgetAllocations(partitions.map((partition) => partition.id))
+              .then(setAllocations)
+              .catch((error) =>
+                dispatchSnackbar({
+                  type: "open",
+                  severity: "error",
+                  message: error,
+                })
+              );
+          })
+          .catch((error) =>
+            dispatchSnackbar({
+              type: "open",
+              severity: "error",
+              message: error,
+            })
+          );
+      })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
-  }, [budget.id, dispatchSnackbar]);
+  }, [identifiers.id, dispatchSnackbar]);
 
   return (
     <>
-      <Grid2 container spacing={1} alignItems="center">
-        <Grid2 size={1}>
-          <Typography variant="h2">{budget.name}</Typography>
-        </Grid2>
-        <Grid2 size={1}>
-          {details && (
-            <Typography variant="h5" sx={{ opacity: 0.7 }}>
-              {details.data.type}
-            </Typography>
+      {budget && (
+        <Paper elevation={0} sx={{ margin: 2 }}>
+          <Grid2
+            container
+            spacing={1}
+            justifyContent="center"
+            sx={{ padding: 1 }}
+          >
+            <Grid2 size={8}>
+              <List sx={{ width: "100%", bgcolor: "background.paper" }}>
+                {partitions.flat().flatMap((partition) => {
+                  const allocationsForPartition = allocations.filter(
+                    (allocation) =>
+                      allocation.partition.id.String === partition.id.id.String
+                  );
+
+                  return allocationsForPartition.map((allocation, index) => (
+                    <ListItemButton
+                      key={`${allocation.category.id.id.String}-${index}`}
+                      onClick={() => {
+                        setEditAllocation(allocation);
+                      }}
+                    >
+                      <ListItem
+                        secondaryAction={
+                          <Typography variant="body1">
+                            {`${allocation.amount} ${budget.currency}`}
+                          </Typography>
+                        }
+                        sx={{
+                          borderLeft: 2,
+                          borderLeftColor: partition.color,
+                        }}
+                      >
+                        <ListItemAvatar>
+                          {categoryIconToMuiIcon(allocation.category)}
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={allocation.category.name}
+                          secondary={partition.name}
+                        />
+                      </ListItem>
+                    </ListItemButton>
+                  ));
+                })}
+              </List>
+              {/* FIXME: button should stick to the end of the page */}
+
+              <SpeedDial
+                color="primary"
+                sx={{ position: "absolute", bottom: 16, right: 16 }}
+                icon={<SpeedDialIcon />}
+                ariaLabel={"add"}
+              >
+                <SpeedDialAction
+                  key={"add-partition"}
+                  icon={<PieChartIcon />}
+                  tooltipTitle={"Add a partition"}
+                  onClick={() => setAddPartition(true)}
+                />
+                <SpeedDialAction
+                  key={"add-allocation"}
+                  icon={<CurrencyExchangeIcon />}
+                  tooltipTitle={"Add a recurring expense"}
+                  onClick={() => setAddAllocation(true)}
+                />
+              </SpeedDial>
+            </Grid2>
+
+            <Grid2 size={4}>
+              <PieChart
+                series={[
+                  {
+                    valueFormatter: (item) => `${item.label} (${item.value}%)`,
+                    arcLabelMinAngle: 35,
+                    data: computeBudgetPieData(budget, partitions, allocations),
+                    highlightScope: { fade: "global", highlight: "item" },
+                    innerRadius: 100,
+                    outerRadius: 120,
+                    paddingAngle: 1,
+                    cornerRadius: 5,
+                  },
+                ]}
+                onItemClick={(_event, partition) =>
+                  setEditPartition(partitions[partition.dataIndex])
+                }
+                height={400}
+              >
+                <PieCenterLabel>
+                  {computeBudgetUnallocated(budget, allocations)} Unallocated
+                </PieCenterLabel>
+              </PieChart>
+            </Grid2>
+          </Grid2>
+
+          {addPartition && (
+            <AddPartitionDrawer
+              budget={budget}
+              // FIXME: bad way to trigger a re-render.
+              onUpdate={() => (identifiers.id = { ...identifiers.id })}
+              close={() => setAddPartition(false)}
+            />
           )}
-        </Grid2>
-        <Grid2 size={5}>
-          {details && (
-            <Typography variant="h4">
-              {details.income} {details.currency}
-            </Typography>
+
+          {editPartition && (
+            <EditPartitionDrawer
+              partition={editPartition}
+              onUpdate={() => (identifiers.id = { ...identifiers.id })}
+              close={() => setEditPartition(null)}
+            />
           )}
-        </Grid2>
-      </Grid2>
-      {details && (
-        <Paper elevation={5} sx={{ margin: 2 }}>
-          <Type budget={details} />
+
+          {addAllocation && (
+            <AddAllocationDrawer
+              budget={budget}
+              onUpdate={() => (identifiers.id = { ...identifiers.id })}
+              close={() => setAddAllocation(false)}
+            />
+          )}
+
+          {editAllocation && (
+            <EditAllocationDrawer
+              budget={budget}
+              allocation={editAllocation}
+              onUpdate={() => (identifiers.id = { ...identifiers.id })}
+              close={() => setEditAllocation(null)}
+            />
+          )}
         </Paper>
       )}
     </>
@@ -635,7 +689,9 @@ export function Layout({ id }: { id: string | undefined }) {
 
       <Divider sx={{ margin: 2 }} />
 
-      {getBudgetIdentifiers() && <Details budget={getBudgetIdentifiers()!} />}
+      {getBudgetIdentifiers() && (
+        <Details identifiers={getBudgetIdentifiers()!} />
+      )}
 
       <Snackbar
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}

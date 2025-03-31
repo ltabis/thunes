@@ -1,3 +1,5 @@
+use std::hash::Hash;
+
 use rhai::{CustomType, TypeBuilder};
 use surrealdb::RecordId;
 
@@ -5,7 +7,7 @@ use crate::script::time_helper;
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Icon {
     Transport,
@@ -28,18 +30,28 @@ pub enum Icon {
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-#[ts(export, rename = "TransactionCategory")]
+#[derive(Clone, Debug, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Category {
     pub name: String,
     pub icon: Icon,
     pub color: String,
 }
 
+impl Hash for Category {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
+}
+
+impl PartialEq for Category {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-#[ts(export, rename = "TransactionCategoryWithId")]
 pub struct CategoryWithId {
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub id: surrealdb::RecordId,

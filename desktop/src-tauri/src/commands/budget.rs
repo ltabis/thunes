@@ -1,7 +1,10 @@
 use surrealdb::engine::local::Db;
 use surrealdb::{RecordId, Surreal};
 use tauri::State;
-use thunes_cli::budget::{Budget, BudgetIdentifiers};
+use thunes_cli::budget::{
+    Allocation, Budget, BudgetIdentifiers, CreateAllocationOptions, CreatePartitionOptions,
+    Partition, UpdateAllocationOptions,
+};
 use thunes_cli::Error as ThunesError;
 
 #[tauri::command]
@@ -91,5 +94,102 @@ pub async fn delete_budget(
         .map_err(|error| {
             tracing::error!(%error, "database error");
             "failed to delete budget".to_string()
+        })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn create_budget_partition(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    budget_id: RecordId,
+    options: CreatePartitionOptions,
+) -> Result<Partition, String> {
+    let database = database.lock().await;
+
+    thunes_cli::budget::create_partition(&database, budget_id, options)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to create budget partition".to_string()
+        })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn get_budget_partitions(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    budget_id: RecordId,
+) -> Result<Vec<Partition>, String> {
+    let database = database.lock().await;
+
+    thunes_cli::budget::get_partitions(&database, budget_id)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to get budget partitions".to_string()
+        })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn update_budget_partition(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    options: Partition,
+) -> Result<Partition, String> {
+    let database = database.lock().await;
+
+    thunes_cli::budget::update_partition(&database, options)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to update budget partition".to_string()
+        })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn create_budget_allocation(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    options: CreateAllocationOptions,
+) -> Result<Allocation, String> {
+    let database = database.lock().await;
+
+    thunes_cli::budget::create_allocation(&database, options)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to create budget allocation".to_string()
+        })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn get_budget_allocations(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    partitions: Vec<RecordId>,
+) -> Result<Vec<Allocation>, String> {
+    let database = database.lock().await;
+
+    thunes_cli::budget::get_allocations(&database, partitions)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to get budget allocations".to_string()
+        })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn update_budget_allocation(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    options: UpdateAllocationOptions,
+) -> Result<Allocation, String> {
+    let database = database.lock().await;
+
+    thunes_cli::budget::update_allocation(&database, options)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to update budget allocation".to_string()
         })
 }

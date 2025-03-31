@@ -177,6 +177,11 @@
     "@babel/helper-string-parser" "^7.25.9"
     "@babel/helper-validator-identifier" "^7.25.9"
 
+"@ctrl/tinycolor@^4.1.0":
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/@ctrl/tinycolor/-/tinycolor-4.1.0.tgz#91a8f8120ffc9da2feb2a38f7862b300d5e9691a"
+  integrity sha512-WyOx8cJQ+FQus4Mm4uPIZA64gbk3Wxh0so5Lcii0aJifqwoVOlfFtorjLE0Hen4OYyHZMXDWqMmaQemBhgxFRQ==
+
 "@emotion/babel-plugin@^11.13.5":
   version "11.13.5"
   resolved "https://registry.yarnpkg.com/@emotion/babel-plugin/-/babel-plugin-11.13.5.tgz#eab8d65dbded74e0ecfd28dc218e75607c4e7bc0"
@@ -2506,6 +2511,13 @@ ms@^2.1.3:
   version "2.1.3"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.3.tgz#574c8138ce1d2b5861f0b44579dbadd60c6615b2"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
+
+mui-color-input@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/mui-color-input/-/mui-color-input-6.0.0.tgz#67b95e33baea1496d658d6ac046dfbcd8a305956"
+  integrity sha512-F9n/RqPLq7fnPWeF53/qssbIHvart7clpOfE+f+dsM+3ddfawwg98+PEhzv3cdAYlJLE9zfVViVTsp/ckUUd3g==
+  dependencies:
+    "@ctrl/tinycolor" "^4.1.0"
 
 nanoid@^3.3.7:
   version "3.3.7"

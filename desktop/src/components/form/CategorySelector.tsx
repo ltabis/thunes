@@ -13,10 +13,11 @@ import { getCategories, RecordId } from "../../api";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 
 export default function CategorySelector({
+  // FIXME: category can be null
   category,
   onChange,
 }: {
-  category: RecordId;
+  category: RecordId | undefined;
   onChange: (category: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
@@ -45,16 +46,20 @@ export default function CategorySelector({
     <FormControl fullWidth>
       <InputLabel>Category</InputLabel>
       <Select
-        value={category}
+        value={category?.id.String}
         label="Category"
-        onChange={(event) => onChange(event.target.value as RecordId)}
+        onChange={(event) => onChange(categories.get(event.target.value)!.id)}
         renderValue={(selected) => {
-          const category = categories.get(selected.id.String)!;
+          const category = categories.get(selected);
           return (
-            <MenuItem>
-              <ListItemAvatar>{categoryIconToMuiIcon(category)}</ListItemAvatar>
-              <ListItemText primary={category.name} />
-            </MenuItem>
+            category && (
+              <MenuItem>
+                <ListItemAvatar>
+                  {categoryIconToMuiIcon(category)}
+                </ListItemAvatar>
+                <ListItemText primary={category.name} />
+              </MenuItem>
+            )
           );
         }}
       >

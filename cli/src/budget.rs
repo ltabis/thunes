@@ -1,52 +1,31 @@
 use crate::account::Account;
-use crate::{transaction, Error};
+use crate::transaction::CategoryWithId;
+use crate::Error;
 use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 
 #[derive(ts_rs::TS)]
-#[ts(export, rename = "BudgetCategory")]
+#[ts(export)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Category {
-    pub name: String,
-    pub percentage: f64,
-    pub transaction_categories: Vec<transaction::Category>,
-    pub color: String,
+pub struct Allocation {
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub id: surrealdb::RecordId,
+    pub amount: f64,
+    pub category: CategoryWithId,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub partition: surrealdb::RecordId,
 }
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(tag = "type", content = "content", rename_all = "lowercase")]
-pub enum Type {
-    Split { categories: Vec<Category> },
-    // ZeroBased,
-}
-
-impl Type {
-    pub fn default_split() -> Self {
-        Self::Split {
-            categories: vec![
-                Category {
-                    name: "Needs".into(),
-                    percentage: 50.0,
-                    transaction_categories: vec![],
-                    color: "red".into(),
-                },
-                Category {
-                    name: "Wants".into(),
-                    percentage: 30.0,
-                    transaction_categories: vec![],
-                    color: "yellow".into(),
-                },
-                Category {
-                    name: "Investments".into(),
-                    percentage: 20.0,
-                    transaction_categories: vec![],
-                    color: "blue".into(),
-                },
-            ],
-        }
-    }
+pub struct Partition {
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub id: surrealdb::RecordId,
+    pub name: String,
+    pub color: String,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub budget: surrealdb::RecordId,
 }
 
 #[derive(ts_rs::TS)]
@@ -56,8 +35,6 @@ pub struct Budget {
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub id: surrealdb::RecordId,
     pub name: String,
-    // FIXME: Can't use serde(flatten) here.
-    pub data: Type,
     pub income: f64,
     pub currency: String,
     pub accounts: Vec<Account>,
@@ -103,23 +80,25 @@ pub async fn create_split(
     options: CreateSplitBudgetOptions,
 ) -> Result<Budget, Error> {
     let query = r#"
-    LET $budget = (CREATE budget SET
+    LET $budget = (CREATE ONLY budget SET
         name = $name,
-        data = $data,
+        partitions = $partitions,
         income = $income,
         currency = $currency,
         accounts = $accounts);
+    CREATE partition SET name = "Needs",       color = "red",    budget = $budget.id;
+    CREATE partition SET name = "Wants",       color = "yellow", budget = $budget.id;
+    CREATE partition SET name = "Investments", color = "blue",   budget = $budget.id;
     RETURN SELECT * FROM $budget.id FETCH accounts"#;
 
     let budget: Option<Budget> = db
         .query(query)
         .bind(("name", options.name))
-        .bind(("data", Type::default_split()))
         .bind(("income", options.income))
         .bind(("currency", options.currency))
         .bind(("accounts", options.accounts))
         .await?
-        .take(1)?;
+        .take(4)?;
 
     budget.ok_or(Error::RecordNotFound)
 }
@@ -147,8 +126,163 @@ pub async fn delete(
     db: &Surreal<Db>,
     budget_id: surrealdb::RecordId,
 ) -> Result<(), surrealdb::Error> {
-    db.query("DELETE budget WHERE id = $budget_id;")
+    db.query(
+        r#"
+        DELETE budget WHERE id = $budget_id;
+        LET $partitions = (SELECT id FROM partition WHERE budget = $budget_id);
+        DELETE $partitions;
+        DELETE allocation WHERE partition IN $partitions;
+        "#,
+    )
+    .bind(("budget_id", budget_id))
+    .await
+    .map(|_| ())
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, serde::Deserialize)]
+pub struct CreatePartitionOptions {
+    pub name: String,
+    pub color: String,
+}
+
+pub async fn create_partition(
+    db: &Surreal<Db>,
+    budget_id: surrealdb::RecordId,
+    options: CreatePartitionOptions,
+) -> Result<Partition, Error> {
+    let query = r#"
+    let $partition = (CREATE ONLY partition SET
+        name   = $name,
+        color  = $color,
+        budget = $budget_id
+    );
+    RETURN $partition
+    "#;
+
+    let partition: Option<Partition> = db
+        .query(query)
+        .bind(("name", options.name))
+        .bind(("color", options.color))
         .bind(("budget_id", budget_id))
-        .await
-        .map(|_| ())
+        .await?
+        .take(1)?;
+
+    partition.ok_or(Error::RecordNotFound)
+}
+
+pub async fn get_partitions(
+    db: &Surreal<Db>,
+    budget: surrealdb::RecordId,
+) -> Result<Vec<Partition>, Error> {
+    let query = r#"SELECT * FROM partition WHERE budget = $budget"#;
+
+    Ok(db.query(query).bind(("budget", budget)).await?.take(0)?)
+}
+
+pub async fn update_partition(db: &Surreal<Db>, options: Partition) -> Result<Partition, Error> {
+    let query: &str = r#"
+    UPDATE $partition SET
+        name  = $name,
+        color = $color;
+    RETURN SELECT * FROM $partition;
+    "#;
+
+    let partition: Option<Partition> = db
+        .query(query)
+        .bind(("name", options.name))
+        .bind(("color", options.color))
+        .bind(("partition", options.id))
+        .await?
+        .take(1)?;
+
+    partition.ok_or(Error::RecordNotFound)
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, serde::Deserialize)]
+pub struct CreateAllocationOptions {
+    #[ts(type = "{ tb: string, id: { String: string }}", optional)]
+    pub category: Option<surrealdb::RecordId>,
+    pub amount: f64,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub partition: surrealdb::RecordId,
+}
+
+pub async fn create_allocation(
+    db: &Surreal<Db>,
+    options: CreateAllocationOptions,
+) -> Result<Allocation, Error> {
+    let query = r#"
+    LET $allocation = (CREATE ONLY allocation SET
+        category  = $category,
+        amount    = $amount,
+        partition = $partition);
+    SELECT * FROM $allocation FETCH category;
+    "#;
+
+    let allocation: Option<Allocation> = db
+        .query(query)
+        .bind(("partition", options.partition))
+        .bind((
+            "category",
+            options.category.unwrap_or(("category", "other").into()),
+        ))
+        .bind(("amount", options.amount))
+        .await?
+        .take(1)?;
+
+    allocation.ok_or(Error::RecordNotFound)
+}
+
+pub async fn get_allocations(
+    db: &Surreal<Db>,
+    partitions: Vec<surrealdb::RecordId>,
+) -> Result<Vec<Allocation>, Error> {
+    let query = r#"SELECT * FROM allocation WHERE partition IN $partitions FETCH category"#;
+
+    Ok(db
+        .query(query)
+        .bind(("partitions", partitions))
+        .await?
+        .take(0)?)
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, serde::Deserialize)]
+pub struct UpdateAllocationOptions {
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub id: surrealdb::RecordId,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub category: surrealdb::RecordId,
+    pub amount: f64,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub partition: surrealdb::RecordId,
+}
+
+pub async fn update_allocation(
+    db: &Surreal<Db>,
+    options: UpdateAllocationOptions,
+) -> Result<Allocation, Error> {
+    let query = r#"
+    UPDATE $allocation SET
+        partition = $partition,
+        category  = $category,
+        amount    = $amount;
+    RETURN SELECT * from $allocation FETCH category;
+    "#;
+
+    let allocation: Option<Allocation> = db
+        .query(query)
+        .bind(("partition", options.partition))
+        .bind(("allocation", options.id))
+        .bind(("category", options.category))
+        .bind(("amount", options.amount))
+        .await?
+        .take(1)?;
+
+    allocation.ok_or(Error::RecordNotFound)
 }

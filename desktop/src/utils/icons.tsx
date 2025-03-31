@@ -18,8 +18,10 @@ import LocalGroceryStoreIcon from "@mui/icons-material/LocalGroceryStore";
 import { Avatar } from "@mui/material";
 import { TransactionCategory } from "../../../cli/bindings/TransactionCategory";
 
-export function categoryIconToMuiIcon(category: TransactionCategory) {
-  return (
+export function categoryIconToMuiIcon(
+  category: TransactionCategory | undefined
+) {
+  return category ? (
     <Avatar
       sx={{
         background: category.color,
@@ -27,6 +29,8 @@ export function categoryIconToMuiIcon(category: TransactionCategory) {
     >
       {getMuiIcon(category.icon)}
     </Avatar>
+  ) : (
+    <Avatar>{getMuiIcon("other")}</Avatar>
   );
 }
 
