@@ -2,7 +2,11 @@ import { MuiColorInput } from "mui-color-input";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { useState } from "react";
 import { Budget } from "../../../../cli/bindings/Budget";
-import { addBudgetPartition, updateBudgetPartition } from "../../api";
+import {
+  addBudgetPartition,
+  deleteBudgetPartition,
+  updateBudgetPartition,
+} from "../../api";
 import {
   Button,
   DialogActions,
@@ -98,6 +102,17 @@ export function EditPartitionDrawer({
       );
   };
 
+  const handlePartitionDelete = async () => {
+    deleteBudgetPartition(form.id)
+      .then(() => {
+        onUpdate(partition);
+        handleCloseForm();
+      })
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  };
+
   return (
     <Drawer open={true} onClose={handleCloseForm} anchor="right">
       <DialogTitle>Update Partition</DialogTitle>
@@ -119,6 +134,9 @@ export function EditPartitionDrawer({
       </DialogContent>
       <DialogActions>
         <Button onClick={handlePartitionSubmission}>Update</Button>
+        <Button onClick={handlePartitionDelete} color="error">
+          Delete
+        </Button>
       </DialogActions>
     </Drawer>
   );

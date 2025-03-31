@@ -172,7 +172,7 @@ pub async fn create_partition(
     partition.ok_or(Error::RecordNotFound)
 }
 
-pub async fn get_partitions(
+pub async fn read_partitions(
     db: &Surreal<Db>,
     budget: surrealdb::RecordId,
 ) -> Result<Vec<Partition>, Error> {
@@ -198,6 +198,21 @@ pub async fn update_partition(db: &Surreal<Db>, options: Partition) -> Result<Pa
         .take(1)?;
 
     partition.ok_or(Error::RecordNotFound)
+}
+
+pub async fn delete_partition(
+    db: &Surreal<Db>,
+    partition: surrealdb::RecordId,
+) -> Result<(), surrealdb::Error> {
+    db.query(
+        r#"
+        DELETE $partition;
+        DELETE allocation WHERE partition = $partition;
+        "#,
+    )
+    .bind(("partition", partition))
+    .await
+    .map(|_| ())
 }
 
 #[derive(ts_rs::TS)]
@@ -237,7 +252,7 @@ pub async fn create_allocation(
     allocation.ok_or(Error::RecordNotFound)
 }
 
-pub async fn get_allocations(
+pub async fn read_allocations(
     db: &Surreal<Db>,
     partitions: Vec<surrealdb::RecordId>,
 ) -> Result<Vec<Allocation>, Error> {
@@ -285,4 +300,14 @@ pub async fn update_allocation(
         .take(1)?;
 
     allocation.ok_or(Error::RecordNotFound)
+}
+
+pub async fn delete_allocation(
+    db: &Surreal<Db>,
+    allocation: surrealdb::RecordId,
+) -> Result<(), surrealdb::Error> {
+    db.query("DELETE $allocation;")
+        .bind(("allocation", allocation))
+        .await
+        .map(|_| ())
 }
