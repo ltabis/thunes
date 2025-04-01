@@ -2,6 +2,7 @@ import {
   Alert,
   AppBar,
   Autocomplete,
+  Box,
   Button,
   Chip,
   Dialog,
@@ -26,10 +27,11 @@ import {
   SpeedDial,
   SpeedDialAction,
   SpeedDialIcon,
-  styled,
   TextField,
   Toolbar,
   Typography,
+  dividerClasses,
+  Stack,
 } from "@mui/material";
 import {
   Dispatch,
@@ -58,7 +60,7 @@ import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { useParams } from "react-router-dom";
 import { Budget } from "../../../cli/bindings/Budget";
 import { Account } from "../../../cli/bindings/Account";
-import { PieChart, useDrawingArea } from "@mui/x-charts";
+import { PieChart } from "@mui/x-charts";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { categoryIconToMuiIcon } from "../utils/icons";
 import { AddAllocationDrawer, EditAllocationDrawer } from "./budget/Allocation";
@@ -333,8 +335,36 @@ function AddBudgetDialog({
 //   );
 // }
 
-const computeBudgetUnallocated = (budget: Budget, allocations: Allocation[]) =>
+const computeBudgetUnallocated = (
+  budget: Budget,
+  allocations: Allocation[]
+): number =>
   budget.income - allocations.reduce((acc, curr) => acc + curr.amount, 0);
+
+// // FIXME: add yellow, green and red following the percentage allocated. (nothing allocated is bad)
+// const formatBudgetAllocationTotal = (total: number, budget: Budget) => (
+//   <>
+//     <PieCenterLabel topAdjust={-20}>
+//       in {budget.income} {budget.currency}
+//     </PieCenterLabel>
+//     <PieCenterLabel topAdjust={10} style={{ fill: "green" }}>
+//       unused {total.toFixed(2)} {budget.currency}
+//     </PieCenterLabel>
+//     <PieCenterLabel topAdjust={40} style={{ fill: "green" }}>
+//       out + {(budget.income - total).toFixed(2)} {budget.currency}
+//     </PieCenterLabel>
+
+//     {/* {total > 0 ? (
+//       <PieCenterLabel topAdjust={10} style={{ fill: "green" }}>
+//         out + {total.toFixed(2)} {budget.currency}
+//       </PieCenterLabel>
+//     ) : (
+//       <PieCenterLabel topAdjust={10} style={{ fill: "red" }}>
+//         - {total.toFixed(2)} {budget.currency}
+//       </PieCenterLabel>
+//     )} */}
+//   </>
+// );
 
 function computeBudgetPieData(
   budget: Budget,
@@ -367,22 +397,6 @@ function computeBudgetPieData(
       color: "white",
     },
   ];
-}
-
-const StyledText = styled("text")(({ theme }) => ({
-  fill: theme.palette.text.primary,
-  textAnchor: "middle",
-  dominantBaseline: "central",
-  fontSize: 20,
-}));
-
-function PieCenterLabel({ children }: { children: React.ReactNode }) {
-  const { width, height, left, top } = useDrawingArea();
-  return (
-    <StyledText x={left + width / 2} y={top + height / 2}>
-      {children}
-    </StyledText>
-  );
 }
 
 function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
@@ -497,28 +511,62 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
             </Grid2>
 
             <Grid2 size={4}>
-              <PieChart
-                series={[
-                  {
-                    valueFormatter: (item) => `${item.label} (${item.value}%)`,
-                    arcLabelMinAngle: 35,
-                    data: computeBudgetPieData(budget, partitions, allocations),
-                    highlightScope: { fade: "global", highlight: "item" },
-                    innerRadius: 100,
-                    outerRadius: 120,
-                    paddingAngle: 1,
-                    cornerRadius: 5,
-                  },
-                ]}
-                onItemClick={(_event, partition) =>
-                  setEditPartition(partitions[partition.dataIndex])
-                }
-                height={400}
-              >
-                <PieCenterLabel>
-                  {computeBudgetUnallocated(budget, allocations)} Unallocated
-                </PieCenterLabel>
-              </PieChart>
+              <Stack>
+                <Stack
+                  direction="row"
+                  divider={<Divider orientation="vertical" flexItem />}
+                  spacing={2}
+                >
+                  <ListItem>
+                    <ListItemText
+                      primary={`+ ${budget.income} ${budget.currency}`}
+                      secondary="in"
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemText
+                      primary={`- ${(
+                        budget.income -
+                        computeBudgetUnallocated(budget, allocations)
+                      ).toFixed(2)} ${budget.currency}`}
+                      secondary="out"
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemText
+                      primary={`${computeBudgetUnallocated(
+                        budget,
+                        allocations
+                      ).toFixed(2)} ${budget.currency}`}
+                      secondary="unused"
+                    />
+                  </ListItem>
+                </Stack>
+
+                <PieChart
+                  series={[
+                    {
+                      valueFormatter: (item) =>
+                        `${item.label} (${item.value}%)`,
+                      arcLabelMinAngle: 35,
+                      data: computeBudgetPieData(
+                        budget,
+                        partitions,
+                        allocations
+                      ),
+                      highlightScope: { fade: "global", highlight: "item" },
+                      innerRadius: 100,
+                      outerRadius: 120,
+                      paddingAngle: 1,
+                      cornerRadius: 5,
+                    },
+                  ]}
+                  onItemClick={(_event, partition) =>
+                    setEditPartition(partitions[partition.dataIndex])
+                  }
+                  height={400}
+                />
+              </Stack>
             </Grid2>
           </Grid2>
 

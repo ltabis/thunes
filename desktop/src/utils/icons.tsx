@@ -25,6 +25,7 @@ export function categoryIconToMuiIcon(
     <Avatar
       sx={{
         background: category.color,
+        color: "white",
       }}
     >
       {getMuiIcon(category.icon)}
