@@ -2,7 +2,6 @@ import {
   Alert,
   AppBar,
   Autocomplete,
-  Box,
   Button,
   Chip,
   Dialog,
@@ -30,7 +29,6 @@ import {
   TextField,
   Toolbar,
   Typography,
-  dividerClasses,
   Stack,
 } from "@mui/material";
 import {
@@ -299,72 +297,11 @@ function AddBudgetDialog({
   );
 }
 
-// function DistributionBar({
-//   partitions,
-// }: {
-//   partitions: { name: string; color: string; percentage: number }[];
-// }) {
-//   const MAX_SIZE = 300;
-
-//   return (
-//     <Box
-//       sx={{
-//         width: MAX_SIZE,
-//         height: 25,
-//         borderRadius: 1,
-//         bgcolor: "grey",
-//       }}
-//     >
-//       <Grid2 container alignItems="center">
-//         {partitions.map((partition) => (
-//           <Tooltip
-//             title={`${partition.name} (${partition.percentage}%)`}
-//             key={partition.name}
-//           >
-//             <Box
-//               sx={{
-//                 width: MAX_SIZE * (partition.percentage / 100),
-//                 height: 25,
-//                 bgcolor: partition.color,
-//               }}
-//             />
-//           </Tooltip>
-//         ))}
-//       </Grid2>
-//     </Box>
-//   );
-// }
-
 const computeBudgetUnallocated = (
   budget: Budget,
   allocations: Allocation[]
 ): number =>
   budget.income - allocations.reduce((acc, curr) => acc + curr.amount, 0);
-
-// // FIXME: add yellow, green and red following the percentage allocated. (nothing allocated is bad)
-// const formatBudgetAllocationTotal = (total: number, budget: Budget) => (
-//   <>
-//     <PieCenterLabel topAdjust={-20}>
-//       in {budget.income} {budget.currency}
-//     </PieCenterLabel>
-//     <PieCenterLabel topAdjust={10} style={{ fill: "green" }}>
-//       unused {total.toFixed(2)} {budget.currency}
-//     </PieCenterLabel>
-//     <PieCenterLabel topAdjust={40} style={{ fill: "green" }}>
-//       out + {(budget.income - total).toFixed(2)} {budget.currency}
-//     </PieCenterLabel>
-
-//     {/* {total > 0 ? (
-//       <PieCenterLabel topAdjust={10} style={{ fill: "green" }}>
-//         out + {total.toFixed(2)} {budget.currency}
-//       </PieCenterLabel>
-//     ) : (
-//       <PieCenterLabel topAdjust={10} style={{ fill: "red" }}>
-//         - {total.toFixed(2)} {budget.currency}
-//       </PieCenterLabel>
-//     )} */}
-//   </>
-// );
 
 function computeBudgetPieData(
   budget: Budget,
@@ -512,6 +449,7 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
 
             <Grid2 size={4}>
               <Stack>
+                {/* FIXME: add yellow, green and red following the percentage allocated. (nothing allocated is bad)*/}
                 <Stack
                   direction="row"
                   divider={<Divider orientation="vertical" flexItem />}
@@ -542,7 +480,6 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
                     />
                   </ListItem>
                 </Stack>
-
                 <PieChart
                   series={[
                     {
