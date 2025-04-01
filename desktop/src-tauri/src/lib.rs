@@ -1,9 +1,5 @@
 use tauri::{App, Manager};
-use thunes_cli::{
-    settings::Settings,
-    transaction::{Category, CategoryWithId, Icon},
-    Record,
-};
+use thunes_cli::{settings::Settings, Record};
 
 pub mod commands {
     pub mod account;
@@ -12,6 +8,8 @@ pub mod commands {
     pub mod settings;
     pub mod tags;
 }
+
+mod default_categories;
 
 fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Setup dev tools.
@@ -63,136 +61,7 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
         {
             let result: Result<Vec<Record>, surrealdb::Error> = db
                 .insert("category")
-                .content(vec![
-                    CategoryWithId {
-                        id: ("category", "transport").into(),
-                        data: Category {
-                            name: "Transport".to_string(),
-                            icon: Icon::Transport,
-                            color: "yellow".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "accommodation").into(),
-                        data: Category {
-                            name: "Accommodation".to_string(),
-                            icon: Icon::Accommodation,
-                            color: "orange".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "subscription").into(),
-                        data: Category {
-                            name: "Subscription".to_string(),
-                            icon: Icon::Subscription,
-                            color: "blue".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "car").into(),
-                        data: Category {
-                            name: "Car".to_string(),
-                            icon: Icon::Car,
-                            color: "yellow".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "other").into(),
-                        data: Category {
-                            name: "Other".to_string(),
-                            icon: Icon::Other,
-                            color: "grey".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "gift-and-donations").into(),
-                        data: Category {
-                            name: "Gift & Donations".to_string(),
-                            icon: Icon::GiftAndDonations,
-                            color: "orange".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "savings").into(),
-                        data: Category {
-                            name: "Savings".to_string(),
-                            icon: Icon::Savings,
-                            color: "red".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "education-and-family").into(),
-                        data: Category {
-                            name: "Education & Family".to_string(),
-                            icon: Icon::EducationAndFamily,
-                            color: "pink".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "loan").into(),
-                        data: Category {
-                            name: "Loan".to_string(),
-                            icon: Icon::Loan,
-                            color: "red".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "professional-fee").into(),
-                        data: Category {
-                            name: "Professional Fee".to_string(),
-                            icon: Icon::ProfessionalFee,
-                            color: "blue".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "taxes").into(),
-                        data: Category {
-                            name: "Taxes".to_string(),
-                            icon: Icon::Taxes,
-                            color: "red".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "spare-time-activities").into(),
-                        data: Category {
-                            name: "Spare-time Activities".to_string(),
-                            icon: Icon::SpareTimeActivities,
-                            color: "pink".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "internal-movements").into(),
-                        data: Category {
-                            name: "Internal Movements".to_string(),
-                            icon: Icon::InternalMovements,
-                            color: "blue".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "cash-withdrawal").into(),
-                        data: Category {
-                            name: "Cash Withdrawal".to_string(),
-                            icon: Icon::CashWithdrawal,
-                            color: "green".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "health").into(),
-                        data: Category {
-                            name: "Health".to_string(),
-                            icon: Icon::Health,
-                            color: "green".to_string(),
-                        },
-                    },
-                    CategoryWithId {
-                        id: ("category", "everyday-life").into(),
-                        data: Category {
-                            name: "Everyday Life".to_string(),
-                            icon: Icon::EverydayLife,
-                            color: "blue".to_string(),
-                        },
-                    },
-                ])
+                .content(default_categories::default_categories())
                 .await;
 
             match result {

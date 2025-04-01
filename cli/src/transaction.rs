@@ -1,5 +1,3 @@
-use std::hash::Hash;
-
 use rhai::{CustomType, TypeBuilder};
 use surrealdb::RecordId;
 
@@ -16,6 +14,7 @@ pub enum Icon {
     Car,
     Other,
     GiftAndDonations,
+    Bed,
     Savings,
     EducationAndFamily,
     Loan,
@@ -30,33 +29,15 @@ pub enum Icon {
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(Clone, Debug, Eq, serde::Serialize, serde::Deserialize)]
-pub struct Category {
-    pub name: String,
-    pub icon: Icon,
-    pub color: String,
-}
-
-impl Hash for Category {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.name.hash(state);
-    }
-}
-
-impl PartialEq for Category {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-#[derive(ts_rs::TS)]
-#[ts(export)]
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct CategoryWithId {
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub id: surrealdb::RecordId,
-    #[serde(flatten)]
-    pub data: Category,
+    pub name: String,
+    pub icon: Icon,
+    pub color: String,
+    #[ts(type = "{ tb: string, id: { String: string }}", optional)]
+    pub parent: Option<surrealdb::RecordId>,
 }
 
 #[derive(ts_rs::TS)]
