@@ -118,7 +118,7 @@ function AddBudgetDialog({
 }: {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateBudgets: (budget: RecordId) => void;
+  handleUpdateBudgets: (budget: RecordId) => Promise<void>;
 }) {
   const navigate = useBudgetNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
@@ -160,8 +160,9 @@ function AddBudgetDialog({
     })
       .then((budget) => {
         handleCloseForm();
-        handleUpdateBudgets(budget.id);
-        navigate({ id: budget.id, name: budget.name });
+        handleUpdateBudgets(budget.id).then(() =>
+          navigate({ id: budget.id, name: budget.name })
+        );
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -590,14 +591,15 @@ export function Layout({ id }: { id: string | undefined }) {
   const handleSelectBudget = async (budget: BudgetIdentifiers) =>
     navigate(budget);
 
-  const handleUpdateBudgets = () => {
-    listBudgets()
-      .then((budgets) =>
-        setBudgets(
-          new Map(budgets.map((budget) => [budget.id.id.String, budget]))
-        )
-      )
-      .catch((error) => setOpenFailure(error));
+  const handleUpdateBudgets = async () => {
+    try {
+      const budgets = await listBudgets();
+      setBudgets(
+        new Map(budgets.map((budget) => [budget.id.id.String, budget]))
+      );
+    } catch (error) {
+      setOpenFailure(error as string);
+    }
   };
 
   useEffect(() => {
