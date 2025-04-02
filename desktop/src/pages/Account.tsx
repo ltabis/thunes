@@ -87,7 +87,7 @@ function AddAccountDialog({
 }: {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateAccounts: (account: RecordId) => void;
+  handleUpdateAccounts: (account: RecordId) => Promise<void>;
 }) {
   const navigate = useAccountNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
@@ -106,8 +106,9 @@ function AddAccountDialog({
     addAccount(form)
       .then((account) => {
         handleCloseForm();
-        handleUpdateAccounts(account.id);
-        navigate({ id: account.id, name: account.name });
+        handleUpdateAccounts(account.id).then(() =>
+          navigate({ id: account.id, name: account.name })
+        );
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -215,14 +216,15 @@ export function Layout({ id }: { id: string | undefined }) {
     setTab(newTab);
   };
 
-  const handleUpdateAccounts = () => {
-    listAccounts()
-      .then((accounts) =>
-        setAccounts(
-          new Map(accounts.map((account) => [account.id.id.String, account]))
-        )
-      )
-      .catch((error) => setOpenFailure(error));
+  const handleUpdateAccounts = async () => {
+    try {
+      const accounts = await listAccounts();
+      setAccounts(
+        new Map(accounts.map((account) => [account.id.id.String, account]))
+      );
+    } catch (error) {
+      setOpenFailure(error as string);
+    }
   };
 
   useEffect(() => {
