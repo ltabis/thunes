@@ -17,19 +17,18 @@ panic = 'abort'
 codegen-units = 1
 
 [dependencies]
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = { version = "1.0.138" }
-clap = { version = "4.5.29", features = ["derive"] }
-time = { version = "0.3.37", features = [
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = { version = "1.0.140" }
+time = { version = "0.3.41", features = [
     "std",
     "parsing",
     "formatting",
     "serde",
 ] }
-time-macros = { version = "0.2.19", features = ["parsing"] }
-rhai-http = { version = "0.3.0" }
-rhai = { version = "1.20.1" }
+time-macros = { version = "0.2.22", features = ["parsing"] }
+rhai-http = { version = "0.4.0" }
+rhai = { version = "1.21.0" }
 ts-rs = { version = "10.1.0", features = ["serde-json-impl"] }
 surrealdb = { version = "2.2.1", features = ["kv-rocksdb"] }
-tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread"] }
-chrono = { version = "0.4.39" }
+tokio = { version = "1.44.1", features = ["macros", "rt-multi-thread"] }
+chrono = { version = "0.4.40" }
