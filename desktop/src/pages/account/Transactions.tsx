@@ -421,17 +421,9 @@ export default function Transactions({ accountId }: { accountId: RecordId }) {
   }, [accountId, dispatchSnackbar]);
 
   return (
-    <Paper elevation={0}>
-      {balance && currency ? (
-        <Typography variant="h6">
-          {`${balance.toFixed(2)} ${currency}`}
-        </Typography>
-      ) : (
-        <Skeleton animation="wave" />
-      )}
-
-      {transactions && sparklineTransactions ? (
-        <Box sx={{ height: 600, width: "100%" }}>
+    <Paper elevation={0} sx={{ flexGrow: 1 }}>
+      <Stack direction="row">
+        {sparklineTransactions && (
           <SparkLineChart
             // Sum account transaction until the last 30 days
             // and display each account state every day.
@@ -462,8 +454,24 @@ export default function Transactions({ accountId }: { accountId: RecordId }) {
                 .map((t) => new Date(t.date)),
               valueFormatter: (value) => value.toISOString().slice(0, 10),
             }}
+            sx={{ flexGrow: 2 }}
           />
-          <List sx={{ width: "100%", bgcolor: "background.paper" }}>
+        )}
+        {balance && currency ? (
+          <Typography variant="h2" sx={{ flexGrow: 1, textWrap: "nowrap" }}>
+            {`${balance.toFixed(2)} ${currency}`}
+          </Typography>
+        ) : (
+          <Skeleton animation="wave" />
+        )}
+      </Stack>
+      {transactions ? (
+        <Box sx={{ width: "100%" }}>
+          <List
+            sx={{
+              bgcolor: "background.paper",
+            }}
+          >
             {transactions.map((transaction) => (
               <ListItemButton
                 onClick={() => setSelectedTransaction(transaction)}

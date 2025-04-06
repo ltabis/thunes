@@ -23,11 +23,16 @@ export default function Dashboard() {
   useEffect(() => {
     getAllBalance()
       .then(setCurrencies)
-      .catch((error) => dispatchSnackbar({ type: "open", severity: "error", message: error }));
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
   }, [dispatchSnackbar]);
 
   return (
-    <Paper elevation={0} sx={{ height: "100%" }}>
+    <Paper
+      elevation={0}
+      sx={{ height: "100%", maxHeight: "100%", overflow: "scroll" }}
+    >
       <Typography variant="h2" sx={{ m: 2 }}>
         Portfolio
       </Typography>
