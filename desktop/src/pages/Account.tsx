@@ -1,6 +1,7 @@
 import {
   Alert,
   AppBar,
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -167,7 +168,8 @@ function AddAccountDialog({
   );
 }
 
-export function Layout({ id }: { id: string | undefined }) {
+export default function () {
+  const { id } = useParams();
   const navigate = useAccountNavigate();
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -232,8 +234,8 @@ export function Layout({ id }: { id: string | undefined }) {
   }, []);
 
   return (
-    <>
-      <AppBar position="static">
+    <Box sx={{ flexGrow: 1, maxHeight: "100%", overflow: "scroll" }}>
+      <AppBar position="sticky">
         <Toolbar>
           {accounts ? (
             <>
@@ -351,12 +353,6 @@ export function Layout({ id }: { id: string | undefined }) {
           handleUpdateAccounts={handleUpdateAccounts}
         />
       )}
-    </>
+    </Box>
   );
-}
-
-export default function () {
-  const { id } = useParams();
-
-  return <Layout id={id} />;
 }

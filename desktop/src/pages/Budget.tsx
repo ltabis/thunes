@@ -19,7 +19,6 @@ import {
   ListItemText,
   Menu,
   MenuItem,
-  Paper,
   Select,
   Snackbar,
   SnackbarCloseReason,
@@ -30,6 +29,7 @@ import {
   Toolbar,
   Typography,
   Stack,
+  Box,
 } from "@mui/material";
 import {
   Dispatch,
@@ -378,176 +378,160 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
   }, [identifiers.id, dispatchSnackbar]);
 
   return (
-    <>
+    <Stack direction="row" sx={{ overflow: "scroll", maxHeight: "100%" }}>
       {budget && (
-        <Paper elevation={0} sx={{ margin: 2 }}>
-          <Grid2
-            container
-            spacing={1}
-            justifyContent="center"
-            sx={{ padding: 1 }}
-          >
-            <Grid2 size={8}>
-              <List sx={{ width: "100%", bgcolor: "background.paper" }}>
-                {partitions.flat().flatMap((partition) => {
-                  const allocationsForPartition = allocations.filter(
-                    (allocation) =>
-                      allocation.partition.id.String === partition.id.id.String
-                  );
+        <List sx={{ flexGrow: 10 }}>
+          {partitions.flat().flatMap((partition) => {
+            const allocationsForPartition = allocations.filter(
+              (allocation) =>
+                allocation.partition.id.String === partition.id.id.String
+            );
 
-                  return allocationsForPartition.map((allocation, index) => (
-                    <ListItemButton
-                      key={`${allocation.category.id.id.String}-${index}`}
-                      onClick={() => {
-                        setEditAllocation(allocation);
-                      }}
-                    >
-                      <ListItem
-                        secondaryAction={
-                          <Typography variant="body1">
-                            {`${allocation.amount} ${budget.currency}`}
-                          </Typography>
-                        }
-                        sx={{
-                          borderLeft: 2,
-                          borderLeftColor: partition.color,
-                        }}
-                      >
-                        <ListItemAvatar>
-                          {categoryIconToMuiIcon(allocation.category)}
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={allocation.name}
-                          secondary={`${partition.name} / ${allocation.category.name}`}
-                        />
-                      </ListItem>
-                    </ListItemButton>
-                  ));
-                })}
-              </List>
-              {/* FIXME: button should stick to the end of the page */}
-
-              <SpeedDial
-                color="primary"
-                sx={{ position: "absolute", bottom: 16, right: 16 }}
-                icon={<SpeedDialIcon />}
-                ariaLabel={"add"}
+            return allocationsForPartition.map((allocation, index) => (
+              <ListItemButton
+                key={`${allocation.category.id.id.String}-${index}`}
+                onClick={() => {
+                  setEditAllocation(allocation);
+                }}
               >
-                <SpeedDialAction
-                  key={"add-partition"}
-                  icon={<PieChartIcon />}
-                  tooltipTitle={"Add a partition"}
-                  onClick={() => setAddPartition(true)}
-                />
-                <SpeedDialAction
-                  key={"add-allocation"}
-                  icon={<CurrencyExchangeIcon />}
-                  tooltipTitle={"Add a recurring expense"}
-                  onClick={() => setAddAllocation(true)}
-                />
-              </SpeedDial>
-            </Grid2>
-
-            <Grid2 size={4}>
-              <Stack>
-                {/* FIXME: add yellow, green and red following the percentage allocated. (nothing allocated is bad)*/}
-                <Stack
-                  direction="row"
-                  divider={<Divider orientation="vertical" flexItem />}
-                  spacing={2}
-                >
-                  <ListItem>
-                    <ListItemText
-                      primary={`+ ${budget.income} ${budget.currency}`}
-                      secondary="in"
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText
-                      primary={`- ${(
-                        budget.income -
-                        computeBudgetUnallocated(budget, allocations)
-                      ).toFixed(2)} ${budget.currency}`}
-                      secondary="out"
-                    />
-                  </ListItem>
-                  <ListItem>
-                    <ListItemText
-                      primary={`${computeBudgetUnallocated(
-                        budget,
-                        allocations
-                      ).toFixed(2)} ${budget.currency}`}
-                      secondary="unused"
-                    />
-                  </ListItem>
-                </Stack>
-                <PieChart
-                  series={[
-                    {
-                      valueFormatter: (item) =>
-                        `${item.label} (${item.value}%)`,
-                      arcLabelMinAngle: 35,
-                      data: computeBudgetPieData(
-                        budget,
-                        partitions,
-                        allocations
-                      ),
-                      highlightScope: { fade: "global", highlight: "item" },
-                      innerRadius: 100,
-                      outerRadius: 120,
-                      paddingAngle: 1,
-                      cornerRadius: 5,
-                    },
-                  ]}
-                  onItemClick={(_event, partition) =>
-                    setEditPartition(partitions[partition.dataIndex])
+                <ListItem
+                  secondaryAction={
+                    <Typography variant="body1">
+                      {`${allocation.amount} ${budget.currency}`}
+                    </Typography>
                   }
-                  height={400}
-                />
-              </Stack>
-            </Grid2>
-          </Grid2>
-
-          {addPartition && (
-            <AddPartitionDrawer
-              budget={budget}
-              // FIXME: bad way to trigger a re-render.
-              onUpdate={() => (identifiers.id = { ...identifiers.id })}
-              close={() => setAddPartition(false)}
-            />
-          )}
-
-          {editPartition && (
-            <EditPartitionDrawer
-              partition={editPartition}
-              onUpdate={() => (identifiers.id = { ...identifiers.id })}
-              close={() => setEditPartition(null)}
-            />
-          )}
-
-          {addAllocation && (
-            <AddAllocationDrawer
-              budget={budget}
-              onUpdate={() => (identifiers.id = { ...identifiers.id })}
-              close={() => setAddAllocation(false)}
-            />
-          )}
-
-          {editAllocation && (
-            <EditAllocationDrawer
-              budget={budget}
-              allocation={editAllocation}
-              onUpdate={() => (identifiers.id = { ...identifiers.id })}
-              close={() => setEditAllocation(null)}
-            />
-          )}
-        </Paper>
+                  sx={{
+                    borderLeft: 2,
+                    borderLeftColor: partition.color,
+                  }}
+                >
+                  <ListItemAvatar>
+                    {categoryIconToMuiIcon(allocation.category)}
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={allocation.name}
+                    secondary={`${partition.name} / ${allocation.category.name}`}
+                  />
+                </ListItem>
+              </ListItemButton>
+            ));
+          })}
+        </List>
       )}
-    </>
+      {budget && (
+        <Stack alignItems="flex-start" sx={{ flexGrow: 1 }}>
+          {/* FIXME: add yellow, green and red following the percentage allocated. (nothing allocated is bad)*/}
+          <Stack
+            direction="row"
+            divider={<Divider orientation="vertical" flexItem />}
+            spacing={2}
+          >
+            <ListItem>
+              <ListItemText
+                primary={`+ ${budget.income} ${budget.currency}`}
+                secondary="in"
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText
+                primary={`- ${(
+                  budget.income - computeBudgetUnallocated(budget, allocations)
+                ).toFixed(2)} ${budget.currency}`}
+                secondary="out"
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText
+                primary={`${computeBudgetUnallocated(
+                  budget,
+                  allocations
+                ).toFixed(2)} ${budget.currency}`}
+                secondary="unused"
+              />
+            </ListItem>
+          </Stack>
+          <Box sx={{ width: "100%" }}>
+            <PieChart
+              series={[
+                {
+                  valueFormatter: (item) => `${item.label} (${item.value}%)`,
+                  arcLabelMinAngle: 35,
+                  data: computeBudgetPieData(budget, partitions, allocations),
+                  highlightScope: { fade: "global", highlight: "item" },
+                  innerRadius: 100,
+                  outerRadius: 120,
+                  paddingAngle: 1,
+                  cornerRadius: 5,
+                },
+              ]}
+              onItemClick={(_event, partition) =>
+                setEditPartition(partitions[partition.dataIndex])
+              }
+              height={400}
+            />
+          </Box>
+        </Stack>
+      )}
+
+      {addPartition && budget && (
+        <AddPartitionDrawer
+          budget={budget}
+          // FIXME: bad way to trigger a re-render.
+          onUpdate={() => (identifiers.id = { ...identifiers.id })}
+          close={() => setAddPartition(false)}
+        />
+      )}
+
+      {editPartition && (
+        <EditPartitionDrawer
+          partition={editPartition}
+          onUpdate={() => (identifiers.id = { ...identifiers.id })}
+          close={() => setEditPartition(null)}
+        />
+      )}
+
+      {addAllocation && budget && (
+        <AddAllocationDrawer
+          budget={budget}
+          onUpdate={() => (identifiers.id = { ...identifiers.id })}
+          close={() => setAddAllocation(false)}
+        />
+      )}
+
+      {editAllocation && budget && (
+        <EditAllocationDrawer
+          budget={budget}
+          allocation={editAllocation}
+          onUpdate={() => (identifiers.id = { ...identifiers.id })}
+          close={() => setEditAllocation(null)}
+        />
+      )}
+
+      <SpeedDial
+        color="primary"
+        sx={{ position: "absolute", bottom: 16, right: 16 }}
+        icon={<SpeedDialIcon />}
+        ariaLabel={"add"}
+      >
+        <SpeedDialAction
+          key={"add-partition"}
+          icon={<PieChartIcon />}
+          tooltipTitle={"Add a partition"}
+          onClick={() => setAddPartition(true)}
+        />
+        <SpeedDialAction
+          key={"add-allocation"}
+          icon={<CurrencyExchangeIcon />}
+          tooltipTitle={"Add a recurring expense"}
+          onClick={() => setAddAllocation(true)}
+        />
+      </SpeedDial>
+    </Stack>
   );
 }
 
-export function Layout({ id }: { id: string | undefined }) {
+export default function () {
+  const { id } = useParams();
   const navigate = useBudgetNavigate();
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -607,7 +591,11 @@ export function Layout({ id }: { id: string | undefined }) {
   }, []);
 
   return (
-    <>
+    <Stack
+      spacing={2}
+      divider={<Divider orientation="vertical" flexItem />}
+      sx={{ flexGrow: 1 }}
+    >
       <AppBar position="static">
         <Toolbar>
           {budgets ? (
@@ -674,8 +662,6 @@ export function Layout({ id }: { id: string | undefined }) {
         </Toolbar>
       </AppBar>
 
-      <Divider sx={{ margin: 2 }} />
-
       {getBudgetIdentifiers() && (
         <Details identifiers={getBudgetIdentifiers()!} />
       )}
@@ -710,12 +696,6 @@ export function Layout({ id }: { id: string | undefined }) {
           handleUpdateBudgets={handleUpdateBudgets}
         />
       )}
-    </>
+    </Stack>
   );
-}
-
-export default function () {
-  const { id } = useParams();
-
-  return <Layout id={id} />;
 }
