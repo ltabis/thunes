@@ -133,10 +133,10 @@ export function EditPartitionDrawer({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handlePartitionSubmission}>Update</Button>
         <Button onClick={handlePartitionDelete} color="error">
           Delete
         </Button>
+        <Button onClick={handlePartitionSubmission}>Update</Button>
       </DialogActions>
     </Drawer>
   );
