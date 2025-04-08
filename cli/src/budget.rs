@@ -1,6 +1,7 @@
 use crate::account::Account;
-use crate::transaction::CategoryWithId;
+use crate::transaction::{CategoryWithId, TransactionWithId};
 use crate::Error;
+use chrono::Datelike;
 use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 
@@ -138,6 +139,216 @@ pub async fn delete(
     .bind(("budget_id", budget_id))
     .await
     .map(|_| ())
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ExpensesAllocation {
+    pub inner: Allocation,
+    pub transactions: Vec<TransactionWithId>,
+    pub total: f64,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ExpensesPartition {
+    pub inner: Partition,
+    pub allocations: Vec<ExpensesAllocation>,
+    pub total: f64,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ExpensesBudget {
+    pub inner: Budget,
+    pub partitions: Vec<ExpensesPartition>,
+    pub total: f64,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ReadExpensesResult {
+    pub period_start: String,
+    pub period_end: String,
+    pub budget: ExpensesBudget,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Deserialize)]
+pub enum ExpensesPeriod {
+    Monthly,
+    Trimestrial,
+    Yearly,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct ReadExpensesOptions {
+    pub period: ExpensesPeriod,
+    pub period_index: u32,
+}
+
+pub async fn read_expenses(
+    db: &Surreal<Db>,
+    budget_id: surrealdb::RecordId,
+    options: ReadExpensesOptions,
+) -> Result<ReadExpensesResult, Error> {
+    // Not using surrealdb time functions here because there is no way (right now)
+    // to add a month to a datetime object.
+    let now = chrono::Utc::now();
+
+    let (before, after) = match options.period {
+        ExpensesPeriod::Monthly => {
+            let before = now
+                .date_naive()
+                .with_day(1)
+                .unwrap()
+                .checked_sub_months(chrono::Months::new(options.period_index))
+                .unwrap();
+
+            let after = now
+                .date_naive()
+                .with_day(1)
+                .unwrap()
+                .checked_add_months(chrono::Months::new(1))
+                .unwrap()
+                .checked_sub_months(chrono::Months::new(options.period_index))
+                .unwrap()
+                .checked_sub_days(chrono::Days::new(1))
+                .unwrap();
+
+            (before, after)
+        }
+        ExpensesPeriod::Trimestrial => {
+            let before = now
+                .date_naive()
+                .with_day(1)
+                .unwrap()
+                .checked_sub_months(chrono::Months::new(2))
+                .unwrap()
+                .checked_sub_months(chrono::Months::new(options.period_index))
+                .unwrap();
+
+            let after = now
+                .date_naive()
+                .with_day(1)
+                .unwrap()
+                .checked_add_months(chrono::Months::new(1))
+                .unwrap()
+                .checked_sub_months(chrono::Months::new(options.period_index))
+                .unwrap()
+                .checked_sub_days(chrono::Days::new(1))
+                .unwrap();
+
+            (before, after)
+        }
+        ExpensesPeriod::Yearly => {
+            let year = now.year() - options.period_index as i32;
+
+            let before = now
+                .date_naive()
+                .with_year(year)
+                .unwrap()
+                .with_month(1)
+                .unwrap()
+                .with_day(1)
+                .unwrap();
+
+            let after = now
+                .date_naive()
+                .with_year(year)
+                .unwrap()
+                .with_month(12)
+                .unwrap()
+                .with_day(31)
+                .unwrap();
+
+            (before, after)
+        }
+    };
+
+    let mut response = db
+        .query(
+            r#"LET $budget = (SELECT * FROM ONLY $budget_id FETCH accounts);
+        RETURN $budget;
+        LET $partitions = (SELECT * FROM partition WHERE budget = $budget.id);
+        RETURN $partitions;
+        RETURN SELECT * FROM allocation WHERE partition IN $partitions.map(|$p| $p.id) FETCH category;
+        RETURN SELECT *
+            FROM transaction
+            WHERE account.id in $budget.accounts.map(|$a| $a.id)
+            AND <datetime>$before <= date AND date <= <datetime>$after;
+        "#,
+        )
+        .bind(("budget_id", budget_id))
+        .bind(("before", before))
+        .bind(("after", after))
+        .await
+        .unwrap();
+
+    // FIXME: Build the result structure using the query directly.
+    let budget = response
+        .take::<Option<Budget>>(1)?
+        .ok_or(Error::RecordNotFound)?;
+    let partitions = response.take::<Vec<Partition>>(3)?;
+    let allocations = response.take::<Vec<Allocation>>(4)?;
+    let transactions = response.take::<Vec<TransactionWithId>>(5)?;
+
+    let partitions: Vec<ExpensesPartition> = partitions
+        .into_iter()
+        .map(|partition| {
+            let allocations: Vec<ExpensesAllocation> = allocations
+                .iter()
+                .filter(|allocation| allocation.partition == partition.id)
+                .map(|allocation| {
+                    let transactions: Vec<TransactionWithId> = transactions
+                        .iter()
+                        .cloned()
+                        .filter(|transaction| transaction.category == allocation.category.id)
+                        .collect();
+                    let total = transactions
+                        .iter()
+                        .fold(0.0, |acc, transactions| acc + transactions.inner.amount);
+
+                    ExpensesAllocation {
+                        inner: allocation.clone(),
+                        transactions,
+                        total,
+                    }
+                })
+                .collect();
+
+            let total = allocations
+                .iter()
+                .fold(0.0, |acc, allocation| acc + allocation.total);
+
+            ExpensesPartition {
+                inner: partition,
+                allocations,
+                total,
+            }
+        })
+        .collect();
+
+    let total = partitions
+        .iter()
+        .fold(0.0, |acc, partition| acc + partition.total);
+
+    Ok(ReadExpensesResult {
+        period_start: before.to_string(),
+        period_end: after.to_string(),
+        budget: ExpensesBudget {
+            inner: budget,
+            partitions,
+            total,
+        },
+    })
 }
 
 #[derive(ts_rs::TS)]

@@ -17,6 +17,8 @@ import { CategoryWithId } from "../../../cli/bindings/CategoryWithId";
 import { CreateAllocationOptions } from "../../../cli/bindings/CreateAllocationOptions";
 import { UpdateAllocationOptions } from "../../../cli/bindings/UpdateAllocationOptions";
 import { CreatePartitionOptions } from "../../../cli/bindings/CreatePartitionOptions";
+import { ReadExpensesOptions } from "../../../cli/bindings/ReadExpensesOptions";
+import { ReadExpensesResult } from "../../../cli/bindings/ReadExpensesResult";
 import { Partition } from "../../../cli/bindings/Partition";
 import { Allocation } from "../../../cli/bindings/Allocation";
 
@@ -87,6 +89,11 @@ export const updateBudget = (budget: Budget): Promise<void> =>
   invoke("update_budget", { budget });
 export const deleteBudget = (budgetId: RecordId): Promise<void> =>
   invoke("delete_budget", { budgetId });
+export const getBudgetExpenses = (
+  budgetId: RecordId,
+  options: ReadExpensesOptions
+): Promise<ReadExpensesResult> =>
+  invoke("get_budget_expenses", { budgetId, options });
 export const addBudgetPartition = (
   budgetId: RecordId,
   options: CreatePartitionOptions

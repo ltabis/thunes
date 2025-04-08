@@ -3,7 +3,7 @@ use surrealdb::{RecordId, Surreal};
 use tauri::State;
 use thunes_cli::budget::{
     Allocation, Budget, BudgetIdentifiers, CreateAllocationOptions, CreatePartitionOptions,
-    Partition, UpdateAllocationOptions,
+    Partition, ReadExpensesOptions, ReadExpensesResult, UpdateAllocationOptions,
 };
 use thunes_cli::Error as ThunesError;
 
@@ -94,6 +94,23 @@ pub async fn delete_budget(
         .map_err(|error| {
             tracing::error!(%error, "database error");
             "failed to delete budget".to_string()
+        })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn get_budget_expenses(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    budget_id: RecordId,
+    options: ReadExpensesOptions,
+) -> Result<ReadExpensesResult, String> {
+    let database = database.lock().await;
+
+    thunes_cli::budget::read_expenses(&database, budget_id, options)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to read budget expenses".to_string()
         })
 }
 

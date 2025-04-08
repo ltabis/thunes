@@ -29,7 +29,8 @@ import {
   Toolbar,
   Typography,
   Stack,
-  Box,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 import {
   Dispatch,
@@ -58,7 +59,6 @@ import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { useParams } from "react-router-dom";
 import { Budget } from "../../../cli/bindings/Budget";
 import { Account } from "../../../cli/bindings/Account";
-import { PieChart } from "@mui/x-charts";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { categoryIconToMuiIcon } from "../utils/icons";
 import { AddAllocationDrawer, EditAllocationDrawer } from "./budget/Allocation";
@@ -67,6 +67,7 @@ import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import { AddPartitionDrawer, EditPartitionDrawer } from "./budget/Partition";
 import { Partition } from "../../../cli/bindings/Partition";
 import { Allocation } from "../../../cli/bindings/Allocation";
+import BudgetPie, { DisplayMode } from "./budget/Pie";
 
 function DeleteBudgetDialog({
   budget,
@@ -304,39 +305,6 @@ const computeBudgetUnallocated = (
 ): number =>
   budget.income - allocations.reduce((acc, curr) => acc + curr.amount, 0);
 
-function computeBudgetPieData(
-  budget: Budget,
-  partitions: Partition[],
-  allocations: Allocation[]
-) {
-  let total_allocated = 0;
-  const data = partitions.map((partition) => {
-    const allocationsForPartition = allocations.filter(
-      (allocation) => allocation.partition.id.String === partition.id.id.String
-    );
-    const value = allocationsForPartition
-      .map((allocation) => allocation.amount)
-      .reduce((acc, curr) => acc + curr, 0);
-
-    total_allocated += value;
-
-    return {
-      label: partition.name,
-      value,
-      color: partition.color,
-    };
-  });
-
-  return [
-    ...data,
-    {
-      label: "Not allocated",
-      value: budget.income - total_allocated,
-      color: "white",
-    },
-  ];
-}
-
 function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [budget, setBudget] = useState<Budget>();
@@ -346,6 +314,7 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
   const [editAllocation, setEditAllocation] = useState<Allocation | null>(null);
   const [addPartition, setAddPartition] = useState(false);
   const [addAllocation, setAddAllocation] = useState(false);
+  const [budgetPreview, setBudgetPreview] = useState(DisplayMode.Budget);
 
   useEffect(() => {
     getBudget(identifiers.id)
@@ -450,31 +419,29 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
               />
             </ListItem>
           </Stack>
-          <Box sx={{ width: "100%" }}>
-            <PieChart
-              series={[
-                {
-                  valueFormatter: (item) =>
-                    `${item.label} (${item.value.toFixed(2)} ${
-                      budget.currency
-                    })`,
-                  arcLabelMinAngle: 35,
-                  data: computeBudgetPieData(budget, partitions, allocations),
-                  highlightScope: { fade: "global", highlight: "item" },
-                  innerRadius: 100,
-                  outerRadius: 120,
-                  paddingAngle: 1,
-                  cornerRadius: 5,
-                  arcLabel: (item) =>
-                    `${((item.value / budget.income) * 100).toFixed(0)}%`,
-                },
-              ]}
-              onItemClick={(_event, partition) =>
-                setEditPartition(partitions[partition.dataIndex])
-              }
-              height={400}
+          <Stack spacing={2} sx={{ width: "100%" }}>
+            <BudgetPie
+              budget={budget.id}
+              onClick={(partition) => setEditPartition(partition)}
+              displayMode={budgetPreview}
+              width={500}
             />
-          </Box>
+            <ToggleButtonGroup
+              color="primary"
+              value={budgetPreview}
+              exclusive
+              onChange={(
+                _: React.MouseEvent<HTMLElement>,
+                displayMode: DisplayMode
+              ) => {
+                setBudgetPreview(displayMode);
+              }}
+              sx={{ justifyContent: "center" }}
+            >
+              <ToggleButton value={DisplayMode.Budget}>Budget</ToggleButton>
+              <ToggleButton value={DisplayMode.Expenses}>Preview</ToggleButton>
+            </ToggleButtonGroup>
+          </Stack>
         </Stack>
       )}
 

@@ -26,7 +26,6 @@ import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
 import { GridRenderEditCellParams, useGridApiContext } from "@mui/x-data-grid";
 import { EditTags } from "./Tags";
 import { Tag } from "../../../../cli/bindings/Tag";
-import { SparkLineChart } from "@mui/x-charts";
 import {
   addTags,
   addTransaction,
@@ -475,16 +474,13 @@ export default function Transactions({
   );
   const [selectedTransaction, setSelectedTransaction] =
     useState<TransactionWithId | null>(null);
-  const [sparklineTransactions, setSparklineTransactions] = useState<
-    TransactionWithId[] | null
-  >(null);
+
   const [balance, setBalance] = useState(0.0);
   const [addTransaction, setAddTransaction] = useState(false);
   const [addTransfer, setAddTransfer] = useState(false);
 
   const handleUpdateTransactions = async (account: RecordId) => {
     await getTransactions(account).then(setTransactions);
-    await getTransactions(account).then(setSparklineTransactions);
     await getCurrency(account).then(setCurrency);
     await getBalance(account).then(setBalance);
   };
@@ -512,40 +508,6 @@ export default function Transactions({
   return (
     <Paper elevation={0} sx={{ flexGrow: 1 }}>
       <Stack direction="row">
-        {sparklineTransactions && (
-          <SparkLineChart
-            // Sum account transaction until the last 30 days
-            // and display each account state every day.
-            data={(() => {
-              const before = sparklineTransactions.slice(
-                0,
-                sparklineTransactions.length - 30
-              );
-              const after = sparklineTransactions.slice(-30);
-              let sum = before.reduce((acc, t) => acc + t.amount, 0);
-
-              return after.map((t) => {
-                sum += t.amount;
-                return sum;
-              });
-            })()}
-            valueFormatter={(value: number | null) =>
-              `${value?.toFixed(2)} ${currency}`
-            }
-            showHighlight
-            showTooltip
-            height={100}
-            // TODO: add options to change the date range (1m, 5m, 1y, etc.)
-            xAxis={{
-              scaleType: "time",
-              data: sparklineTransactions
-                .slice(-30)
-                .map((t) => new Date(t.date)),
-              valueFormatter: (value) => value.toISOString().slice(0, 10),
-            }}
-            sx={{ flexGrow: 2 }}
-          />
-        )}
         {balance && currency ? (
           <Typography variant="h2" sx={{ flexGrow: 1, textWrap: "nowrap" }}>
             {`${balance.toFixed(2)} ${currency}`}

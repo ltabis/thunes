@@ -11,14 +11,18 @@ import { PieChart } from "@mui/x-charts";
 import { useEffect, useState } from "react";
 import { CurrencyBalance } from "../../../cli/bindings/CurrencyBalance";
 import Grid from "@mui/material/Grid2";
-import { getAllBalance } from "../api";
+import { getAllBalance, getBudgetExpenses, listBudgets } from "../api";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
 import { useAccountNavigate } from "../hooks/accounts";
+import { ExpensesBudget } from "../../../cli/bindings/ExpensesBudget";
+import BudgetPie, { DisplayMode } from "./budget/Pie";
 
 export default function Dashboard() {
   const navigate = useAccountNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
+  // FIXME: Find a better name than "currencies".
   const [currencies, setCurrencies] = useState<CurrencyBalance[] | null>(null);
+  const [budgets, setBudgets] = useState<ExpensesBudget[] | null>(null);
 
   useEffect(() => {
     getAllBalance()
@@ -26,6 +30,32 @@ export default function Dashboard() {
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
+
+    async function getBudgets() {
+      try {
+        const results = [];
+        const budgets = await listBudgets();
+        for (const budget of budgets) {
+          results.push(
+            (
+              await getBudgetExpenses(budget.id, {
+                period: "Monthly",
+                period_index: 0,
+              })
+            ).budget
+          );
+        }
+        setBudgets(results);
+      } catch (error) {
+        dispatchSnackbar({
+          type: "open",
+          severity: "error",
+          message: error as string,
+        });
+      }
+    }
+
+    getBudgets();
   }, [dispatchSnackbar]);
 
   return (
@@ -37,14 +67,15 @@ export default function Dashboard() {
         Portfolio
       </Typography>
 
-      <Divider></Divider>
+      <Divider />
 
-      {currencies ? (
-        <Grid container spacing={2} sx={{ m: 2 }}>
-          {currencies.map(({ total_balance, currency, accounts }) => (
+      <Grid container spacing={2} sx={{ m: 2 }}>
+        {currencies ? (
+          currencies.map(({ total_balance, currency, accounts }) => (
             <Card key={currency} variant="outlined">
               <CardHeader
                 title={currency}
+                subheader="accounts"
                 action={
                   <Typography variant="subtitle1">
                     {total_balance.toFixed(2)} {currency}
@@ -81,11 +112,37 @@ export default function Dashboard() {
                 />
               </CardContent>
             </Card>
-          ))}
-        </Grid>
-      ) : (
-        <Skeleton animation="wave" variant="circular" />
-      )}
+          ))
+        ) : (
+          <Skeleton animation="wave" variant="circular" />
+        )}
+
+        {budgets ? (
+          budgets.map(({ inner, total }) => (
+            <Card key={inner.id.id.String} variant="outlined">
+              <CardHeader
+                title={inner.name}
+                subheader="budget"
+                action={
+                  <Typography variant="subtitle1">
+                    {total.toFixed(2)} {inner.currency}
+                  </Typography>
+                }
+              />
+              <CardContent>
+                <BudgetPie
+                  displayMode={DisplayMode.Expenses}
+                  key={inner.name}
+                  budget={inner.id}
+                  width={500}
+                />
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <Skeleton animation="wave" variant="circular" />
+        )}
+      </Grid>
     </Paper>
   );
 }
