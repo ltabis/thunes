@@ -454,7 +454,10 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
             <PieChart
               series={[
                 {
-                  valueFormatter: (item) => `${item.label} (${item.value}%)`,
+                  valueFormatter: (item) =>
+                    `${item.label} (${item.value.toFixed(2)} ${
+                      budget.currency
+                    })`,
                   arcLabelMinAngle: 35,
                   data: computeBudgetPieData(budget, partitions, allocations),
                   highlightScope: { fade: "global", highlight: "item" },
@@ -462,6 +465,8 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
                   outerRadius: 120,
                   paddingAngle: 1,
                   cornerRadius: 5,
+                  arcLabel: (item) =>
+                    `${((item.value / budget.income) * 100).toFixed(0)}%`,
                 },
               ]}
               onItemClick={(_event, partition) =>

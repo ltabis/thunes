@@ -235,10 +235,10 @@ export function EditAllocationDrawer({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleAllocationSubmission}>Update</Button>
         <Button onClick={handleAllocationDelete} color="error">
           Delete
         </Button>
+        <Button onClick={handleAllocationSubmission}>Update</Button>
       </DialogActions>
     </Drawer>
   );
