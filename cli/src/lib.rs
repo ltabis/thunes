@@ -150,7 +150,7 @@ pub struct AddTransactionOptions {
     pub date: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-pub async fn add_transaction(
+pub async fn create_transaction(
     db: &Surreal<Db>,
     account_id: RecordId,
     options: AddTransactionOptions,
@@ -163,14 +163,6 @@ pub async fn add_transaction(
         description = $description,
         tags = $tags,
         account = $account_id"#;
-
-    dbg!(
-        &options,
-        options
-            .category
-            .clone()
-            .unwrap_or(("category", "other").into())
-    );
 
     db.query(query)
         .bind(("date", options.date.unwrap_or_else(chrono::Utc::now)))
@@ -187,25 +179,52 @@ pub async fn add_transaction(
     Ok(())
 }
 
-pub async fn update_transaction(
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, serde::Deserialize)]
+pub struct AddTransactionTransferOptions {
+    pub description: String,
+    pub amount: f64,
+    #[ts(as = "Option<String>", optional)]
+    pub date: Option<chrono::DateTime<chrono::Utc>>,
+    pub tags: Vec<Tag>,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub from: RecordId,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub to: RecordId,
+}
+
+pub async fn create_transaction_transfer(
     db: &Surreal<Db>,
-    transaction: TransactionWithId,
+    options: AddTransactionTransferOptions,
 ) -> Result<(), surrealdb::Error> {
     let query = r#"
-    UPDATE $transaction SET
-        date = <datetime>$date,
-        category = $category,
-        amount = $amount,
+    CREATE transaction SET
         description = $description,
-        tags = $tags"#;
+        amount = -$amount,
+        date = <datetime>$date,
+        tags = $tags,
+        account = $from,
+        category = $category;
+    CREATE transaction SET
+        description = $description,
+        amount = $amount,
+        date = <datetime>$date,
+        tags = $tags,
+        account = $to,
+        category = $category;"#;
 
     db.query(query)
-        .bind(("transaction", transaction.id))
-        .bind(("date", transaction.inner.date))
-        .bind(("category", transaction.category))
-        .bind(("amount", transaction.inner.amount))
-        .bind(("description", transaction.inner.description))
-        .bind(("tags", serde_json::json!(transaction.inner.tags)))
+        .bind(("description", options.description))
+        .bind(("amount", options.amount))
+        .bind(("date", options.date.unwrap_or_else(chrono::Utc::now)))
+        .bind(("tags", serde_json::json!(options.tags)))
+        .bind(("from", options.from))
+        .bind(("to", options.to))
+        .bind((
+            "category",
+            RecordId::from(("category", "internal-movements")),
+        ))
         .await?;
 
     Ok(())
@@ -214,7 +233,7 @@ pub async fn update_transaction(
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Default, Debug, serde::Deserialize)]
-pub struct GetTransactionOptions {
+pub struct ReadTransactionOptions {
     #[ts(as = "Option<String>", optional)]
     pub start: Option<surrealdb::Datetime>,
     #[ts(as = "Option<String>", optional)]
@@ -225,10 +244,10 @@ pub struct GetTransactionOptions {
     pub last_x_days: Option<usize>,
 }
 
-pub async fn get_transactions(
+pub async fn read_transactions(
     db: &Surreal<Db>,
     account_id: RecordId,
-    options: GetTransactionOptions,
+    options: ReadTransactionOptions,
 ) -> Result<Vec<TransactionWithId>, surrealdb::Error> {
     let mut query = "SELECT * FROM transaction WHERE account = $account_id".to_string();
 
@@ -262,6 +281,39 @@ pub async fn get_transactions(
         .take(0)?;
 
     Ok(transactions)
+}
+
+pub async fn update_transaction(
+    db: &Surreal<Db>,
+    transaction: TransactionWithId,
+) -> Result<(), surrealdb::Error> {
+    let query = r#"
+    UPDATE $transaction SET
+        date = <datetime>$date,
+        category = $category,
+        amount = $amount,
+        description = $description,
+        tags = $tags"#;
+
+    db.query(query)
+        .bind(("transaction", transaction.id))
+        .bind(("date", transaction.inner.date))
+        .bind(("category", transaction.category))
+        .bind(("amount", transaction.inner.amount))
+        .bind(("description", transaction.inner.description))
+        .bind(("tags", serde_json::json!(transaction.inner.tags)))
+        .await?;
+
+    Ok(())
+}
+
+pub async fn delete_transaction(
+    db: &Surreal<Db>,
+    transaction: RecordId,
+) -> Result<(), surrealdb::Error> {
+    let _: Option<TransactionWithId> = db.delete(transaction).await?;
+
+    Ok(())
 }
 
 #[derive(ts_rs::TS)]

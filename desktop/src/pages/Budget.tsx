@@ -228,7 +228,7 @@ function AddBudgetDialog({
               <InputLabel>Currency</InputLabel>
               <Select
                 value={form.currency}
-                label="Age"
+                label="Currency"
                 onChange={(currency) =>
                   setForm({ ...form, currency: currency.target.value })
                 }

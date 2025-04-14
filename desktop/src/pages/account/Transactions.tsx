@@ -2,36 +2,25 @@ import {
   Box,
   Button,
   Chip,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Drawer,
-  Fab,
-  FormControl,
-  Grid2,
-  InputLabel,
   List,
   ListItem,
   ListItemAvatar,
   ListItemButton,
   ListItemText,
-  MenuItem,
   Paper,
-  Select,
   Skeleton,
+  SpeedDial,
+  SpeedDialAction,
   Stack,
   TextField,
   Typography,
+  SpeedDialIcon,
 } from "@mui/material";
-import {
-  FormEvent,
-  useEffect,
-  useState,
-  SetStateAction,
-  Dispatch,
-} from "react";
-import AddIcon from "@mui/icons-material/Add";
+import { useEffect, useState } from "react";
 import { Transaction } from "../../../../cli/bindings/Transaction";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
 import { GridRenderEditCellParams, useGridApiContext } from "@mui/x-data-grid";
@@ -41,6 +30,8 @@ import { SparkLineChart } from "@mui/x-charts";
 import {
   addTags,
   addTransaction,
+  addTransactionTransfer,
+  deleteTransaction,
   EMPTY_RECORD_ID,
   getBalance,
   getCategories,
@@ -56,23 +47,24 @@ import { filterFloat } from "../../utils";
 import { categoryIconToMuiIcon } from "../../utils/icons";
 import { CategoryWithId } from "../../../../cli/bindings/CategoryWithId";
 import CategorySelector from "../../components/form/CategorySelector";
+import ReceiptIcon from "@mui/icons-material/Receipt";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import AccountSelector from "../../components/form/AccountSelector";
+import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers";
 
 function EditTransactionDrawer({
   accountId,
   transaction,
   close,
-  handleUpdateTransactions,
+  onUpdate,
 }: {
   accountId: RecordId;
   transaction: TransactionWithId;
   close: () => void;
-  handleUpdateTransactions: (account: RecordId) => void;
+  onUpdate: (account: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [categories, setCategories] = useState<Map<
-    string,
-    CategoryWithId
-  > | null>(null);
+
   // Note: omit amount float value to enable the user to enter a floating point character.
   const [form, setForm] = useState<
     Omit<TransactionWithId, "amount" | "date" | "category"> & {
@@ -96,8 +88,6 @@ function EditTransactionDrawer({
   const handleTransactionSubmission = async () => {
     const amount = filterFloat(form.amount);
 
-    // FIXME: set other category by default.
-
     updateTransaction({
       ...form,
       amount,
@@ -105,26 +95,23 @@ function EditTransactionDrawer({
     })
       .then(() => {
         handleCloseForm();
-        handleUpdateTransactions(accountId);
+        onUpdate(accountId);
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
   };
 
-  useEffect(() => {
-    getCategories()
-      .then((categories) =>
-        setCategories(
-          new Map(
-            categories.map((category) => [category.id.id.String, category])
-          )
-        )
-      )
+  const handleAllocationDelete = async () => {
+    deleteTransaction(transaction.id)
+      .then(() => {
+        onUpdate(accountId);
+        handleCloseForm();
+      })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
-  }, [dispatchSnackbar]);
+  };
 
   return (
     <Drawer open={true} onClose={handleCloseForm} anchor="right">
@@ -164,49 +151,21 @@ function EditTransactionDrawer({
             value={form.tags}
             handleChange={(tags) => setForm({ ...form, tags })}
           />
-          {categories && (
-            <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
-              <Select
-                value={form.category?.id.String}
-                label="Category"
-                onChange={(category) =>
-                  setForm({
-                    ...form,
-                    category:
-                      categories.get(category.target.value)?.id ??
-                      form.category,
-                  })
-                }
-                renderValue={(selected) => {
-                  const category = categories.get(selected)!;
-                  return (
-                    <MenuItem>
-                      <ListItemAvatar>
-                        {categoryIconToMuiIcon(category)}
-                      </ListItemAvatar>
-                      <ListItemText primary={category.name} />
-                    </MenuItem>
-                  );
-                }}
-              >
-                {Array.from(categories.values()).map((category) => (
-                  <MenuItem
-                    key={category.id.id.String}
-                    value={category.id.id.String}
-                  >
-                    <ListItemAvatar>
-                      {categoryIconToMuiIcon(category)}
-                    </ListItemAvatar>
-                    <ListItemText primary={category.name} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
+          <CategorySelector
+            category={form.category}
+            onChange={(category) =>
+              setForm({
+                ...form,
+                category: category,
+              })
+            }
+          />
         </Stack>
       </DialogContent>
       <DialogActions>
+        <Button onClick={handleAllocationDelete} color="error">
+          Delete
+        </Button>
         <Button
           disabled={handleValidAmount()}
           onClick={handleTransactionSubmission}
@@ -218,16 +177,14 @@ function EditTransactionDrawer({
   );
 }
 
-function AddTransactionDialog({
+function AddTransactionDrawer({
   accountId,
-  open,
-  setOpen,
+  close,
   handleUpdateTransactions,
 }: {
   accountId: RecordId;
-  open: boolean;
-  setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateTransactions: (accountId: RecordId) => void;
+  close: () => void;
+  handleUpdateTransactions: (account: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
   // Note: omit amount float value to enable the user to enter a floating point character.
@@ -248,7 +205,7 @@ function AddTransactionDialog({
   });
 
   const handleCloseForm = () => {
-    setOpen(false);
+    close();
   };
 
   const handleValidAmount = () => isNaN(filterFloat(form.amount));
@@ -274,83 +231,213 @@ function AddTransactionDialog({
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleCloseForm}
-      slotProps={{
-        paper: {
-          component: "form",
-          onSubmit: async (event: FormEvent<HTMLFormElement>) => {
-            event.preventDefault();
-            return handleTransactionSubmission();
-          },
-        },
-      }}
-    >
+    <Drawer open={true} onClose={handleCloseForm} anchor="right">
       <DialogTitle>Add transaction</DialogTitle>
       <DialogContent>
-        <Grid2 container spacing={2} sx={{ margin: 1 }}>
-          <Grid2 size={5}>
-            <TextField
-              id="transaction-description"
-              label="Description"
-              name="description"
-              value={form.description}
-              onChange={(description) =>
-                setForm({ ...form, description: description.target.value })
-              }
-            />
-          </Grid2>
-          <Grid2 size={3}>
-            <TextField
-              id="transaction-amount"
-              label="Amount"
-              name="amount"
-              slotProps={{
-                inputLabel: {
-                  shrink: true,
-                },
-              }}
-              value={form.amount}
-              onChange={(amount) =>
-                setForm({ ...form, amount: amount.target.value })
-              }
-              error={handleValidAmount()}
-              helperText={handleValidAmount() && "Not a valid amount"}
-            />
-          </Grid2>
-          <Grid2 size={5}>
-            <DatePicker
-              value={form.date}
-              onChange={(date) => setForm({ ...form, date: date as Dayjs })}
-            />
-          </Grid2>
-          <Grid2 size={3}>
-            <EditTags
-              value={form.tags}
-              handleChange={(tags) => setForm({ ...form, tags })}
-            />
-          </Grid2>
-          <Grid2 size={8}>
-            <CategorySelector
-              category={form.category}
-              onChange={(category) =>
-                setForm({
-                  ...form,
-                  category: category,
-                })
-              }
-            />
-          </Grid2>
-        </Grid2>
+        <Stack spacing={2}>
+          <TextField
+            id="transaction-description"
+            label="Description"
+            name="description"
+            value={form.description}
+            onChange={(description) =>
+              setForm({ ...form, description: description.target.value })
+            }
+          />
+          <TextField
+            id="transaction-amount"
+            label="Amount"
+            name="amount"
+            slotProps={{
+              inputLabel: {
+                shrink: true,
+              },
+            }}
+            value={form.amount}
+            onChange={(amount) =>
+              setForm({ ...form, amount: amount.target.value })
+            }
+            error={handleValidAmount()}
+            helperText={handleValidAmount() && "Not a valid amount"}
+          />
+          <DatePicker
+            value={form.date}
+            onChange={(date) => date && setForm({ ...form, date })}
+          />
+          <EditTags
+            value={form.tags}
+            handleChange={(tags) => setForm({ ...form, tags })}
+          />
+          <CategorySelector
+            category={form.category}
+            onChange={(category) =>
+              setForm({
+                ...form,
+                category: category,
+              })
+            }
+          />
+        </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCloseForm}>Cancel</Button>
-        <Button disabled={handleValidAmount()} type="submit">
+        <Button onClick={handleCloseForm} color="error">
+          Cancel
+        </Button>
+        <Button
+          disabled={handleValidAmount()}
+          onClick={handleTransactionSubmission}
+        >
           Add
         </Button>
       </DialogActions>
-    </Dialog>
+    </Drawer>
+  );
+}
+
+function AddTransferDrawer({
+  accountId,
+  close,
+  handleUpdateTransactions,
+}: {
+  accountId: AccountIdentifiers;
+  close: () => void;
+  handleUpdateTransactions: (account: RecordId) => void;
+}) {
+  const dispatchSnackbar = useDispatchSnackbar()!;
+  // Note: omit amount float value to enable the user to enter a floating point character.
+  const [form, setForm] = useState<{
+    amount: string;
+    description: string;
+    date: Dayjs;
+    tags: Tag[];
+    from: AccountIdentifiers | null;
+    to: AccountIdentifiers | null;
+  }>({
+    amount: "0",
+    description: "",
+    tags: [],
+    // FIXME: should be re-run every time the UI is opened because it will
+    //        keep the current date and time between two transactions otherwise.
+    date: dayjs(),
+    from: accountId,
+    to: null,
+  });
+
+  const handleCloseForm = () => {
+    close();
+  };
+
+  const handleValidAmount = () => {
+    const number = filterFloat(form.amount);
+    if (isNaN(number)) return true;
+    return number < 0;
+  };
+  const handleValidAccounts = () => !form.from || !form.to;
+
+  const handleTransactionSubmission = async () => {
+    const amount = filterFloat(form.amount);
+    const from = form.from!.id;
+    const to = form.to!.id;
+
+    addTransactionTransfer({
+      ...form,
+      from,
+      to,
+      amount,
+      date: form.date.toISOString(),
+    })
+      .then(() => {
+        handleCloseForm();
+        handleUpdateTransactions(accountId.id);
+      })
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
+  };
+
+  return (
+    <Drawer open={true} onClose={handleCloseForm} anchor="right">
+      <DialogTitle>Add transfer between two accounts</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2}>
+          <TextField
+            id="transaction-description"
+            label="Transfer description"
+            name="description"
+            value={form.description}
+            onChange={(description) =>
+              setForm({ ...form, description: description.target.value })
+            }
+          />
+          <TextField
+            id="transaction-amount"
+            label="Amount"
+            name="amount"
+            slotProps={{
+              inputLabel: {
+                shrink: true,
+              },
+            }}
+            value={form.amount}
+            onChange={(amount) =>
+              setForm({ ...form, amount: amount.target.value })
+            }
+            error={handleValidAmount()}
+            helperText={handleValidAmount() && "Not a valid amount"}
+          />
+          <DatePicker
+            value={form.date}
+            onChange={(date) => date && setForm({ ...form, date })}
+          />
+          <EditTags
+            value={form.tags}
+            handleChange={(tags) => setForm({ ...form, tags })}
+          />
+
+          <AccountSelector
+            label="From"
+            account={form.from}
+            onChange={(from) => {
+              setForm({
+                ...form,
+                to: null,
+                from: from ? { id: from?.id, name: from?.name } : null,
+              });
+            }}
+          />
+          <AccountSelector
+            label="To"
+            account={form.to}
+            onChange={(to) => setForm({ ...form, to })}
+            filter={(accounts) => {
+              const from = accounts.find(
+                (account) => account.id.id.String === form.from?.id.id.String
+              );
+
+              return from
+                ? accounts.filter(
+                    (account) =>
+                      account.currency === from.currency &&
+                      account.id.id.String !== from.id.id.String
+                  )
+                : [];
+            }}
+            disabled={form.from === null}
+          />
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleCloseForm} color="error">
+          Cancel
+        </Button>
+        <Button
+          disabled={handleValidAmount() || handleValidAccounts()}
+          onClick={handleTransactionSubmission}
+        >
+          Add
+        </Button>
+      </DialogActions>
+    </Drawer>
   );
 }
 
@@ -371,9 +458,12 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
   return <EditTags value={value} handleChange={handleChange} />;
 }
 
-export default function Transactions({ accountId }: { accountId: RecordId }) {
+export default function Transactions({
+  accountId,
+}: {
+  accountId: AccountIdentifiers;
+}) {
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [open, setOpen] = useState(false);
   // FIXME: Pull the category directly from the transaction.
   const [categories, setCategories] = useState<Map<
     string,
@@ -389,9 +479,8 @@ export default function Transactions({ accountId }: { accountId: RecordId }) {
     TransactionWithId[] | null
   >(null);
   const [balance, setBalance] = useState(0.0);
-  const handleOpenForm = () => {
-    setOpen(true);
-  };
+  const [addTransaction, setAddTransaction] = useState(false);
+  const [addTransfer, setAddTransfer] = useState(false);
 
   const handleUpdateTransactions = async (account: RecordId) => {
     await getTransactions(account).then(setTransactions);
@@ -415,7 +504,7 @@ export default function Transactions({ accountId }: { accountId: RecordId }) {
   }, [dispatchSnackbar]);
 
   useEffect(() => {
-    handleUpdateTransactions(accountId).catch((error) =>
+    handleUpdateTransactions(accountId.id).catch((error) =>
       dispatchSnackbar({ type: "open", severity: "error", message: error })
     );
   }, [accountId, dispatchSnackbar]);
@@ -527,33 +616,48 @@ export default function Transactions({ accountId }: { accountId: RecordId }) {
       )}
 
       {/* FIXME: button should stick to the end of the page */}
-      <Fab
+      <SpeedDial
         color="primary"
-        aria-label="add"
-        sx={{
-          position: "absolute",
-          bottom: 16,
-          right: 16,
-        }}
-        onClick={handleOpenForm}
+        sx={{ position: "absolute", bottom: 16, right: 16 }}
+        icon={<SpeedDialIcon />}
+        ariaLabel={"add"}
       >
-        <AddIcon />
-      </Fab>
+        <SpeedDialAction
+          key={"add-regular-transaction"}
+          icon={<ReceiptIcon />}
+          tooltipTitle={"Add a transaction"}
+          onClick={() => setAddTransaction(true)}
+        />
+        <SpeedDialAction
+          key={"add-allocation"}
+          icon={<SwapHorizIcon />}
+          tooltipTitle={"Add a transfer of money between accounts"}
+          onClick={() => setAddTransfer(true)}
+        />
+      </SpeedDial>
 
-      {/* TODO: Remove in favor of a drawer */}
-      <AddTransactionDialog
-        accountId={accountId}
-        open={open}
-        setOpen={setOpen}
-        handleUpdateTransactions={handleUpdateTransactions}
-      />
+      {addTransaction && (
+        <AddTransactionDrawer
+          accountId={accountId.id}
+          handleUpdateTransactions={handleUpdateTransactions}
+          close={() => setAddTransaction(false)}
+        />
+      )}
+
+      {addTransfer && (
+        <AddTransferDrawer
+          accountId={accountId}
+          handleUpdateTransactions={handleUpdateTransactions}
+          close={() => setAddTransfer(false)}
+        />
+      )}
 
       {selectedTransaction && (
         <EditTransactionDrawer
-          accountId={accountId}
+          accountId={accountId.id}
           transaction={selectedTransaction}
           close={() => setSelectedTransaction(null)}
-          handleUpdateTransactions={handleUpdateTransactions}
+          onUpdate={handleUpdateTransactions}
         />
       )}
     </Paper>

@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { AddTransactionOptions } from "../../../cli/bindings/AddTransactionOptions";
+import { AddTransactionTransferOptions } from "../../../cli/bindings/AddTransactionTransferOptions";
 import { Tag } from "../../../cli/bindings/Tag";
 import { TransactionWithId } from "../../../cli/bindings/TransactionWithId";
 import { GetTransactionOptions } from "../../../cli/bindings/GetTransactionOptions";
@@ -43,9 +44,14 @@ export const addTransaction = (
   accountId: RecordId,
   options: AddTransactionOptions
 ): Promise<void> => invoke("add_transaction", { accountId, options });
+export const addTransactionTransfer = (
+  options: AddTransactionTransferOptions
+): Promise<void> => invoke("add_transaction_transfer", { options });
 export const updateTransaction = (
   transaction: TransactionWithId
 ): Promise<void> => invoke("update_transaction", { transaction });
+export const deleteTransaction = (transaction: RecordId): Promise<void> =>
+  invoke("delete_transaction", { transaction });
 
 // Categories.
 // TODO:
