@@ -315,7 +315,7 @@ export default function () {
       {getAccountIdentifiers() && (
         <>
           <div hidden={tab !== 0}>
-            <Transactions accountId={accounts!.get(id!)!.id} />
+            <Transactions accountId={accounts!.get(id!)!} />
           </div>
           <div hidden={tab !== 1}>
             <Settings accountId={accounts!.get(id!)!.id} />
