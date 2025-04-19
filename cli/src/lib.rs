@@ -94,7 +94,7 @@ pub async fn balance(
 
     // Note: could probably expect here, because the query does not change
     //       the return value of the SELECT statement.
-    sum.ok_or(Error::RecordNotFound)
+    Ok(sum.unwrap_or(0.0))
 }
 
 #[derive(ts_rs::TS)]
