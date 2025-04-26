@@ -9,7 +9,7 @@ pub mod commands {
     pub mod tags;
 }
 
-mod default_categories;
+pub mod default_categories;
 
 fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Setup dev tools.
@@ -123,6 +123,7 @@ pub fn run() {
             commands::budget::get_budget,
             commands::budget::update_budget,
             commands::budget::delete_budget,
+            commands::budget::get_budget_expenses,
             commands::budget::create_budget_partition,
             commands::budget::get_budget_partitions,
             commands::budget::update_budget_partition,
