@@ -45,22 +45,44 @@ function computeBudgetPieSeries(
       outerRadius: 115,
       paddingAngle: 1,
       cornerRadius: 5,
+      valueFormatter: (
+        item: MakeOptional<PieValueType, "id"> & { exceeded?: number }
+      ) => {
+        // FIXME: must be returned by the backend.
+        return item.exceeded
+          ? `WARNING: budget exceeded (${item.exceeded.toFixed(2)} ${
+              expenses.inner.currency
+            })`
+          : `${item.value.toFixed(2)} ${expenses.inner.currency}`;
+      },
+      data: [
+        ...expenses.partitions
+          .map((partition) => {
+            const total = partition.total * -1;
+            const max = basePartitions.find(
+              (p) => p.partitionId.id.String === partition.inner.id.id.String
+            )!.value;
 
-      data: expenses.partitions
-        .map((partition) => [
-          {
-            value: partition.total * -1,
-            color: partition.inner.color,
-          },
-          {
-            value:
-              (basePartitions.find(
-                (p) => p.partitionId.id.String === partition.inner.id.id.String
-              )?.value ?? 0) + partition.total,
-            color: "none",
-          },
-        ])
-        .flat(),
+            return [
+              {
+                value: total > max ? max : total,
+                color: partition.inner.color,
+                exceeded: total > max ? total : undefined,
+              },
+              {
+                value: max + partition.total,
+                color: "none",
+              },
+            ];
+          })
+          .flat(),
+        {
+          value:
+            expenses.inner.income -
+            basePartitions.reduce((acc, curr) => acc + curr.value, 0),
+          color: "none",
+        },
+      ],
     });
   }
 
