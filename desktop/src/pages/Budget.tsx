@@ -9,7 +9,7 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
-  Grid2,
+  Grid,
   IconButton,
   InputLabel,
   List,
@@ -29,8 +29,6 @@ import {
   Toolbar,
   Typography,
   Stack,
-  ToggleButtonGroup,
-  ToggleButton,
 } from "@mui/material";
 import {
   Dispatch,
@@ -67,7 +65,7 @@ import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import { AddPartitionDrawer, EditPartitionDrawer } from "./budget/Partition";
 import { Partition } from "../../../cli/bindings/Partition";
 import { Allocation } from "../../../cli/bindings/Allocation";
-import BudgetPie, { DisplayMode } from "./budget/Pie";
+import BudgetPie from "./budget/Pie";
 
 function DeleteBudgetDialog({
   budget,
@@ -194,8 +192,8 @@ function AddBudgetDialog({
     >
       <DialogTitle>Add budget</DialogTitle>
       <DialogContent>
-        <Grid2 container spacing={2} sx={{ margin: 1 }}>
-          <Grid2 size={5}>
+        <Grid container spacing={2} sx={{ margin: 1 }}>
+          <Grid size={5}>
             <TextField
               id="budget-name"
               label="Name"
@@ -203,8 +201,8 @@ function AddBudgetDialog({
               value={form.name}
               onChange={(name) => setForm({ ...form, name: name.target.value })}
             />
-          </Grid2>
-          <Grid2 size={3}>
+          </Grid>
+          <Grid size={3}>
             <TextField
               id="budget-income"
               label="Income"
@@ -221,11 +219,11 @@ function AddBudgetDialog({
               error={handleValidAmount()}
               helperText={handleValidAmount() && "Not a valid amount"}
             />
-          </Grid2>
-        </Grid2>
+          </Grid>
+        </Grid>
         {accounts && (
-          <Grid2 container spacing={2} sx={{ margin: 1 }}>
-            <Grid2 size={5}>
+          <Grid container spacing={2} sx={{ margin: 1 }}>
+            <Grid size={5}>
               <InputLabel>Currency</InputLabel>
               <Select
                 value={form.currency}
@@ -240,9 +238,9 @@ function AddBudgetDialog({
                   </MenuItem>
                 ))}
               </Select>
-            </Grid2>
+            </Grid>
 
-            <Grid2 size={5}>
+            <Grid size={5}>
               {form.currency !== "" && (
                 <Autocomplete
                   multiple
@@ -278,8 +276,8 @@ function AddBudgetDialog({
                   }
                 />
               )}
-            </Grid2>
-          </Grid2>
+            </Grid>
+          </Grid>
         )}
       </DialogContent>
       <DialogActions>
@@ -314,7 +312,6 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
   const [editAllocation, setEditAllocation] = useState<Allocation | null>(null);
   const [addPartition, setAddPartition] = useState(false);
   const [addAllocation, setAddAllocation] = useState(false);
-  const [budgetPreview, setBudgetPreview] = useState(DisplayMode.Budget);
 
   useEffect(() => {
     getBudget(identifiers.id)
@@ -423,24 +420,10 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
             <BudgetPie
               budget={budget.id}
               onClick={(partition) => setEditPartition(partition)}
-              displayMode={budgetPreview}
+              // TODO: save in database
+              options={{ expenses: false, allocations: false }}
               width={500}
             />
-            <ToggleButtonGroup
-              color="primary"
-              value={budgetPreview}
-              exclusive
-              onChange={(
-                _: React.MouseEvent<HTMLElement>,
-                displayMode: DisplayMode
-              ) => {
-                setBudgetPreview(displayMode);
-              }}
-              sx={{ justifyContent: "center" }}
-            >
-              <ToggleButton value={DisplayMode.Budget}>Budget</ToggleButton>
-              <ToggleButton value={DisplayMode.Expenses}>Preview</ToggleButton>
-            </ToggleButtonGroup>
           </Stack>
         </Stack>
       )}

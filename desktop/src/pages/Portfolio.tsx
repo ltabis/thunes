@@ -6,16 +6,16 @@ import {
   Paper,
   Skeleton,
   Typography,
+  Grid,
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts";
 import { useEffect, useState } from "react";
 import { CurrencyBalance } from "../../../cli/bindings/CurrencyBalance";
-import Grid from "@mui/material/Grid2";
 import { getAllBalance, getBudgetExpenses, listBudgets } from "../api";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
 import { useAccountNavigate } from "../hooks/accounts";
 import { ExpensesBudget } from "../../../cli/bindings/ExpensesBudget";
-import BudgetPie, { DisplayMode } from "./budget/Pie";
+import BudgetPie from "./budget/Pie";
 
 export default function Dashboard() {
   const navigate = useAccountNavigate();
@@ -86,9 +86,7 @@ export default function Dashboard() {
                 <PieChart
                   width={400}
                   height={300}
-                  slotProps={{
-                    legend: { hidden: true },
-                  }}
+                  hideLegend={true}
                   series={[
                     {
                       data: accounts.map(({ account, balance }) => ({
@@ -131,7 +129,7 @@ export default function Dashboard() {
               />
               <CardContent>
                 <BudgetPie
-                  displayMode={DisplayMode.Expenses}
+                  options={{ expenses: false, allocations: false }}
                   key={inner.name}
                   budget={inner.id}
                   width={500}
