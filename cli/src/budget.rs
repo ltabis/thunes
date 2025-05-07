@@ -8,6 +8,14 @@ use surrealdb::Surreal;
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct View {
+    expenses: bool,
+    allocations: bool,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Allocation {
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub id: surrealdb::RecordId,
@@ -40,6 +48,7 @@ pub struct Budget {
     pub income: f64,
     pub currency: String,
     pub accounts: Vec<Account>,
+    pub view: View,
 }
 
 #[derive(ts_rs::TS)]
@@ -87,7 +96,8 @@ pub async fn create_split(
         partitions = $partitions,
         income = $income,
         currency = $currency,
-        accounts = $accounts);
+        accounts = $accounts,
+        view = { expenses: false, allocations: false });
     CREATE partition SET name = "Needs",       color = "red",    budget = $budget.id;
     CREATE partition SET name = "Wants",       color = "yellow", budget = $budget.id;
     CREATE partition SET name = "Investments", color = "blue",   budget = $budget.id;
