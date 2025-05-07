@@ -3,7 +3,7 @@ import {
   Button,
   Divider,
   FormControl,
-  Grid2,
+  Grid,
   InputLabel,
   MenuItem,
   Paper,
@@ -47,9 +47,9 @@ function SettingSection({
 
       <Divider sx={{ marginTop: 2, marginBottom: 2 }} />
 
-      <Grid2 container direction="row" spacing={1}>
+      <Grid container direction="row" spacing={1}>
         {children}
-      </Grid2>
+      </Grid>
     </>
   );
 }
@@ -85,11 +85,11 @@ export default function Settings() {
         title="Appearance"
         description="Customize the application's appearance"
       >
-        <Grid2 size={SETTINGS_GRID_PADDING}>
+        <Grid size={SETTINGS_GRID_PADDING}>
           <SettingDescription>Change the application theme</SettingDescription>
-        </Grid2>
+        </Grid>
 
-        <Grid2 size={1}>
+        <Grid size={1}>
           <FormControl fullWidth>
             <InputLabel id="theme-select">Theme</InputLabel>
             <Select
@@ -112,16 +112,16 @@ export default function Settings() {
               <MenuItem value={"dark"}>Dark</MenuItem>
             </Select>
           </FormControl>
-        </Grid2>
+        </Grid>
       </SettingSection>
 
       <SettingSection title="Data" description="Storage and backups">
-        <Grid2 size={SETTINGS_GRID_PADDING}>
+        <Grid size={SETTINGS_GRID_PADDING}>
           <SettingDescription>
             Select where to store your account and application data backups.
           </SettingDescription>
-        </Grid2>
-        <Grid2 size={5}>
+        </Grid>
+        <Grid size={5}>
           <TextField
             fullWidth
             label="Backups path"
@@ -129,15 +129,15 @@ export default function Settings() {
             onClick={handleBackupDirectoryPath}
             sx={{ cursor: "pointer" }}
           />
-        </Grid2>
-        <Grid2 size={SETTINGS_GRID_PADDING}>
+        </Grid>
+        <Grid size={SETTINGS_GRID_PADDING}>
           <SettingDescription>
             Export your accounts and application settings to the specified
             location
           </SettingDescription>
-        </Grid2>
+        </Grid>
         {/* TODO: add option to regularly make backups */}
-        <Grid2 size={5}>
+        <Grid size={5}>
           <Button
             variant="contained"
             onClick={async () => {
@@ -154,13 +154,13 @@ export default function Settings() {
           >
             Export now
           </Button>
-        </Grid2>
-        <Grid2 size={SETTINGS_GRID_PADDING}>
+        </Grid>
+        <Grid size={SETTINGS_GRID_PADDING}>
           <SettingDescription>
             Import accounts and settings from a <b>.surql</b> database file.
           </SettingDescription>
-        </Grid2>
-        <Grid2 size={5}>
+        </Grid>
+        <Grid size={5}>
           <Button
             variant="contained"
             onClick={async () => {
@@ -190,7 +190,7 @@ export default function Settings() {
             Importing a database will override your current accounts and
             settings.
           </Alert>
-        </Grid2>
+        </Grid>
       </SettingSection>
 
       <Divider sx={{ marginTop: 2, marginBottom: 2 }} />

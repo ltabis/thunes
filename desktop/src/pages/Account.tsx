@@ -8,7 +8,7 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
-  Grid2,
+  Grid,
   IconButton,
   Menu,
   MenuItem,
@@ -132,8 +132,8 @@ function AddAccountDialog({
     >
       <DialogTitle>Add account</DialogTitle>
       <DialogContent>
-        <Grid2 container spacing={2} sx={{ margin: 1 }}>
-          <Grid2 size={5}>
+        <Grid container spacing={2} sx={{ margin: 1 }}>
+          <Grid size={5}>
             <TextField
               id="account-name"
               label="Name"
@@ -141,8 +141,8 @@ function AddAccountDialog({
               value={form.name}
               onChange={(name) => setForm({ ...form, name: name.target.value })}
             />
-          </Grid2>
-          <Grid2 size={5}>
+          </Grid>
+          <Grid size={5}>
             <TextField
               id="account-currency"
               label="Currency"
@@ -152,8 +152,8 @@ function AddAccountDialog({
                 setForm({ ...form, currency: currency.target.value })
               }
             />
-          </Grid2>
-        </Grid2>
+          </Grid>
+        </Grid>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCloseForm}>Cancel</Button>
