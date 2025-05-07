@@ -1,7 +1,7 @@
 import { PieChart, PieSeriesType, PieValueType } from "@mui/x-charts";
 import { Partition } from "../../../../cli/bindings/Partition";
 import { useEffect, useState } from "react";
-import { getBudgetExpenses, RecordId } from "../../api";
+import { getBudgetExpenses, RecordId, updateBudget } from "../../api";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { ReadExpensesResult } from "../../../../cli/bindings/ReadExpensesResult";
 import { ExpensesBudget } from "../../../../cli/bindings/ExpensesBudget";
@@ -12,21 +12,15 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Skeleton,
   Stack,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 
 const PIE_OPTION_OFFSET = 10;
 
-export type Options = {
-  expenses: boolean;
-  allocations: boolean;
-};
-
-function computeBudgetPieSeries(
-  expenses: ExpensesBudget,
-  options: Options
-): PieSeriesType[] {
+function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
+  const options = expenses.inner.view;
   let total_allocated = 0;
   const basePartitions = expenses.partitions.map((partition) => {
     const value = partition.allocations
@@ -51,8 +45,6 @@ function computeBudgetPieSeries(
       type: "pie",
       innerRadius: innerRadiusStart,
       outerRadius: innerRadiusStart + 20,
-      paddingAngle: 1,
-      cornerRadius: 5,
       highlightScope: { fade: "series", highlight: "item" },
       valueFormatter: (item: PieValueType) =>
         `${item.value.toFixed(2)} ${expenses.inner.currency}`,
@@ -141,7 +133,7 @@ function computeBudgetPieSeries(
       },
     ],
     highlightScope: { fade: "global", highlight: "item" },
-    paddingAngle: 5,
+    paddingAngle: 1,
     cornerRadius: 5,
     innerRadius: 50,
     outerRadius: 100,
@@ -155,13 +147,11 @@ function computeBudgetPieSeries(
 export default function ({
   budget,
   onClick,
-  options,
   width,
   height,
 }: {
   budget: RecordId;
   onClick?: (partition: Partition) => void;
-  options: Options;
   width?: number;
   height?: number;
 }) {
@@ -175,7 +165,6 @@ export default function ({
   };
   const [expenses, setExpenses] = useState<ReadExpensesResult | null>(null);
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [controlledOptions, setControlledOptions] = useState(options);
 
   useEffect(() => {
     getBudgetExpenses(budget, {
@@ -186,11 +175,9 @@ export default function ({
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
-  }, [budget, options, dispatchSnackbar]);
+  }, [budget, dispatchSnackbar]);
 
-  if (!expenses) return;
-
-  return (
+  return expenses ? (
     <Stack>
       <Stack maxWidth={"80%"} justifyContent={"flex-end"} direction={"row"}>
         <IconButton
@@ -209,14 +196,29 @@ export default function ({
           open={open}
           onClose={handleClose}
         >
-          {Object.entries(controlledOptions).map(([key, value]) => (
+          {Object.entries(expenses.budget.inner.view).map(([key, value]) => (
             <MenuItem
               key={key}
               onClick={() => {
-                setControlledOptions((prev) => ({
-                  ...prev,
-                  [key]: !value,
-                }));
+                setExpenses((prev) => {
+                  prev!.budget.inner.view = {
+                    ...prev!.budget.inner.view,
+                    [key]: !value,
+                  };
+                  const newValue = {
+                    ...prev!,
+                  };
+
+                  updateBudget(newValue.budget.inner).catch((error) =>
+                    dispatchSnackbar({
+                      type: "open",
+                      severity: "error",
+                      message: error,
+                    })
+                  );
+
+                  return newValue;
+                });
               }}
             >
               <ListItemIcon>
@@ -234,7 +236,7 @@ export default function ({
       </Stack>
 
       <PieChart
-        series={computeBudgetPieSeries(expenses.budget, controlledOptions)}
+        series={computeBudgetPieSeries(expenses.budget)}
         onItemClick={(_event, partition) =>
           onClick?.(expenses.budget.partitions[partition.dataIndex].inner)
         }
@@ -243,5 +245,7 @@ export default function ({
         hideLegend
       />
     </Stack>
+  ) : (
+    <Skeleton variant="circular" width={200} height={200} />
   );
 }
