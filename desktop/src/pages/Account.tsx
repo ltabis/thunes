@@ -14,8 +14,6 @@ import {
   MenuItem,
   Snackbar,
   SnackbarCloseReason,
-  Tab,
-  Tabs,
   TextField,
   Toolbar,
   Typography,
@@ -30,56 +28,13 @@ import {
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import Transactions from "./account/Transactions";
 import { MouseEvent, SyntheticEvent } from "react";
-import Settings from "./account/Settings";
-import { addAccount, deleteAccount, listAccounts, RecordId } from "../api";
+import SettingsDrawer from "./account/Settings";
+import { addAccount, listAccounts, RecordId } from "../api";
 import { Account } from "../../../cli/bindings/Account";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
 import { useParams } from "react-router-dom";
 import { useAccountNavigate } from "../hooks/accounts";
-
-function DeleteAccountDialog({
-  account,
-  open,
-  setOpen,
-  handleUpdateAccounts,
-}: {
-  account: AccountIdentifiers;
-  open: boolean;
-  setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateAccounts: (account: RecordId) => void;
-}) {
-  const navigate = useAccountNavigate();
-  const dispatchSnackbar = useDispatchSnackbar()!;
-
-  const handleCloseForm = () => {
-    setOpen(false);
-  };
-
-  const handleDeleteAccount = async () => {
-    deleteAccount(account.id)
-      .then(() => {
-        handleCloseForm();
-        handleUpdateAccounts(account.id);
-        navigate();
-      })
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-  };
-
-  return (
-    <Dialog open={open} onClose={handleCloseForm}>
-      <DialogTitle>
-        Are you sure you want to delete the {account.name} account ?
-      </DialogTitle>
-      <DialogActions>
-        <Button onClick={handleCloseForm}>Cancel</Button>
-        <Button onClick={handleDeleteAccount}>Delete</Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
 
 function AddAccountDialog({
   open,
@@ -172,7 +127,7 @@ export default function () {
   const { id } = useParams();
   const navigate = useAccountNavigate();
 
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [settingsDialog, setSettingsDialog] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openFailure, setOpenFailure] = useState("");
   const [accounts, setAccounts] = useState<Map<string, AccountIdentifiers>>();
@@ -185,7 +140,6 @@ export default function () {
 
   const openAccountMenu = Boolean(accountAnchorEl);
   const openSettingsMenu = Boolean(settingsAnchorEl);
-  const [tab, setTab] = useState(0);
 
   const getAccountIdentifiers = () =>
     id && accounts ? accounts.get(id) : undefined;
@@ -213,10 +167,6 @@ export default function () {
 
   const handleSelectAccount = async (account: AccountIdentifiers) =>
     navigate(account);
-
-  const handleTabChange = (_event: SyntheticEvent, newTab: number) => {
-    setTab(newTab);
-  };
 
   const handleUpdateAccounts = async () => {
     try {
@@ -256,9 +206,6 @@ export default function () {
                 anchorEl={accountAnchorEl}
                 open={openAccountMenu}
                 onClose={handleClose}
-                MenuListProps={{
-                  "aria-labelledby": "basic-button",
-                }}
               >
                 {Array.from(accounts.values())
                   .sort((a, b) => a.name.localeCompare(b.name))
@@ -282,13 +229,6 @@ export default function () {
           )}
 
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
-          {getAccountIdentifiers() && (
-            <Tabs onChange={handleTabChange} value={tab} variant="fullWidth">
-              <Tab label="Transactions"></Tab>
-              <Tab label="Settings"></Tab>
-            </Tabs>
-          )}
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
 
           {/* TODO: account actions */}
           <IconButton aria-label="delete" onClick={handleClickSettings}>
@@ -299,12 +239,14 @@ export default function () {
             anchorEl={settingsAnchorEl}
             open={openSettingsMenu}
             onClose={handleClose}
-            MenuListProps={{
-              "aria-labelledby": "basic-button",
-            }}
           >
-            <MenuItem onClick={() => setOpenDeleteDialog(true)}>
-              Delete
+            <MenuItem
+              onClick={() => {
+                setSettingsDialog(true);
+                handleClose();
+              }}
+            >
+              Settings
             </MenuItem>
           </Menu>
         </Toolbar>
@@ -313,14 +255,7 @@ export default function () {
       <Divider sx={{ margin: 2 }} />
 
       {getAccountIdentifiers() && (
-        <>
-          <div hidden={tab !== 0}>
-            <Transactions accountId={accounts!.get(id!)!} />
-          </div>
-          <div hidden={tab !== 1}>
-            <Settings accountId={accounts!.get(id!)!.id} />
-          </div>
-        </>
+        <Transactions accountId={accounts!.get(id!)!} />
       )}
 
       <Snackbar
@@ -345,12 +280,11 @@ export default function () {
         handleUpdateAccounts={handleUpdateAccounts}
       />
 
-      {id && accounts && (
-        <DeleteAccountDialog
-          account={getAccountIdentifiers()!}
-          open={openDeleteDialog}
-          setOpen={setOpenDeleteDialog}
-          handleUpdateAccounts={handleUpdateAccounts}
+      {settingsDialog && (
+        <SettingsDrawer
+          account={getAccountIdentifiers()!.id}
+          onClose={() => setSettingsDialog(false)}
+          onChange={handleUpdateAccounts}
         />
       )}
     </Box>
