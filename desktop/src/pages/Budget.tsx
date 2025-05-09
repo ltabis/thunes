@@ -40,7 +40,6 @@ import {
 import { MouseEvent, SyntheticEvent } from "react";
 import {
   addBudget,
-  deleteBudget,
   getBudget,
   getBudgetAllocations,
   getBudgetPartitions,
@@ -66,49 +65,7 @@ import { AddPartitionDrawer, EditPartitionDrawer } from "./budget/Partition";
 import { Partition } from "../../../cli/bindings/Partition";
 import { Allocation } from "../../../cli/bindings/Allocation";
 import BudgetPie from "./budget/Pie";
-
-function DeleteBudgetDialog({
-  budget,
-  open,
-  setOpen,
-  handleUpdateBudgets,
-}: {
-  budget: BudgetIdentifiers;
-  open: boolean;
-  setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateBudgets: (budget: RecordId) => void;
-}) {
-  const navigate = useBudgetNavigate();
-  const dispatchSnackbar = useDispatchSnackbar()!;
-
-  const handleCloseForm = () => {
-    setOpen(false);
-  };
-
-  const handleDeleteBudget = async () => {
-    deleteBudget(budget.id)
-      .then(() => {
-        handleCloseForm();
-        handleUpdateBudgets(budget.id);
-        navigate();
-      })
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-  };
-
-  return (
-    <Dialog open={open} onClose={handleCloseForm}>
-      <DialogTitle>
-        Are you sure you want to delete the {budget.name} budget ?
-      </DialogTitle>
-      <DialogActions>
-        <Button onClick={handleCloseForm}>Cancel</Button>
-        <Button onClick={handleDeleteBudget}>Delete</Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
+import BudgetSettings from "./budget/Settings";
 
 function AddBudgetDialog({
   open,
@@ -420,8 +377,6 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
             <BudgetPie
               budget={budget.id}
               onClick={(partition) => setEditPartition(partition)}
-              // TODO: save in database
-              options={{ expenses: false, allocations: false }}
               width={500}
             />
           </Stack>
@@ -471,13 +426,13 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
         <SpeedDialAction
           key={"add-partition"}
           icon={<PieChartIcon />}
-          tooltipTitle={"Add a partition"}
+          slotProps={{ tooltip: { title: "Add a partition" } }}
           onClick={() => setAddPartition(true)}
         />
         <SpeedDialAction
           key={"add-allocation"}
           icon={<CurrencyExchangeIcon />}
-          tooltipTitle={"Add a recurring expense"}
+          slotProps={{ tooltip: { title: "Add a recurring expense" } }}
           onClick={() => setAddAllocation(true)}
         />
       </SpeedDial>
@@ -489,7 +444,7 @@ export default function () {
   const { id } = useParams();
   const navigate = useBudgetNavigate();
 
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [editBudget, setEditBudget] = useState<boolean>(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openFailure, setOpenFailure] = useState("");
   const [budgets, setBudgets] = useState<Map<string, BudgetIdentifiers>>();
@@ -570,9 +525,6 @@ export default function () {
                 anchorEl={budgetAnchorEl}
                 open={openBudgetMenu}
                 onClose={handleClose}
-                MenuListProps={{
-                  "aria-labelledby": "basic-button",
-                }}
               >
                 {Array.from(budgets.values())
                   .sort((a, b) => a.name.localeCompare(b.name))
@@ -606,12 +558,14 @@ export default function () {
             anchorEl={settingsAnchorEl}
             open={openSettingsMenu}
             onClose={handleClose}
-            MenuListProps={{
-              "aria-labelledby": "basic-button",
-            }}
           >
-            <MenuItem onClick={() => setOpenDeleteDialog(true)}>
-              Delete
+            <MenuItem
+              onClick={() => {
+                setEditBudget(true);
+                handleClose();
+              }}
+            >
+              Settings
             </MenuItem>
           </Menu>
         </Toolbar>
@@ -643,12 +597,11 @@ export default function () {
         handleUpdateBudgets={handleUpdateBudgets}
       />
 
-      {id && budgets && (
-        <DeleteBudgetDialog
-          budget={getBudgetIdentifiers()!}
-          open={openDeleteDialog}
-          setOpen={setOpenDeleteDialog}
-          handleUpdateBudgets={handleUpdateBudgets}
+      {editBudget && budgets && (
+        <BudgetSettings
+          budget={getBudgetIdentifiers()!.id}
+          onChange={handleUpdateBudgets}
+          onClose={() => setEditBudget(false)}
         />
       )}
     </Stack>
