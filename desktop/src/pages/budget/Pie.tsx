@@ -144,6 +144,7 @@ function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
   return series;
 }
 
+// FIXME: budget data should be fed into the component and updated with an onChange hook.
 export default function ({
   budget,
   onClick,

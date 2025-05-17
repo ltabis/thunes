@@ -65,6 +65,7 @@ import { AddPartitionDrawer, EditPartitionDrawer } from "./budget/Partition";
 import { Partition } from "../../../cli/bindings/Partition";
 import { Allocation } from "../../../cli/bindings/Allocation";
 import BudgetPie from "./budget/Pie";
+import AllocationBar from "./budget/AllocationBar";
 import BudgetSettings from "./budget/Settings";
 
 function AddBudgetDialog({
@@ -379,6 +380,7 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
               onClick={(partition) => setEditPartition(partition)}
               width={500}
             />
+            <AllocationBar budget={budget} />
           </Stack>
         </Stack>
       )}
