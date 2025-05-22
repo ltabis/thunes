@@ -5,6 +5,8 @@ pub mod commands {
     pub mod account;
     pub mod budget;
     pub mod categories;
+    pub mod currency;
+    pub mod portfolio;
     pub mod settings;
     pub mod tags;
 }
@@ -111,7 +113,7 @@ pub fn run() {
             commands::account::add_account,
             commands::account::delete_account,
             commands::account::get_transactions,
-            commands::account::get_currency,
+            commands::account::get_currency_from_account,
             commands::account::get_balance,
             commands::account::get_all_balance,
             commands::account::add_transaction,
@@ -139,6 +141,13 @@ pub fn run() {
             commands::settings::save_settings,
             commands::settings::backup_export,
             commands::settings::backup_import,
+            commands::currency::list_currencies,
+            commands::currency::get_currency,
+            commands::portfolio::add_tile,
+            commands::portfolio::get_tile,
+            commands::portfolio::list_tiles,
+            commands::portfolio::remove_tile,
+            commands::portfolio::update_tile,
         ])
         .setup(setup)
         .run(tauri::generate_context!())
