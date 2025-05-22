@@ -15,7 +15,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import PieChartIcon from "@mui/icons-material/PieChart";
 import Account from "./pages/Account";
 import { Route, Routes, Outlet, useNavigate } from "react-router-dom";
-import Dashboard from "./pages/Portfolio";
+import Portfolio from "./pages/Portfolio";
 import React, { useEffect } from "react";
 import Settings from "./pages/Settings";
 import { darkTheme, lightTheme } from "./Themes";
@@ -144,7 +144,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Dashboard />} />
+        <Route index element={<Portfolio />} />
         <Route path="account/:id?" element={<Account />} />
         <Route path="budget/:id?" element={<Budget />} />
         <Route path="settings" element={<Settings />} />

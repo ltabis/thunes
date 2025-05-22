@@ -10,6 +10,8 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@fontsource/roboto": "^5.1.0",
@@ -23,8 +25,8 @@
     "@tauri-apps/plugin-shell": "^2",
     "dayjs": "^1.11.13",
     "mui-color-input": "7.0.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "react": "^17.0.0 || ^18.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0",
     "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
