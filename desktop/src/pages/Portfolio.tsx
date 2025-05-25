@@ -27,6 +27,10 @@ import {
   RenderTile as RenderAccountTile,
   AddTile as AddAccountTile,
 } from "./portfolio/Accounts";
+import {
+  RenderTile as RenderBudgetTile,
+  AddBudget as AddBudgetTile,
+} from "./portfolio/Budgets";
 import { PortfolioTile } from "../../../cli/bindings/PortfolioTile";
 import {
   SortableContext,
@@ -57,6 +61,11 @@ function Tile({
   switch (tile.type) {
     case "Currency": {
       content = <RenderAccountTile tile={tile.data} {...{ onRemove }} />;
+      break;
+    }
+    case "Budget": {
+      content = <RenderBudgetTile tile={tile.data} {...{ onRemove }} />;
+      break;
     }
   }
 
@@ -77,6 +86,7 @@ function Tile({
 export default function () {
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [addAccountTile, setAddAccountTile] = useState(false);
+  const [addBudgetTile, setAddBudgetTile] = useState(false);
   const [tiles, setTiles] = useState<PortfolioTile[]>([]);
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -185,6 +195,7 @@ export default function () {
               title: "Add a budget tile",
             },
           }}
+          onClick={() => setAddBudgetTile(true)}
         />
       </SpeedDial>
 
@@ -193,6 +204,24 @@ export default function () {
           close={() => setAddAccountTile(false)}
           onCreate={(data) => {
             addTile({ content: { type: "Currency", data } })
+              .then(listTiles)
+              .then(setTiles)
+              .catch((error) =>
+                dispatchSnackbar({
+                  type: "open",
+                  severity: "error",
+                  message: error,
+                })
+              );
+          }}
+        />
+      )}
+
+      {addBudgetTile && (
+        <AddBudgetTile
+          close={() => setAddBudgetTile(false)}
+          onCreate={(data) => {
+            addTile({ content: { type: "Budget", data } })
               .then(listTiles)
               .then(setTiles)
               .catch((error) =>
