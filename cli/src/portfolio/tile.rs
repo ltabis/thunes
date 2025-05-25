@@ -7,6 +7,7 @@ use surrealdb::{engine::local::Db, Surreal};
 #[serde(tag = "type", content = "data")]
 pub enum Inner {
     Currency(super::currency::Tile),
+    Budget(super::budget::Tile),
 }
 
 #[derive(ts_rs::TS)]
