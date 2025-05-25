@@ -21,6 +21,10 @@ import { ReadExpensesOptions } from "../../../cli/bindings/ReadExpensesOptions";
 import { ReadExpensesResult } from "../../../cli/bindings/ReadExpensesResult";
 import { Partition } from "../../../cli/bindings/Partition";
 import { Allocation } from "../../../cli/bindings/Allocation";
+import { ReadCurrencyOptions } from "../../../cli/bindings/ReadCurrencyOptions";
+import { Currency } from "../../../cli/bindings/Currency";
+import { WriteTileOptions } from "../../../cli/bindings/WriteTileOptions";
+import { PortfolioTile } from "../../../cli/bindings/PortfolioTile";
 
 // TODO: could this be automated ?
 
@@ -29,8 +33,8 @@ export type RecordId = { tb: string; id: { String: string } };
 export const EMPTY_RECORD_ID: RecordId = { tb: "", id: { String: "" } };
 
 // Transactions.
-export const getCurrency = (accountId: RecordId): Promise<string> =>
-  invoke("get_currency", { accountId });
+export const getCurrencyFromAccount = (accountId: RecordId): Promise<string> =>
+  invoke("get_currency_from_account", { accountId });
 export const getBalance = (
   accountId: RecordId,
   options?: BalanceOptions
@@ -129,3 +133,20 @@ export const addTags = (tags: Tag[]): Promise<void> =>
 export const ExportBackup = (): Promise<void> => invoke("backup_export");
 export const ImportBackup = (path: string): Promise<void> =>
   invoke("backup_import", { path });
+
+// Currency.
+export const listCurrencies = (): Promise<string[]> =>
+  invoke("list_currencies");
+export const getCurrency = (options: ReadCurrencyOptions): Promise<Currency> =>
+  invoke("get_currency", { options });
+
+// Tiles.
+export const addTile = (options: WriteTileOptions): Promise<PortfolioTile> =>
+  invoke("add_tile", { options });
+export const listTiles = (): Promise<PortfolioTile[]> => invoke("list_tiles");
+export const getTile = (id: RecordId): Promise<PortfolioTile> =>
+  invoke("get_tile", { id });
+export const updateTile = (tile: PortfolioTile): Promise<void> =>
+  invoke("update_tile", { tile });
+export const removeTile = (id: RecordId): Promise<void> =>
+  invoke("remove_tile", { id });

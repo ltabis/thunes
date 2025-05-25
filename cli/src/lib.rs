@@ -4,6 +4,7 @@ use transaction::{Tag, TransactionWithId};
 
 pub mod account;
 pub mod budget;
+pub mod portfolio;
 pub mod script;
 pub mod settings;
 pub mod transaction;
@@ -124,7 +125,10 @@ pub async fn list_accounts_with_details(
     db.select("account").await
 }
 
-pub async fn get_currency(db: &Surreal<Db>, account_id: RecordId) -> Result<String, Error> {
+pub async fn get_currency_from_account(
+    db: &Surreal<Db>,
+    account_id: RecordId,
+) -> Result<String, Error> {
     // FIXME: select currency, but get a `{ "currency": "EUR" }` instead of just the currency. (check ONLY statement)
     let account: Option<Account> = db
         .query("SELECT * FROM account WHERE id = $account_id")
@@ -318,7 +322,7 @@ pub async fn delete_transaction(
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct AccountWithBalance {
     pub account: Account,
     pub balance: f64,
@@ -326,13 +330,14 @@ pub struct AccountWithBalance {
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct CurrencyBalance {
     pub currency: String,
     pub total_balance: f64,
     pub accounts: Vec<AccountWithBalance>,
 }
 
+// TODO: remove the following
 pub async fn balances_by_currency(
     db: &Surreal<Db>,
 ) -> Result<Vec<CurrencyBalance>, surrealdb::Error> {

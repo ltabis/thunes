@@ -34,7 +34,7 @@ import {
   EMPTY_RECORD_ID,
   getBalance,
   getCategories,
-  getCurrency,
+  getCurrencyFromAccount,
   getTransactions,
   RecordId,
   updateTransaction,
@@ -481,7 +481,7 @@ export default function Transactions({
 
   const handleUpdateTransactions = async (account: RecordId) => {
     await getTransactions(account).then(setTransactions);
-    await getCurrency(account).then(setCurrency);
+    await getCurrencyFromAccount(account).then(setCurrency);
     await getBalance(account).then(setBalance);
   };
 
@@ -577,7 +577,6 @@ export default function Transactions({
         </>
       )}
 
-      {/* FIXME: button should stick to the end of the page */}
       <SpeedDial
         color="primary"
         sx={{ position: "absolute", bottom: 16, right: 16 }}
@@ -587,13 +586,21 @@ export default function Transactions({
         <SpeedDialAction
           key={"add-regular-transaction"}
           icon={<ReceiptIcon />}
-          tooltipTitle={"Add a transaction"}
+          slotProps={{
+            tooltip: {
+              title: "Add a transaction",
+            },
+          }}
           onClick={() => setAddTransaction(true)}
         />
         <SpeedDialAction
           key={"add-allocation"}
           icon={<SwapHorizIcon />}
-          tooltipTitle={"Add a transfer of money between accounts"}
+          slotProps={{
+            tooltip: {
+              title: "Add a transfer of money between accounts",
+            },
+          }}
           onClick={() => setAddTransfer(true)}
         />
       </SpeedDial>

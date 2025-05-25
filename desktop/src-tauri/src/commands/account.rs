@@ -156,13 +156,13 @@ pub async fn get_all_balance(
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
-pub async fn get_currency(
+pub async fn get_currency_from_account(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account_id: RecordId,
 ) -> Result<String, String> {
     let database = database.lock().await;
 
-    thunes_cli::get_currency(&database, account_id)
+    thunes_cli::get_currency_from_account(&database, account_id)
         .await
         .map_err(|error| match error {
             ThunesError::Database(error) => {
