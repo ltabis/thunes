@@ -6,22 +6,8 @@ on:
       - release
 
 jobs:
-  get-release-version:
-    runs-on: ubuntu-latest
-    outputs:
-      rv: ${{ steps.get.outputs.version }}
-    steps:
-      - name: Get release version from tag
-        id: get
-        shell: bash
-        run: |
-          version="${GITHUB_REF#refs/tags/}"
-          echo "version=${version}" >> $GITHUB_OUTPUT
-          echo "thunes release version=${version}"
-
   changelog:
     runs-on: ubuntu-latest
-    needs: [get-release-version]
     outputs:
       release_body: ${{ steps.git-cliff.outputs.content }}
     steps:
@@ -31,7 +17,7 @@ jobs:
         id: git-cliff
         with:
           config: cliff.toml
-          args: --latest --verbose --tag ${{ needs.get-release-version.outputs.rv }}
+          args: --latest --verbose
 
   build-release:
     needs: [changelog]
