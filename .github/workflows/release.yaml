@@ -1,11 +1,9 @@
-name: release
+name: "publish"
+
 on:
   push:
-    tags:
-      - "v*"
-
-permissions:
-  contents: write
+    branches:
+      - release
 
 jobs:
   get-release-version:
@@ -19,7 +17,7 @@ jobs:
         run: |
           version="${GITHUB_REF#refs/tags/}"
           echo "version=${version}" >> $GITHUB_OUTPUT
-          echo "rhai-http release version=${version}"
+          echo "thunes release version=${version}"
 
   changelog:
     runs-on: ubuntu-latest
@@ -27,11 +25,7 @@ jobs:
     outputs:
       release_body: ${{ steps.git-cliff.outputs.content }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
+      - uses: actions/checkout@v4
       - name: Generate changelog
         uses: orhun/git-cliff-action@v2
         id: git-cliff
@@ -39,16 +33,54 @@ jobs:
           config: cliff.toml
           args: --latest --verbose --tag ${{ needs.get-release-version.outputs.rv }}
 
-  publish-github:
-    needs: changelog
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+  build-release:
+    needs: [changelog]
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "macos-latest" # M1 and above
+            args: "--target aarch64-apple-darwin"
+          - platform: "macos-latest" # Intel
+            args: "--target x86_64-apple-darwin"
+          - platform: "ubuntu-22.04"
+            args: ""
+          - platform: "windows-latest"
+            args: ""
 
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
         with:
-          body: ${{ needs.changelog.outputs.release_body }}
-          tag_name: ${{ needs.get-release-version.outputs.rv }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          node-version: lts/*
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: install dependencies for ubuntu
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: install frontend dependencies
+        run: cd desktop && yarn install
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: thunes-v__VERSION__
+          releaseName: "Thunes v__VERSION__"
+          releaseBody: ${{ needs.changelog.outputs.release_body }}
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+          projectPath: "desktop"
