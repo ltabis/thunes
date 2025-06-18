@@ -1,11 +1,10 @@
 import {
   FormControl,
-  InputLabel,
-  Select,
   MenuItem,
   ListItemAvatar,
   ListItemText,
-  ListSubheader,
+  Autocomplete,
+  TextField,
 } from "@mui/material";
 import { categoryIconToMuiIcon } from "../../utils/icons";
 import { useEffect, useState } from "react";
@@ -21,6 +20,10 @@ export default function CategorySelector({
   onChange: (category: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
+  const [categoryGroups, setCategoryGroups] = useState<Map<
+    string,
+    CategoryWithId
+  > | null>(null);
   const [categories, setCategories] = useState<Map<
     string,
     CategoryWithId
@@ -28,67 +31,52 @@ export default function CategorySelector({
 
   useEffect(() => {
     getCategories()
-      .then((categories) =>
+      .then((categories) => {
+        const sub = Array.from(categories.values()).filter(
+          (category) => category.parent !== null
+        );
         setCategories(
-          new Map(
-            categories.map((category) => [category.id.id.String, category])
-          )
-        )
-      )
+          new Map(sub.map((category) => [category.id.id.String, category]))
+        );
+        const groups = Array.from(categories.values()).filter(
+          (category) => !category.parent
+        );
+        setCategoryGroups(
+          new Map(groups.map((category) => [category.id.id.String, category]))
+        );
+      })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
   }, [dispatchSnackbar]);
 
-  if (!categories) return;
+  if (!categories || !categoryGroups) return;
 
   return (
     <FormControl fullWidth>
-      <InputLabel>Category</InputLabel>
-      <Select
-        value={category?.id.String}
-        label="Category"
-        onChange={(event) => onChange(categories.get(event.target.value)!.id)}
-        renderValue={(selected) => {
-          const category = categories.get(selected);
-          return (
-            category && (
-              <MenuItem>
-                <ListItemAvatar>
-                  {categoryIconToMuiIcon(category)}
-                </ListItemAvatar>
-                <ListItemText primary={category.name} />
-              </MenuItem>
-            )
-          );
-        }}
-      >
-        {Array.from(categories.values())
-          .filter((category) => !category.parent)
-          .map((parent) => ({
-            parent,
-            subcategories: Array.from(categories.values()).filter(
-              (category) => category.parent?.id.String === parent.id.id.String
-            ),
-          }))
-          .map(({ parent, subcategories }) => [
-            <ListSubheader key={`subheader-${parent.id.id.String}`}>
-              {parent.name}
-            </ListSubheader>,
-            ...subcategories.concat([parent]).map((category) => (
-              <MenuItem
-                key={category.id.id.String}
-                value={category.id.id.String}
-              >
-                <ListItemAvatar>
-                  {categoryIconToMuiIcon(category)}
-                </ListItemAvatar>
-                <ListItemText primary={category.name} />
-              </MenuItem>
-            )),
-          ])
-          .flat()}
-      </Select>
+      <Autocomplete
+        handleHomeEndKeys
+        clearOnBlur
+        disablePortal
+        disableClearable
+        value={categories.get(category!.id.String)!}
+        groupBy={(category) =>
+          categoryGroups.get(category.parent!.id.String)!.name
+        }
+        isOptionEqualToValue={(option, value) =>
+          option.id.id.String === value.id.id.String
+        }
+        getOptionLabel={(category) => category.name}
+        options={Array.from(categories.values())}
+        renderInput={(params) => <TextField {...params} label="Category" />}
+        renderOption={(props, option) => (
+          <MenuItem {...props} key={option.name}>
+            <ListItemAvatar>{categoryIconToMuiIcon(option)}</ListItemAvatar>
+            <ListItemText primary={option.name} />
+          </MenuItem>
+        )}
+        onChange={(_event, value) => onChange(value.id)}
+      />
     </FormControl>
   );
 }
