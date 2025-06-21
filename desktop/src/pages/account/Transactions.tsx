@@ -21,7 +21,6 @@ import {
   SpeedDialIcon,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import { Transaction } from "../../../../cli/bindings/Transaction";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
 import { GridRenderEditCellParams, useGridApiContext } from "@mui/x-data-grid";
 import { EditTags } from "./Tags";
@@ -50,6 +49,9 @@ import ReceiptIcon from "@mui/icons-material/Receipt";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import AccountSelector from "../../components/form/AccountSelector";
 import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers";
+import TransactionAutocomplete, {
+  FormTransaction,
+} from "../../components/form/TransactionAutocomplete";
 
 function EditTransactionDrawer({
   accountId,
@@ -187,13 +189,8 @@ function AddTransactionDrawer({
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
   // Note: omit amount float value to enable the user to enter a floating point character.
-  const [form, setForm] = useState<
-    Omit<Transaction, "amount" | "date"> & {
-      amount: string;
-      date: Dayjs;
-      category: RecordId;
-    }
-  >({
+  const [form, setForm] = useState<FormTransaction>({
+    id: EMPTY_RECORD_ID,
     amount: "0",
     description: "",
     tags: [],
@@ -234,14 +231,19 @@ function AddTransactionDrawer({
       <DialogTitle>Add transaction</DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
-          <TextField
-            id="transaction-description"
-            label="Description"
-            name="description"
-            value={form.description}
-            onChange={(description) =>
-              setForm({ ...form, description: description.target.value })
-            }
+          <TransactionAutocomplete
+            value={form}
+            account={accountId}
+            onChange={(transaction, reason) => {
+              if (reason === "createOption") {
+                setForm({
+                  ...form,
+                  description: transaction.description,
+                });
+              } else {
+                setForm({ ...transaction, date: dayjs() });
+              }
+            }}
           />
           <TextField
             id="transaction-amount"
@@ -272,7 +274,7 @@ function AddTransactionDrawer({
             onChange={(category) =>
               setForm({
                 ...form,
-                category: category,
+                category,
               })
             }
           />
