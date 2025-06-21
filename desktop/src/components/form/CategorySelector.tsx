@@ -1,5 +1,4 @@
 import {
-  FormControl,
   MenuItem,
   ListItemAvatar,
   ListItemText,
@@ -7,7 +6,7 @@ import {
   TextField,
 } from "@mui/material";
 import { categoryIconToMuiIcon } from "../../utils/icons";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CategoryWithId } from "../../../../cli/bindings/CategoryWithId";
 import { getCategories, RecordId } from "../../api";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
@@ -16,7 +15,7 @@ export default function CategorySelector({
   category,
   onChange,
 }: {
-  category: RecordId | undefined;
+  category: RecordId;
   onChange: (category: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
@@ -28,6 +27,11 @@ export default function CategorySelector({
     string,
     CategoryWithId
   > | null>(null);
+
+  const value = useMemo(
+    () => categories?.get(category.id.String) ?? null,
+    [categories, category.id.String]
+  );
 
   useEffect(() => {
     getCategories()
@@ -53,30 +57,29 @@ export default function CategorySelector({
   if (!categories || !categoryGroups) return;
 
   return (
-    <FormControl fullWidth>
-      <Autocomplete
-        handleHomeEndKeys
-        clearOnBlur
-        disablePortal
-        disableClearable
-        value={categories.get(category!.id.String)!}
-        groupBy={(category) =>
-          categoryGroups.get(category.parent!.id.String)!.name
-        }
-        isOptionEqualToValue={(option, value) =>
-          option.id.id.String === value.id.id.String
-        }
-        getOptionLabel={(category) => category.name}
-        options={Array.from(categories.values())}
-        renderInput={(params) => <TextField {...params} label="Category" />}
-        renderOption={(props, option) => (
-          <MenuItem {...props} key={option.name}>
-            <ListItemAvatar>{categoryIconToMuiIcon(option)}</ListItemAvatar>
-            <ListItemText primary={option.name} />
-          </MenuItem>
-        )}
-        onChange={(_event, value) => onChange(value.id)}
-      />
-    </FormControl>
+    <Autocomplete
+      handleHomeEndKeys
+      clearOnBlur
+      disablePortal
+      value={value}
+      groupBy={(category) =>
+        categoryGroups.get(category.parent!.id.String)!.name
+      }
+      isOptionEqualToValue={(option, value) =>
+        option.id.id.String === value.id.id.String
+      }
+      getOptionLabel={(category) => category.name}
+      options={Array.from(categories.values())}
+      renderInput={(params) => <TextField {...params} label="Category" />}
+      renderOption={(props, option) => (
+        <MenuItem {...props} key={option.name}>
+          <ListItemAvatar>{categoryIconToMuiIcon(option)}</ListItemAvatar>
+          <ListItemText primary={option.name} />
+        </MenuItem>
+      )}
+      onChange={(_event, value: CategoryWithId | null) =>
+        value ? onChange(value.id) : {}
+      }
+    />
   );
 }
