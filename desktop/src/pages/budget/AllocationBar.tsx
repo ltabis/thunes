@@ -92,13 +92,12 @@ export function Inner({ budget }: { budget: ExpensesBudget }) {
   );
 }
 
-// TODO: remove me.
 export default function ({
   budget,
 }: {
   budget: Budget;
+  // TODO:
   onClick?: (partition: Allocation) => void;
-  onChange?: (budget: Budget) => void;
 }) {
   const [expenses, setExpenses] = useState<ReadExpensesResult | null>(null);
   const dispatchSnackbar = useDispatchSnackbar()!;

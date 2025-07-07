@@ -1,3 +1,4 @@
+import { CSS } from "@dnd-kit/utilities";
 import {
   Divider,
   Typography,
@@ -20,9 +21,6 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
-import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import PieChartIcon from "@mui/icons-material/PieChart";
 import {
   RenderTile as RenderAccountTile,
   AddTile as AddAccountTile,
@@ -39,6 +37,10 @@ import {
   rectSwappingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import PieChartIcon from "@mui/icons-material/PieChart";
+import AlignHorizontalLeftIcon from "@mui/icons-material/AlignHorizontalLeft";
+import { BudgetTileType } from "../../../cli/bindings/BudgetTileType";
 
 function Tile({
   id,
@@ -86,7 +88,9 @@ function Tile({
 export default function () {
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [addAccountTile, setAddAccountTile] = useState(false);
-  const [addBudgetTile, setAddBudgetTile] = useState(false);
+  const [addBudgetTile, setAddBudgetTile] = useState<BudgetTileType | null>(
+    null
+  );
   const [tiles, setTiles] = useState<PortfolioTile[]>([]);
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -193,6 +197,16 @@ export default function () {
           slotProps={{
             tooltip: {
               title: "Add a budget tile",
+            },
+          }}
+          onClick={() => setAddBudgetTile(true)}
+        />
+        <SpeedDialAction
+          key={"add-budget-horizontal-bars-tile"}
+          icon={<AlignHorizontalLeftIcon />}
+          slotProps={{
+            tooltip: {
+              title: "Add a budget category spending tile",
             },
           }}
           onClick={() => setAddBudgetTile(true)}

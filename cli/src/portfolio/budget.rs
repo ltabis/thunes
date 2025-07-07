@@ -3,7 +3,7 @@
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum Type {
     Pie,
-    // HorizontalBars,
+    HorizontalBars,
 }
 
 #[derive(ts_rs::TS)]

@@ -16,6 +16,7 @@ import { getBudgetExpenses } from "../../api";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { BudgetTile } from "../../../../cli/bindings/BudgetTile";
 import BudgetPie from "../budget/Pie";
+import BudgetAllocationBar from "../budget/AllocationBar";
 import { ReadExpensesResult } from "../../../../cli/bindings/ReadExpensesResult";
 import BudgetSelector from "../../components/form/BudgetSelector";
 import { BudgetIdentifiers } from "../../../../cli/bindings/BudgetIdentifiers";
@@ -63,6 +64,15 @@ export function RenderTile({
           height={300}
         />
       );
+      break;
+    case "HorizontalBars":
+      chart = (
+        <BudgetAllocationBar
+          key={data.budget.inner.name}
+          budget={data.budget.inner}
+        />
+      );
+      break;
   }
 
   return (
