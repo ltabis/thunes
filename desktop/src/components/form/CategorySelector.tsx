@@ -36,17 +36,22 @@ export default function CategorySelector({
   useEffect(() => {
     getCategories()
       .then((categories) => {
-        const sub = Array.from(categories.values()).filter(
-          (category) => category.parent !== null
-        );
-        setCategories(
-          new Map(sub.map((category) => [category.id.id.String, category]))
-        );
         const groups = Array.from(categories.values()).filter(
           (category) => !category.parent
         );
         setCategoryGroups(
           new Map(groups.map((category) => [category.id.id.String, category]))
+        );
+        const allCategories = Array.from(categories.values()).map(
+          (category) => {
+            if (!category.parent) category.parent = category.id;
+            return category;
+          }
+        );
+        setCategories(
+          new Map(
+            allCategories.map((category) => [category.id.id.String, category])
+          )
         );
       })
       .catch((error) =>
