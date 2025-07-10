@@ -4,7 +4,7 @@ import {
   TextField,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import { getTransactions, RecordId } from "../../api";
+import { EMPTY_RECORD_ID, getTransactions, RecordId } from "../../api";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import dayjs, { Dayjs } from "dayjs";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
@@ -39,7 +39,6 @@ export default function ({
     <Autocomplete
       selectOnFocus
       handleHomeEndKeys
-      clearOnBlur
       disablePortal
       disableClearable
       value={{
@@ -48,9 +47,24 @@ export default function ({
         amount: parseInt(value!.amount),
       }}
       options={transactions ? Array.from(transactions) : []}
-      getOptionLabel={(option) => option.description ?? ""}
+      getOptionLabel={(option) => option.description}
       getOptionKey={(option) => option.id.id.String}
       renderInput={(params) => <TextField {...params} label="Description" />}
+      onInputChange={(_event, value, reason) => {
+        if (reason === "input") {
+          onChange(
+            {
+              description: value,
+              amount: "0",
+              category: EMPTY_RECORD_ID,
+              date: dayjs(),
+              id: EMPTY_RECORD_ID,
+              tags: [],
+            },
+            "createOption"
+          );
+        }
+      }}
       onChange={(_event, value, reason) =>
         onChange(
           {
