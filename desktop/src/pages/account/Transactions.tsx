@@ -218,7 +218,6 @@ function AddTransactionDrawer({
       date: form.date.toISOString(),
     })
       .then(() => {
-        handleCloseForm();
         handleUpdateTransactions(accountId);
       })
       .catch((error) =>
@@ -286,9 +285,19 @@ function AddTransactionDrawer({
         </Button>
         <Button
           disabled={handleValidAmount()}
-          onClick={handleTransactionSubmission}
+          onClick={() => {
+            handleTransactionSubmission();
+            handleCloseForm();
+          }}
         >
           Add
+        </Button>
+        <Button
+          disabled={handleValidAmount()}
+          onClick={handleTransactionSubmission}
+          variant="contained"
+        >
+          Add Another
         </Button>
       </DialogActions>
     </Drawer>
