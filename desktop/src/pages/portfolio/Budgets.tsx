@@ -8,6 +8,7 @@ import {
   DialogTitle,
   Drawer,
   IconButton,
+  Skeleton,
   Stack,
   Typography,
 } from "@mui/material";
@@ -20,6 +21,7 @@ import { ReadExpensesResult } from "../../../../cli/bindings/ReadExpensesResult"
 import BudgetSelector from "../../components/form/BudgetSelector";
 import { BudgetIdentifiers } from "../../../../cli/bindings/BudgetIdentifiers";
 import { ClearIcon } from "@mui/x-date-pickers";
+import { useBudgetNavigate } from "../../hooks/budget";
 
 export function RenderTile({
   tile,
@@ -28,7 +30,7 @@ export function RenderTile({
   tile: BudgetTile;
   onRemove: () => void;
 }) {
-  // TODO: const navigate = useAccountNavigate();
+  const navigate = useBudgetNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [data, setData] = useState<ReadExpensesResult>();
 
@@ -48,8 +50,7 @@ export function RenderTile({
       );
   }, [tile.budget, dispatchSnackbar]);
 
-  // FIXME: add skeleton.
-  if (!data) return;
+  if (!data) return <Skeleton animation="wave" />;
 
   let chart = <></>;
 
@@ -61,6 +62,12 @@ export function RenderTile({
           budget={data.budget.inner.id}
           width={400}
           height={300}
+          onClick={() =>
+            navigate({
+              name: "",
+              id: { id: { String: tile.budget }, tb: "budget" },
+            })
+          }
         />
       );
   }

@@ -120,6 +120,7 @@ function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
   }
 
   series.push({
+    id: "partitions",
     type: "pie",
     valueFormatter: (item: PieValueType) =>
       `${item.value.toFixed(2)} ${expenses.inner.currency}`,
@@ -238,9 +239,12 @@ export default function ({
 
       <PieChart
         series={computeBudgetPieSeries(expenses.budget)}
-        onItemClick={(_event, partition) =>
-          onClick?.(expenses.budget.partitions[partition.dataIndex].inner)
-        }
+        onItemClick={(_event, partitionData) => {
+          const partition = expenses.budget.partitions[partitionData.dataIndex];
+          // TODO: Edit partition or allocation on click
+          if (partition && partitionData.seriesId === "partitions")
+            onClick?.(partition.inner);
+        }}
         width={width ?? 400}
         height={height ?? 300}
         hideLegend
