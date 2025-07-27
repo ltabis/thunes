@@ -62,6 +62,7 @@ export function Inner({ budget }: { budget: ExpensesBudget }) {
               justifyContent: "center",
               alignItems: "center",
             }}
+            key={allocation.inner.id.id.String}
           >
             <Tooltip title={allocation.inner.category.name}>
               {categoryIconToMuiIcon(allocation.inner.category)}
