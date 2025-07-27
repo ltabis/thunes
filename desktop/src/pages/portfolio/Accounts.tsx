@@ -8,6 +8,7 @@ import {
   DialogTitle,
   Drawer,
   IconButton,
+  Skeleton,
   Stack,
   Typography,
 } from "@mui/material";
@@ -40,8 +41,7 @@ export function RenderTile({
       );
   }, [tile.currency, dispatchSnackbar]);
 
-  // FIXME: add skeleton.
-  if (!data) return;
+  if (!data) return <Skeleton animation="wave" />;
 
   let chart = <></>;
 
