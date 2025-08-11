@@ -1,8 +1,5 @@
 # Thunes
 
-> [!WARNING]
-> This README is a work in progress.
-
 Thunes is a simple desktop app that you can use to manage your expenses and budgets.
 Thunes does not synchronise your bank accounts, you provide every transaction manually.
 
@@ -25,13 +22,8 @@ It is mainly built for my needs, but I figured it would be interesting to share 
 
 ## Getting Started
 
-<!-- Go to [releases](https://github.com/ltabis/thunes/releases) and download the latest version of the app.
-You can also download the [demo database]() and import it in the app to try it out. -->
-
-> [!WARNING]
-> Thunes does not have a release system setup, it is being worked on.
-> You can still use the app by downloading the repository and compiling the program.
-> See the [Development](#development) section bellow.
+Go to [releases](https://github.com/ltabis/thunes/releases) and download the latest version of the app for your platform.
+<!-- You can also download the [demo database]() and import it in the app to try it out. -->
 
 <!-- ## Screenshots
 
