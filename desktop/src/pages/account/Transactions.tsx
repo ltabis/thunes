@@ -19,6 +19,8 @@ import {
   TextField,
   Typography,
   SpeedDialIcon,
+  InputAdornment,
+  InputBase,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
@@ -47,6 +49,7 @@ import { CategoryWithId } from "../../../../cli/bindings/CategoryWithId";
 import CategorySelector from "../../components/form/CategorySelector";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import SearchIcon from "@mui/icons-material/Search";
 import AccountSelector from "../../components/form/AccountSelector";
 import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers";
 import TransactionAutocomplete, {
@@ -181,11 +184,11 @@ function EditTransactionDrawer({
 function AddTransactionDrawer({
   accountId,
   close,
-  handleUpdateTransactions,
+  onUpdate,
 }: {
   accountId: RecordId;
   close: () => void;
-  handleUpdateTransactions: (account: RecordId) => void;
+  onUpdate: (account: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
   // Note: omit amount float value to enable the user to enter a floating point character.
@@ -218,7 +221,7 @@ function AddTransactionDrawer({
       date: form.date.toISOString(),
     })
       .then(() => {
-        handleUpdateTransactions(accountId);
+        onUpdate(accountId);
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -307,11 +310,11 @@ function AddTransactionDrawer({
 function AddTransferDrawer({
   accountId,
   close,
-  handleUpdateTransactions,
+  onUpdate,
 }: {
   accountId: AccountIdentifiers;
   close: () => void;
-  handleUpdateTransactions: (account: RecordId) => void;
+  onUpdate: (account: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
   // Note: omit amount float value to enable the user to enter a floating point character.
@@ -358,7 +361,7 @@ function AddTransferDrawer({
     })
       .then(() => {
         handleCloseForm();
-        handleUpdateTransactions(accountId.id);
+        onUpdate(accountId.id);
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -489,9 +492,19 @@ export default function Transactions({
   const [balance, setBalance] = useState(0.0);
   const [addTransaction, setAddTransaction] = useState(false);
   const [addTransfer, setAddTransfer] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const handleUpdateTransactions = async (account: RecordId) => {
-    await getTransactions(account).then(setTransactions);
+  const handleUpdateTransactions = async (
+    account: RecordId,
+    search: string
+  ) => {
+    await getTransactions(account).then((transactions) => {
+      // FIXME: Search with backend.
+      const filtered = transactions.filter((transaction) =>
+        transaction.description.toLowerCase().includes(search)
+      );
+      setTransactions(filtered);
+    });
     await getCurrencyFromAccount(account).then(setCurrency);
     await getBalance(account).then(setBalance);
   };
@@ -508,24 +521,35 @@ export default function Transactions({
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
-  }, [dispatchSnackbar]);
+  }, [dispatchSnackbar, search]);
 
   useEffect(() => {
-    handleUpdateTransactions(accountId.id).catch((error) =>
+    handleUpdateTransactions(accountId.id, search).catch((error) =>
       dispatchSnackbar({ type: "open", severity: "error", message: error })
     );
-  }, [accountId, dispatchSnackbar]);
+  }, [accountId, dispatchSnackbar, search]);
 
   return (
     <Paper elevation={0} sx={{ flexGrow: 1 }}>
-      <Stack direction="row">
-        {balance && currency ? (
-          <Typography variant="h2" sx={{ flexGrow: 1, textWrap: "nowrap" }}>
-            {`${balance.toFixed(2)} ${currency}`}
-          </Typography>
-        ) : (
-          <Skeleton animation="wave" />
-        )}
+      <Stack direction="column">
+        <Stack direction="row">
+          {balance && currency ? (
+            <Typography variant="h2" sx={{ textWrap: "nowrap" }}>
+              {`${balance.toFixed(2)} ${currency}`}
+            </Typography>
+          ) : (
+            <Skeleton animation="wave" />
+          )}
+        </Stack>
+        <Stack direction="row">
+          <InputAdornment position="start">
+            <SearchIcon />
+          </InputAdornment>
+          <InputBase
+            value={search}
+            onChange={(elem) => setSearch(elem.target.value.toLowerCase())}
+          />
+        </Stack>
       </Stack>
       {transactions ? (
         <Box sx={{ width: "100%" }}>
@@ -619,7 +643,7 @@ export default function Transactions({
       {addTransaction && (
         <AddTransactionDrawer
           accountId={accountId.id}
-          handleUpdateTransactions={handleUpdateTransactions}
+          onUpdate={(id) => handleUpdateTransactions(id, search)}
           close={() => setAddTransaction(false)}
         />
       )}
@@ -627,7 +651,7 @@ export default function Transactions({
       {addTransfer && (
         <AddTransferDrawer
           accountId={accountId}
-          handleUpdateTransactions={handleUpdateTransactions}
+          onUpdate={(id) => handleUpdateTransactions(id, search)}
           close={() => setAddTransfer(false)}
         />
       )}
@@ -637,7 +661,7 @@ export default function Transactions({
           accountId={accountId.id}
           transaction={selectedTransaction}
           close={() => setSelectedTransaction(null)}
-          onUpdate={handleUpdateTransactions}
+          onUpdate={(id) => handleUpdateTransactions(id, search)}
         />
       )}
     </Paper>
