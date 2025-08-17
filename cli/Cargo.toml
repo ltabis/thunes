@@ -1,6 +1,6 @@
 [package]
 name = "thunes-cli"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["ltabis <ltabis.pro@gmail.com>"]
 edition = "2021"
 description = "A cli to register and analyze monetary transactions"
