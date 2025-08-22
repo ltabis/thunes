@@ -33,7 +33,6 @@ import {
   addTransactionTransfer,
   deleteTransaction,
   EMPTY_RECORD_ID,
-  getBalance,
   getCategories,
   getCurrencyFromAccount,
   getTransactions,
@@ -50,11 +49,11 @@ import CategorySelector from "../../components/form/CategorySelector";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import SearchIcon from "@mui/icons-material/Search";
-import AccountSelector from "../../components/form/AccountSelector";
 import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers";
 import TransactionAutocomplete, {
   FormTransaction,
 } from "../../components/form/TransactionAutocomplete";
+import AccountAutocomplete from "../../components/form/AccountAutocomplete";
 
 function EditTransactionDrawer({
   accountId,
@@ -407,7 +406,7 @@ function AddTransferDrawer({
             handleChange={(tags) => setForm({ ...form, tags })}
           />
 
-          <AccountSelector
+          <AccountAutocomplete
             label="From"
             account={form.from}
             onChange={(from) => {
@@ -418,7 +417,7 @@ function AddTransferDrawer({
               });
             }}
           />
-          <AccountSelector
+          <AccountAutocomplete
             label="To"
             account={form.to}
             onChange={(to) => setForm({ ...form, to })}
@@ -489,7 +488,6 @@ export default function Transactions({
   const [selectedTransaction, setSelectedTransaction] =
     useState<TransactionWithId | null>(null);
 
-  const [balance, setBalance] = useState(0.0);
   const [addTransaction, setAddTransaction] = useState(false);
   const [addTransfer, setAddTransfer] = useState(false);
   const [search, setSearch] = useState("");
@@ -506,7 +504,6 @@ export default function Transactions({
       setTransactions(filtered);
     });
     await getCurrencyFromAccount(account).then(setCurrency);
-    await getBalance(account).then(setBalance);
   };
 
   useEffect(() => {
@@ -533,21 +530,13 @@ export default function Transactions({
     <Paper elevation={0} sx={{ flexGrow: 1 }}>
       <Stack direction="column">
         <Stack direction="row">
-          {balance && currency ? (
-            <Typography variant="h2" sx={{ textWrap: "nowrap" }}>
-              {`${balance.toFixed(2)} ${currency}`}
-            </Typography>
-          ) : (
-            <Skeleton animation="wave" />
-          )}
-        </Stack>
-        <Stack direction="row">
           <InputAdornment position="start">
             <SearchIcon />
           </InputAdornment>
           <InputBase
             value={search}
             onChange={(elem) => setSearch(elem.target.value.toLowerCase())}
+            placeholder="Search by description"
           />
         </Stack>
       </Stack>

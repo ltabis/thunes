@@ -128,7 +128,7 @@ function Layout() {
                 bgcolor: "background.default",
                 p: 3,
                 maxHeight: "100vh",
-                overflow: "hidden",
+                overflow: "scroll",
               }}
             >
               <Outlet />

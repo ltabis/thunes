@@ -1,7 +1,5 @@
 import {
-  Divider,
   Typography,
-  Stack,
   SpeedDial,
   SpeedDialAction,
   SpeedDialIcon,
@@ -39,6 +37,7 @@ import {
   rectSwappingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
+import Page from "./Page";
 
 function Tile({
   id,
@@ -131,13 +130,10 @@ export default function () {
   }, [dispatchSnackbar]);
 
   return (
-    <Stack sx={{ width: "100%", height: "100%", overflow: "scroll" }}>
-      <Typography variant="h2" sx={{ m: 2 }}>
-        Portfolio
-      </Typography>
-
-      <Divider />
-
+    <Page
+      toolbarStart={<Typography variant="h4">Portfolio</Typography>}
+      actions={[]}
+    >
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -234,6 +230,6 @@ export default function () {
           }}
         />
       )}
-    </Stack>
+    </Page>
   );
 }

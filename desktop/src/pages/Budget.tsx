@@ -1,6 +1,5 @@
 import {
   Alert,
-  AppBar,
   Autocomplete,
   Button,
   Chip,
@@ -10,14 +9,12 @@ import {
   DialogTitle,
   Divider,
   Grid,
-  IconButton,
   InputLabel,
   List,
   ListItem,
   ListItemAvatar,
   ListItemButton,
   ListItemText,
-  Menu,
   MenuItem,
   Select,
   Snackbar,
@@ -26,7 +23,6 @@ import {
   SpeedDialAction,
   SpeedDialIcon,
   TextField,
-  Toolbar,
   Typography,
   Stack,
 } from "@mui/material";
@@ -37,7 +33,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { MouseEvent, SyntheticEvent } from "react";
+import { SyntheticEvent } from "react";
 import {
   addBudget,
   getBudget,
@@ -56,7 +52,6 @@ import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { useParams } from "react-router-dom";
 import { Budget } from "../../../cli/bindings/Budget";
 import { Account } from "../../../cli/bindings/Account";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { categoryIconToMuiIcon } from "../utils/icons";
 import { AddAllocationDrawer, EditAllocationDrawer } from "./budget/Allocation";
 import PieChartIcon from "@mui/icons-material/PieChart";
@@ -67,6 +62,8 @@ import { Allocation } from "../../../cli/bindings/Allocation";
 import BudgetPie from "./budget/Pie";
 import AllocationBar from "./budget/AllocationBar";
 import BudgetSettings from "./budget/Settings";
+import Page from "./Page";
+import CustomSelector from "../components/form/CustomSelector";
 
 function AddBudgetDialog({
   open,
@@ -450,28 +447,9 @@ export default function () {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openFailure, setOpenFailure] = useState("");
   const [budgets, setBudgets] = useState<Map<string, BudgetIdentifiers>>();
-  const [budgetAnchorEl, setBudgetAnchorEl] = useState<null | HTMLElement>(
-    null
-  );
-  const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(
-    null
-  );
-
-  const openBudgetMenu = Boolean(budgetAnchorEl);
-  const openSettingsMenu = Boolean(settingsAnchorEl);
 
   const getBudgetIdentifiers = () =>
     id && budgets ? budgets.get(id) : undefined;
-
-  const handleClickBudget = (event: MouseEvent<HTMLElement>) =>
-    setBudgetAnchorEl(event.currentTarget);
-  const handleClickSettings = (event: MouseEvent<HTMLElement>) =>
-    setSettingsAnchorEl(event.currentTarget);
-
-  const handleClose = () => {
-    setBudgetAnchorEl(null);
-    setSettingsAnchorEl(null);
-  };
 
   const handleSnackbarClose = (
     _event?: SyntheticEvent | Event,
@@ -502,77 +480,39 @@ export default function () {
     handleUpdateBudgets();
   }, []);
 
+  if (!budgets) return;
+
   return (
-    <Stack
-      spacing={2}
-      divider={<Divider orientation="vertical" flexItem />}
-      sx={{ flexGrow: 1 }}
+    <Page
+      toolbarStart={
+        <CustomSelector
+          selected={
+            id
+              ? {
+                  name: budgets.get(id)!.name,
+                  value: id,
+                }
+              : undefined
+          }
+          items={Array.from(budgets.values()).map((budget) => ({
+            name: budget.name,
+            value: budget.id.id.String,
+          }))}
+          createPlaceholder="Create budget"
+          selectPlaceholder="Select budget"
+          onChange={(selected) =>
+            handleSelectBudget(budgets.get(selected.value)!)
+          }
+          onCreate={() => setOpenAddDialog(true)}
+        />
+      }
+      actions={[
+        {
+          name: "Settings",
+          run: () => setEditBudget(true),
+        },
+      ]}
     >
-      <AppBar position="static">
-        <Toolbar>
-          {budgets ? (
-            <>
-              <Button
-                id="basic-button"
-                aria-controls={openBudgetMenu ? "basic-menu" : undefined}
-                aria-haspopup="true"
-                aria-expanded={openBudgetMenu ? "true" : undefined}
-                onClick={handleClickBudget}
-                variant="contained"
-              >
-                {id && budgets ? getBudgetIdentifiers()!.name : "Select budget"}
-              </Button>
-              <Menu
-                id="basic-menu"
-                anchorEl={budgetAnchorEl}
-                open={openBudgetMenu}
-                onClose={handleClose}
-              >
-                {Array.from(budgets.values())
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((budget) => (
-                    <MenuItem
-                      key={budget.name}
-                      selected={budget.id.id.String === id}
-                      onClick={() => handleSelectBudget(budget)}
-                    >
-                      {budget.name}
-                    </MenuItem>
-                  ))}
-                {budgets.size !== 0 && <Divider />}
-                <MenuItem onClick={() => setOpenAddDialog(true)}>
-                  Create budget
-                </MenuItem>
-              </Menu>
-            </>
-          ) : (
-            <></>
-          )}
-
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
-
-          {/* TODO: budget actions */}
-          <IconButton aria-label="delete" onClick={handleClickSettings}>
-            <MoreVertIcon />
-          </IconButton>
-          <Menu
-            id="settings-menu"
-            anchorEl={settingsAnchorEl}
-            open={openSettingsMenu}
-            onClose={handleClose}
-          >
-            <MenuItem
-              onClick={() => {
-                setEditBudget(true);
-                handleClose();
-              }}
-            >
-              Settings
-            </MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
-
       {getBudgetIdentifiers() && (
         <Details identifiers={getBudgetIdentifiers()!} />
       )}
@@ -599,13 +539,13 @@ export default function () {
         handleUpdateBudgets={handleUpdateBudgets}
       />
 
-      {editBudget && budgets && (
+      {editBudget && getBudgetIdentifiers() && (
         <BudgetSettings
           budget={getBudgetIdentifiers()!.id}
           onChange={handleUpdateBudgets}
           onClose={() => setEditBudget(false)}
         />
       )}
-    </Stack>
+    </Page>
   );
 }
