@@ -27,18 +27,7 @@ import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
 import { GridRenderEditCellParams, useGridApiContext } from "@mui/x-data-grid";
 import { EditTags } from "./Tags";
 import { Tag } from "../../../../cli/bindings/Tag";
-import {
-  addTags,
-  addTransaction,
-  addTransactionTransfer,
-  deleteTransaction,
-  EMPTY_RECORD_ID,
-  getCategories,
-  getCurrencyFromAccount,
-  getTransactions,
-  RecordId,
-  updateTransaction,
-} from "../../api";
+import { addTags, EMPTY_RECORD_ID, getCategories, RecordId } from "../../api";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
@@ -54,21 +43,21 @@ import TransactionAutocomplete, {
   FormTransaction,
 } from "../../components/form/TransactionAutocomplete";
 import AccountAutocomplete from "../../components/form/AccountAutocomplete";
+import { Account } from "../../../../cli/bindings/Account";
+import { useTransactionStore } from "../../stores/transactions";
 
 function EditTransactionDrawer({
-  accountId,
+  account,
   transaction,
   close,
-  onUpdate,
 }: {
-  accountId: RecordId;
+  account: Account;
   transaction: TransactionWithId;
   close: () => void;
-  onUpdate: (account: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
+  const transactionStore = useTransactionStore();
 
-  // Note: omit amount float value to enable the user to enter a floating point character.
   const [form, setForm] = useState<
     Omit<TransactionWithId, "amount" | "date" | "category"> & {
       amount: string;
@@ -90,15 +79,14 @@ function EditTransactionDrawer({
 
   const handleTransactionSubmission = async () => {
     const amount = filterFloat(form.amount);
-
-    updateTransaction({
-      ...form,
-      amount,
-      date: form.date.toISOString(),
-    })
+    transactionStore
+      .update(account, {
+        ...form,
+        amount,
+        date: form.date.toISOString(),
+      })
       .then(() => {
         handleCloseForm();
-        onUpdate(accountId);
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -106,9 +94,9 @@ function EditTransactionDrawer({
   };
 
   const handleAllocationDelete = async () => {
-    deleteTransaction(transaction.id)
+    transactionStore
+      .delete(account, transaction)
       .then(() => {
-        onUpdate(accountId);
         handleCloseForm();
       })
       .catch((error) =>
@@ -181,16 +169,14 @@ function EditTransactionDrawer({
 }
 
 function AddTransactionDrawer({
-  accountId,
+  account,
   close,
-  onUpdate,
 }: {
-  accountId: RecordId;
+  account: Account;
   close: () => void;
-  onUpdate: (account: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
-  // Note: omit amount float value to enable the user to enter a floating point character.
+  const transactionStore = useTransactionStore();
   const [form, setForm] = useState<FormTransaction>({
     id: EMPTY_RECORD_ID,
     amount: "0",
@@ -213,14 +199,12 @@ function AddTransactionDrawer({
     const category =
       form.category !== EMPTY_RECORD_ID ? form.category : undefined;
 
-    addTransaction(accountId, {
-      ...form,
-      category,
-      amount,
-      date: form.date.toISOString(),
-    })
-      .then(() => {
-        onUpdate(accountId);
+    transactionStore
+      .create(account, {
+        ...form,
+        category,
+        amount,
+        date: form.date.toISOString(),
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -234,7 +218,7 @@ function AddTransactionDrawer({
         <Stack spacing={2}>
           <TransactionAutocomplete
             value={form}
-            account={accountId}
+            account={account.id}
             onChange={(transaction, reason) => {
               if (reason === "createOption") {
                 setForm({
@@ -307,16 +291,14 @@ function AddTransactionDrawer({
 }
 
 function AddTransferDrawer({
-  accountId,
+  account,
   close,
-  onUpdate,
 }: {
-  accountId: AccountIdentifiers;
+  account: Account;
   close: () => void;
-  onUpdate: (account: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
-  // Note: omit amount float value to enable the user to enter a floating point character.
+  const transactionStore = useTransactionStore();
   const [form, setForm] = useState<{
     amount: string;
     description: string;
@@ -331,7 +313,7 @@ function AddTransferDrawer({
     // FIXME: should be re-run every time the UI is opened because it will
     //        keep the current date and time between two transactions otherwise.
     date: dayjs(),
-    from: accountId,
+    from: account,
     to: null,
   });
 
@@ -351,16 +333,16 @@ function AddTransferDrawer({
     const from = form.from!.id;
     const to = form.to!.id;
 
-    addTransactionTransfer({
-      ...form,
-      from,
-      to,
-      amount,
-      date: form.date.toISOString(),
-    })
+    transactionStore
+      .createTransfer({
+        ...form,
+        from,
+        to,
+        amount,
+        date: form.date.toISOString(),
+      })
       .then(() => {
         handleCloseForm();
-        onUpdate(accountId.id);
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -470,21 +452,14 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
   return <EditTags value={value} handleChange={handleChange} />;
 }
 
-export default function Transactions({
-  accountId,
-}: {
-  accountId: AccountIdentifiers;
-}) {
+export default function Transactions({ account }: { account: Account }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
+  const transactionStore = useTransactionStore();
   // FIXME: Pull the category directly from the transaction.
   const [categories, setCategories] = useState<Map<
     string,
     CategoryWithId
   > | null>(null);
-  const [currency, setCurrency] = useState<string | null>(null);
-  const [transactions, setTransactions] = useState<TransactionWithId[] | null>(
-    null
-  );
   const [selectedTransaction, setSelectedTransaction] =
     useState<TransactionWithId | null>(null);
 
@@ -492,19 +467,14 @@ export default function Transactions({
   const [addTransfer, setAddTransfer] = useState(false);
   const [search, setSearch] = useState("");
 
-  const handleUpdateTransactions = async (
-    account: RecordId,
-    search: string
-  ) => {
-    await getTransactions(account).then((transactions) => {
-      // FIXME: Search with backend.
-      const filtered = transactions.filter((transaction) =>
+  let transactions = transactionStore.transactions.get(account.id.id.String);
+
+  // FIXME: Search transactions with backend.
+  transactions = search
+    ? transactions?.filter((transaction) =>
         transaction.description.toLowerCase().includes(search)
-      );
-      setTransactions(filtered);
-    });
-    await getCurrencyFromAccount(account).then(setCurrency);
-  };
+      )
+    : transactions;
 
   useEffect(() => {
     getCategories()
@@ -519,12 +489,6 @@ export default function Transactions({
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
   }, [dispatchSnackbar, search]);
-
-  useEffect(() => {
-    handleUpdateTransactions(accountId.id, search).catch((error) =>
-      dispatchSnackbar({ type: "open", severity: "error", message: error })
-    );
-  }, [accountId, dispatchSnackbar, search]);
 
   return (
     <Paper elevation={0} sx={{ flexGrow: 1 }}>
@@ -556,11 +520,11 @@ export default function Transactions({
                   secondaryAction={
                     transaction.amount > 0 ? (
                       <Typography variant="body1" color="success">
-                        {`+ ${transaction.amount} ${currency}`}
+                        {`+ ${transaction.amount} ${account.currency}`}
                       </Typography>
                     ) : (
                       <Typography variant="body1">
-                        {`- ${transaction.amount * -1} ${currency}`}
+                        {`- ${transaction.amount * -1} ${account.currency}`}
                       </Typography>
                     )
                   }
@@ -631,26 +595,23 @@ export default function Transactions({
 
       {addTransaction && (
         <AddTransactionDrawer
-          accountId={accountId.id}
-          onUpdate={(id) => handleUpdateTransactions(id, search)}
+          account={account}
           close={() => setAddTransaction(false)}
         />
       )}
 
       {addTransfer && (
         <AddTransferDrawer
-          accountId={accountId}
-          onUpdate={(id) => handleUpdateTransactions(id, search)}
+          account={account}
           close={() => setAddTransfer(false)}
         />
       )}
 
       {selectedTransaction && (
         <EditTransactionDrawer
-          accountId={accountId.id}
+          account={account}
           transaction={selectedTransaction}
           close={() => setSelectedTransaction(null)}
-          onUpdate={(id) => handleUpdateTransactions(id, search)}
         />
       )}
     </Paper>

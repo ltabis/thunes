@@ -49,10 +49,12 @@ export const getTransactions = (
 export const addTransaction = (
   accountId: RecordId,
   options: AddTransactionOptions
-): Promise<void> => invoke("add_transaction", { accountId, options });
+): Promise<TransactionWithId> =>
+  invoke("add_transaction", { accountId, options });
 export const addTransactionTransfer = (
   options: AddTransactionTransferOptions
-): Promise<void> => invoke("add_transaction_transfer", { options });
+): Promise<TransactionWithId> =>
+  invoke("add_transaction_transfer", { options });
 export const updateTransaction = (
   transaction: TransactionWithId
 ): Promise<void> => invoke("update_transaction", { transaction });
