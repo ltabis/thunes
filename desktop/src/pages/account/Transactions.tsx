@@ -218,7 +218,7 @@ function AddTransactionDrawer({
         <Stack spacing={2}>
           <TransactionAutocomplete
             value={form}
-            account={account.id}
+            account={account}
             onChange={(transaction, reason) => {
               if (reason === "createOption") {
                 setForm({

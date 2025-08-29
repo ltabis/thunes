@@ -18,8 +18,7 @@ import { useAccountStore } from "../../stores/accounts";
 function DeleteAccountDialog({
   account,
   onClose,
-}: // onChange,
-{
+}: {
   account: Account;
   onClose: () => void;
 }) {
@@ -68,7 +67,6 @@ export default function ({
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
-    // onChange(account.id);
     onClose();
   };
 
