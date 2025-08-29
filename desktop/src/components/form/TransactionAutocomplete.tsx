@@ -3,11 +3,11 @@ import {
   AutocompleteChangeReason,
   TextField,
 } from "@mui/material";
-import { useEffect, useState } from "react";
-import { EMPTY_RECORD_ID, getTransactions, RecordId } from "../../api";
-import { useDispatchSnackbar } from "../../contexts/Snackbar";
+import { EMPTY_RECORD_ID, RecordId } from "../../api";
 import dayjs, { Dayjs } from "dayjs";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
+import { useTransactionStore } from "../../stores/transactions";
+import { Account } from "../../../../cli/bindings/Account";
 
 export type FormTransaction = Omit<TransactionWithId, "amount" | "date"> & {
   // Omit "amount" float value to enable the user to enter a floating point character.
@@ -22,19 +22,10 @@ export default function ({
   onChange,
 }: {
   value: FormTransaction;
-  account: RecordId;
+  account: Account;
   onChange: (value: FormTransaction, reason: AutocompleteChangeReason) => void;
 }) {
-  const dispatchSnackbar = useDispatchSnackbar()!;
-  const [transactions, setTransactions] = useState<Set<TransactionWithId>>();
-
-  useEffect(() => {
-    getTransactions(account)
-      .then((t) => setTransactions(new Set(t)))
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-  }, [account, dispatchSnackbar]);
+  const transactionStore = useTransactionStore();
 
   return (
     <Autocomplete
@@ -47,7 +38,9 @@ export default function ({
         date: value!.date.toString(),
         amount: parseInt(value!.amount),
       }}
-      options={transactions ? Array.from(transactions) : []}
+      options={Array.from(
+        transactionStore.transactions.get(account.id.id.String)!
+      )}
       getOptionLabel={(option) => option.description}
       getOptionKey={(option) => option.id.id.String}
       renderInput={(params) => <TextField {...params} label="Description" />}
