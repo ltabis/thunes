@@ -14,37 +14,29 @@ import {
   TextField,
 } from "@mui/material";
 import { Budget } from "../../../../cli/bindings/Budget";
-import { useEffect, useState } from "react";
-import {
-  deleteBudget,
-  getBudget,
-  listAccountsWithDetails,
-  RecordId,
-  updateBudget,
-} from "../../api";
+import { useState } from "react";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
-import { BudgetIdentifiers } from "../../../../cli/bindings/BudgetIdentifiers";
 import { useBudgetNavigate } from "../../hooks/budget";
 import { filterFloat } from "../../utils";
-import { Account } from "../../../../cli/bindings/Account";
+import { useBudgetStore } from "../../stores/budget";
+import { useAccountStore } from "../../stores/account";
 
 function DeleteBudgetDialog({
   budget,
   onClose,
-  onChange,
 }: {
-  budget: BudgetIdentifiers;
+  budget: Budget;
   onClose: () => void;
-  onChange: (budget: RecordId) => void;
 }) {
   const navigate = useBudgetNavigate();
+  const store = useBudgetStore();
   const dispatchSnackbar = useDispatchSnackbar()!;
 
   const handleDeleteBudget = async () => {
-    deleteBudget(budget.id)
+    store
+      .delete(budget)
       .then(() => {
         onClose();
-        onChange(budget.id);
         navigate();
       })
       .catch((error) =>
@@ -68,18 +60,17 @@ function DeleteBudgetDialog({
 export default function ({
   budget,
   onClose,
-  onChange,
 }: {
-  budget: RecordId;
+  budget: Budget;
   onClose: () => void;
-  onChange: (budget: RecordId) => void;
 }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
+  const budgetStore = useBudgetStore()!;
+  const accountStore = useAccountStore()!;
   const [deleteDialog, setDeleteDialog] = useState(false);
-  const [accounts, setAccounts] = useState<Account[]>();
-  const [form, setForm] = useState<
-    Omit<Budget, "income"> & { income: string }
-  >();
+  const [form, setForm] = useState<Omit<Budget, "income"> & { income: string }>(
+    { ...budget, income: budget.income.toString() }
+  );
 
   const handleSettingsUpdate = (
     form: Omit<Budget, "income"> & { income: string }
@@ -90,40 +81,18 @@ export default function ({
       ...form,
       income,
     };
-    updateBudget(budget).catch((error) =>
-      dispatchSnackbar({ type: "open", severity: "error", message: error })
-    );
-    onChange(budget.id);
-    onClose();
+
+    budgetStore
+      .update(budget)
+      .then(() => onClose())
+      .catch((error) =>
+        dispatchSnackbar({ type: "open", severity: "error", message: error })
+      );
   };
 
   const handleValidAmount = (income: string) => isNaN(filterFloat(income));
 
-  const getCurrencies = (accounts: Account[]) =>
-    Array.from(new Set(accounts.map((account) => account.currency)).values());
-
-  const filterAccountByCurrency = (accounts: Account[], currency: string) =>
-    accounts.filter((account) => account.currency === currency);
-
-  useEffect(() => {
-    getBudget(budget)
-      .then((budget) =>
-        setForm({
-          ...budget,
-          income: budget.income.toString(),
-        })
-      )
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-    listAccountsWithDetails()
-      .then(setAccounts)
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-  }, [budget, dispatchSnackbar]);
-
-  if (!form || !accounts) return <></>;
+  if (!form) return <></>;
 
   return (
     <Drawer open={true} onClose={() => onClose()} anchor="right">
@@ -182,7 +151,7 @@ export default function ({
               })
             }
           >
-            {getCurrencies(accounts).map((currency, id) => (
+            {accountStore.getCurrencies().map((currency, id) => (
               <MenuItem key={`${currency}-${id}`} value={currency}>
                 {currency}
               </MenuItem>
@@ -199,9 +168,7 @@ export default function ({
               disablePortal
               disableCloseOnSelect
               value={form.accounts}
-              options={
-                accounts ? filterAccountByCurrency(accounts, form.currency) : []
-              }
+              options={accountStore.filterByCurrency(form.currency)}
               getOptionLabel={(account) => account.name}
               renderInput={(params) => (
                 <TextField {...params} label="Accounts" />
@@ -233,10 +200,10 @@ export default function ({
       </DialogActions>
 
       {deleteDialog && (
+        // FIXME: delete dialogs could be refactored into a component.
         <DeleteBudgetDialog
-          budget={{ id: form.id, name: form.name }}
+          budget={budget}
           onClose={() => setDeleteDialog(false)}
-          onChange={onChange}
         />
       )}
     </Drawer>

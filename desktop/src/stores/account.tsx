@@ -7,11 +7,13 @@ interface AccountState {
   accounts: Map<string, Account>;
   create: (account: AddAccountOptions) => Promise<Account>;
   update: (account: Account) => Promise<void>;
+  getCurrencies: () => string[];
+  filterByCurrency: (currency: string) => Account[];
 }
 
 // TODO: generalize errors with snack bars.
 
-export const useAccountStore = create<AccountState>((set) => ({
+export const useAccountStore = create<AccountState>((set, get) => ({
   accounts: new Map(),
   create: async (account: AddAccountOptions): Promise<Account> => {
     const newAccount = await addAccount(account);
@@ -28,5 +30,23 @@ export const useAccountStore = create<AccountState>((set) => ({
     set((state) => ({
       accounts: new Map(state.accounts).set(account.id.id.String, account),
     }));
+  },
+  // FIXME: real dirty.
+  getCurrencies: () => {
+    const accounts = get().accounts;
+
+    return Array.from(
+      new Set(
+        Array.from(accounts.values()).map((account) => account.currency)
+      ).values()
+    );
+  },
+
+  filterByCurrency: (currency) => {
+    const accounts = get().accounts;
+
+    return Array.from(accounts.values()).filter(
+      (account) => account.currency === currency
+    );
   },
 }));

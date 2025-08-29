@@ -44,7 +44,7 @@ import TransactionAutocomplete, {
 } from "../../components/form/TransactionAutocomplete";
 import AccountAutocomplete from "../../components/form/AccountAutocomplete";
 import { Account } from "../../../../cli/bindings/Account";
-import { useTransactionStore } from "../../stores/transactions";
+import { useTransactionStore } from "../../stores/transaction";
 
 function EditTransactionDrawer({
   account,

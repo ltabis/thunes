@@ -8,10 +8,11 @@ import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import { SettingsProvider } from "./contexts/Settings";
 
-import { useAccountStore } from "./stores/accounts";
-import { getTransactions, listAccountsWithDetails } from "./api";
-import { useTransactionStore } from "./stores/transactions";
+import { useAccountStore } from "./stores/account";
+import { getTransactions, listAccountsWithDetails, listBudgets } from "./api";
+import { useTransactionStore } from "./stores/transaction";
 import { TransactionWithId } from "../../cli/bindings/TransactionWithId";
+import { useBudgetStore } from "./stores/budget";
 
 await listAccountsWithDetails().then((accounts) =>
   useAccountStore.setState({
@@ -30,6 +31,8 @@ for (const [id, account] of useAccountStore.getState().accounts) {
 useTransactionStore.setState({
   transactions,
 });
+
+useBudgetStore.setState({ budgets: await listBudgets() });
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

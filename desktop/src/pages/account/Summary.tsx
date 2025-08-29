@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { getBalance, getCurrencyFromAccount } from "../../api";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { Account } from "../../../../cli/bindings/Account";
-import { useTransactionStore } from "../../stores/transactions";
+import { useTransactionStore } from "../../stores/transaction";
 
 export default function Transactions({ account }: { account: Account }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
