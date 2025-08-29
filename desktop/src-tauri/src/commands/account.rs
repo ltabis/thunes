@@ -182,7 +182,7 @@ pub async fn add_transaction(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account_id: RecordId,
     options: AddTransactionOptions,
-) -> Result<(), String> {
+) -> Result<TransactionWithId, String> {
     let database = database.lock().await;
 
     thunes_cli::create_transaction(&database, account_id, options)
@@ -198,7 +198,7 @@ pub async fn add_transaction(
 pub async fn add_transaction_transfer(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     options: AddTransactionTransferOptions,
-) -> Result<(), String> {
+) -> Result<TransactionWithId, String> {
     let database = database.lock().await;
 
     thunes_cli::create_transaction_transfer(&database, options)

@@ -9,20 +9,19 @@ import {
   TextField,
 } from "@mui/material";
 import { Account } from "../../../../cli/bindings/Account";
-import { useEffect, useState } from "react";
-import { deleteAccount, getAccount, RecordId, updateAccount } from "../../api";
+import { useState } from "react";
+import { deleteAccount } from "../../api";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
-import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers";
 import { useAccountNavigate } from "../../hooks/accounts";
+import { useAccountStore } from "../../stores/accounts";
 
 function DeleteAccountDialog({
   account,
   onClose,
-  onChange,
-}: {
-  account: AccountIdentifiers;
+}: // onChange,
+{
+  account: Account;
   onClose: () => void;
-  onChange: (account: RecordId) => void;
 }) {
   const navigate = useAccountNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
@@ -31,7 +30,6 @@ function DeleteAccountDialog({
     deleteAccount(account.id)
       .then(() => {
         onClose();
-        onChange(account.id);
         navigate();
       })
       .catch((error) =>
@@ -55,31 +53,24 @@ function DeleteAccountDialog({
 export default function ({
   account,
   onClose,
-  onChange,
 }: {
-  account: RecordId;
+  account: Account;
   onClose: () => void;
-  onChange: (account: RecordId) => void;
 }) {
+  const accountStore = useAccountStore();
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [deleteDialog, setDeleteDialog] = useState(false);
-  const [form, setForm] = useState<Account>();
+  const [form, setForm] = useState<Account>(account);
 
   const handleSettingsUpdate = (account: Account) => {
-    updateAccount(account).catch((error) =>
-      dispatchSnackbar({ type: "open", severity: "error", message: error })
-    );
-    onChange(account.id);
-    onClose();
-  };
-
-  useEffect(() => {
-    getAccount(account)
-      .then(setForm)
+    accountStore
+      .update(account)
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
-  }, [account, dispatchSnackbar]);
+    // onChange(account.id);
+    onClose();
+  };
 
   if (!form) return <></>;
 
@@ -123,9 +114,8 @@ export default function ({
 
       {deleteDialog && (
         <DeleteAccountDialog
-          account={{ id: form.id, name: form.name }}
+          account={form}
           onClose={() => setDeleteDialog(false)}
-          onChange={onChange}
         />
       )}
     </Drawer>

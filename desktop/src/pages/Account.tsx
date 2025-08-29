@@ -11,18 +11,11 @@ import {
   SnackbarCloseReason,
   TextField,
 } from "@mui/material";
-import {
-  Dispatch,
-  FormEvent,
-  SetStateAction,
-  useEffect,
-  useState,
-} from "react";
+import { Dispatch, FormEvent, SetStateAction, useState } from "react";
 import Transactions from "./account/Transactions";
 import Summary from "./account/Summary";
 import { SyntheticEvent } from "react";
 import SettingsDrawer from "./account/Settings";
-import { addAccount, listAccounts, RecordId } from "../api";
 import { Account } from "../../../cli/bindings/Account";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
@@ -31,16 +24,16 @@ import { useAccountNavigate } from "../hooks/accounts";
 import Page from "./Page";
 import { Item } from "../components/form/CustomSelector";
 import CustomSelector from "../components/form/CustomSelector";
+import { useAccountStore } from "../stores/accounts";
 
 function AddAccountDialog({
   open,
   setOpen,
-  handleUpdateAccounts,
 }: {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateAccounts: (account: RecordId) => Promise<void>;
 }) {
+  const accountStore = useAccountStore();
   const navigate = useAccountNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [form, setForm] = useState<
@@ -55,12 +48,11 @@ function AddAccountDialog({
   };
 
   const handleAccountSubmission = async () => {
-    addAccount(form)
+    accountStore
+      .create(form)
       .then((account) => {
         handleCloseForm();
-        handleUpdateAccounts(account.id).then(() =>
-          navigate({ id: account.id, name: account.name })
-        );
+        navigate({ id: account.id, name: account.name });
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
@@ -126,10 +118,7 @@ export default function () {
   const [settingsDialog, setSettingsDialog] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openFailure, setOpenFailure] = useState("");
-  const [accounts, setAccounts] = useState<Map<string, AccountIdentifiers>>();
-
-  const getAccountIdentifiers = () =>
-    id && accounts ? accounts.get(id) : undefined;
+  const accountStore = useAccountStore();
 
   const handleSnackbarClose = (
     _event?: SyntheticEvent | Event,
@@ -145,23 +134,6 @@ export default function () {
   const handleSelectAccount = async (account: AccountIdentifiers) =>
     navigate(account);
 
-  const handleUpdateAccounts = async () => {
-    try {
-      const accounts = await listAccounts();
-      setAccounts(
-        new Map(accounts.map((account) => [account.id.id.String, account]))
-      );
-    } catch (error) {
-      setOpenFailure(error as string);
-    }
-  };
-
-  useEffect(() => {
-    handleUpdateAccounts();
-  }, []);
-
-  if (!accounts) return;
-
   return (
     <Page
       toolbarStart={
@@ -169,28 +141,24 @@ export default function () {
           selected={
             id
               ? ({
-                  name: accounts.get(id)!.name,
+                  name: accountStore.accounts.get(id)!.name,
                   value: id,
                 } as Item)
               : undefined
           }
-          items={Array.from(accounts.values()).map((account) => ({
+          items={Array.from(accountStore.accounts.values()).map((account) => ({
             name: account.name,
             value: account.id.id.String,
           }))}
           createPlaceholder="Create account"
           selectPlaceholder="Select account"
           onChange={(selected) =>
-            handleSelectAccount(accounts.get(selected.value)!)
+            handleSelectAccount(accountStore.accounts.get(selected.value)!)
           }
           onCreate={() => setOpenAddDialog(true)}
         />
       }
-      toolbarEnd={
-        getAccountIdentifiers() && (
-          <Summary accountId={getAccountIdentifiers()!} />
-        )
-      }
+      toolbarEnd={id && <Summary account={accountStore.accounts.get(id)!} />}
       actions={[
         {
           name: "Settings",
@@ -201,9 +169,7 @@ export default function () {
       ]}
     >
       <Box>
-        {getAccountIdentifiers() && (
-          <Transactions accountId={getAccountIdentifiers()!} />
-        )}
+        {id && <Transactions account={accountStore.accounts.get(id)!} />}
 
         <Snackbar
           anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
@@ -221,17 +187,12 @@ export default function () {
           </Alert>
         </Snackbar>
 
-        <AddAccountDialog
-          open={openAddDialog}
-          setOpen={setOpenAddDialog}
-          handleUpdateAccounts={handleUpdateAccounts}
-        />
+        <AddAccountDialog open={openAddDialog} setOpen={setOpenAddDialog} />
 
-        {settingsDialog && getAccountIdentifiers() && (
+        {settingsDialog && id && (
           <SettingsDrawer
-            account={getAccountIdentifiers()!.id}
+            account={accountStore.accounts.get(id)!}
             onClose={() => setSettingsDialog(false)}
-            onChange={handleUpdateAccounts}
           />
         )}
       </Box>

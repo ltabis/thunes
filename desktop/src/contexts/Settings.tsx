@@ -1,4 +1,4 @@
-import { Settings as AppSettings } from "../../../cli/bindings/Settings";
+import { Settings } from "../../../cli/bindings/Settings";
 import {
   createContext,
   Dispatch,
@@ -8,7 +8,7 @@ import {
 } from "react";
 import { Action, settingsReducer } from "../reducers/Settings";
 
-const SettingsContext = createContext<AppSettings | null>(null);
+const SettingsContext = createContext<Settings | null>(null);
 const SettingsDispatchContext = createContext<Dispatch<Action> | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {

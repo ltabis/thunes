@@ -1,28 +1,37 @@
 import { Skeleton, Stack, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
-import { getBalance, getCurrencyFromAccount, RecordId } from "../../api";
+import { getBalance, getCurrencyFromAccount } from "../../api";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
-import { AccountIdentifiers } from "../../../../cli/bindings/AccountIdentifiers";
+import { Account } from "../../../../cli/bindings/Account";
+import { useTransactionStore } from "../../stores/transactions";
 
-export default function Transactions({
-  accountId,
-}: {
-  accountId: AccountIdentifiers;
-}) {
+export default function Transactions({ account }: { account: Account }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
   const [currency, setCurrency] = useState<string | null>(null);
   const [balance, setBalance] = useState(0.0);
 
-  const handleUpdateTransactions = async (account: RecordId) => {
-    await getCurrencyFromAccount(account).then(setCurrency);
-    await getBalance(account).then(setBalance);
-  };
-
   useEffect(() => {
-    handleUpdateTransactions(accountId.id).catch((error) =>
-      dispatchSnackbar({ type: "open", severity: "error", message: error })
-    );
-  }, [accountId, dispatchSnackbar]);
+    const handleUpdateTransactions = async (account: Account) => {
+      await getCurrencyFromAccount(account.id)
+        .then(setCurrency)
+        .catch((error) =>
+          dispatchSnackbar({ type: "open", severity: "error", message: error })
+        );
+      await getBalance(account.id)
+        .then(setBalance)
+        .catch((error) =>
+          dispatchSnackbar({ type: "open", severity: "error", message: error })
+        );
+    };
+
+    handleUpdateTransactions(account);
+
+    const unsubscribe = useTransactionStore.subscribe(async () => {
+      handleUpdateTransactions(account);
+    });
+
+    return unsubscribe;
+  }, [account, dispatchSnackbar]);
 
   return (
     <Stack direction="row">

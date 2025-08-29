@@ -158,7 +158,7 @@ pub async fn create_transaction(
     db: &Surreal<Db>,
     account_id: RecordId,
     options: AddTransactionOptions,
-) -> Result<(), surrealdb::Error> {
+) -> Result<TransactionWithId, Error> {
     let query = r#"
     CREATE transaction SET
         date = <datetime>$date,
@@ -168,7 +168,8 @@ pub async fn create_transaction(
         tags = $tags,
         account = $account_id"#;
 
-    db.query(query)
+    let transaction: Option<TransactionWithId> = db
+        .query(query)
         .bind(("date", options.date.unwrap_or_else(chrono::Utc::now)))
         .bind((
             "category",
@@ -178,9 +179,10 @@ pub async fn create_transaction(
         .bind(("description", options.description))
         .bind(("tags", serde_json::json!(options.tags)))
         .bind(("account_id", account_id))
-        .await?;
+        .await?
+        .take(0)?;
 
-    Ok(())
+    transaction.ok_or(Error::RecordNotFound)
 }
 
 #[derive(ts_rs::TS)]
@@ -201,7 +203,7 @@ pub struct AddTransactionTransferOptions {
 pub async fn create_transaction_transfer(
     db: &Surreal<Db>,
     options: AddTransactionTransferOptions,
-) -> Result<(), surrealdb::Error> {
+) -> Result<TransactionWithId, Error> {
     let query = r#"
     CREATE transaction SET
         description = $description,
@@ -218,7 +220,8 @@ pub async fn create_transaction_transfer(
         account = $to,
         category = $category;"#;
 
-    db.query(query)
+    let transaction: Option<TransactionWithId> = db
+        .query(query)
         .bind(("description", options.description))
         .bind(("amount", options.amount))
         .bind(("date", options.date.unwrap_or_else(chrono::Utc::now)))
@@ -229,9 +232,10 @@ pub async fn create_transaction_transfer(
             "category",
             RecordId::from(("category", "internal-movements")),
         ))
-        .await?;
+        .await?
+        .take(0)?;
 
-    Ok(())
+    transaction.ok_or(Error::RecordNotFound)
 }
 
 #[derive(ts_rs::TS)]

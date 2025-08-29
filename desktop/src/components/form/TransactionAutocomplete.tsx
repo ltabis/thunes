@@ -10,6 +10,7 @@ import dayjs, { Dayjs } from "dayjs";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
 
 export type FormTransaction = Omit<TransactionWithId, "amount" | "date"> & {
+  // Omit "amount" float value to enable the user to enter a floating point character.
   amount: string;
   date: Dayjs;
   category: RecordId;
