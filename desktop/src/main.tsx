@@ -9,10 +9,16 @@ import { BrowserRouter } from "react-router-dom";
 import { SettingsProvider } from "./contexts/Settings";
 
 import { useAccountStore } from "./stores/account";
-import { getTransactions, listAccountsWithDetails, listBudgets } from "./api";
+import {
+  getTransactions,
+  listAccountsWithDetails,
+  listBudgets,
+  listTiles,
+} from "./api";
 import { useTransactionStore } from "./stores/transaction";
 import { TransactionWithId } from "../../cli/bindings/TransactionWithId";
 import { useBudgetStore } from "./stores/budget";
+import { useTileStore } from "./stores/tiles";
 
 await listAccountsWithDetails().then((accounts) =>
   useAccountStore.setState({
@@ -33,6 +39,7 @@ useTransactionStore.setState({
 });
 
 useBudgetStore.setState({ budgets: await listBudgets() });
+useTileStore.setState({ tiles: await listTiles() });
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
