@@ -34,15 +34,7 @@ import {
   useState,
 } from "react";
 import { SyntheticEvent } from "react";
-import {
-  addBudget,
-  getBudget,
-  getBudgetAllocations,
-  getBudgetPartitions,
-  listAccountsWithDetails,
-  listBudgets,
-  RecordId,
-} from "../api";
+import { getBudgetAllocations, getBudgetPartitions } from "../api";
 import { BudgetIdentifiers } from "../../../cli/bindings/BudgetIdentifiers";
 import { useBudgetNavigate } from "../hooks/budget";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
@@ -64,19 +56,20 @@ import AllocationBar from "./budget/AllocationBar";
 import BudgetSettings from "./budget/Settings";
 import Page from "./Page";
 import CustomSelector from "../components/form/CustomSelector";
+import { useBudgetStore } from "../stores/budget";
+import { useAccountStore } from "../stores/account";
 
 function AddBudgetDialog({
   open,
   setOpen,
-  handleUpdateBudgets,
 }: {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  handleUpdateBudgets: (budget: RecordId) => Promise<void>;
 }) {
   const navigate = useBudgetNavigate();
+  const budgetStore = useBudgetStore();
+  const accountStore = useAccountStore();
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [accounts, setAccounts] = useState<Account[]>();
 
   const [form, setForm] = useState<
     Omit<CreateSplitBudgetOptions, "income" | "accounts"> & {
@@ -90,12 +83,14 @@ function AddBudgetDialog({
     accounts: [],
   });
 
-  const getCurrencies = (accounts: Account[]) =>
-    Array.from(new Set(accounts.map((account) => account.currency)).values());
-
   // FIXME: filter using the backend.
-  const filterAccountByCurrency = (accounts: Account[], currency: string) =>
-    accounts.filter((account) => account.currency === currency);
+  const filterAccountByCurrency = (
+    accounts: Map<string, Account>,
+    currency: string
+  ) =>
+    Array.from(accounts.values()).filter(
+      (account) => account.currency === currency
+    );
 
   const handleCloseForm = () => {
     setOpen(false);
@@ -107,29 +102,20 @@ function AddBudgetDialog({
     const income = filterFloat(form.income);
     const accounts = form.accounts.map((account) => account.id);
 
-    addBudget({
-      ...form,
-      income,
-      accounts,
-    })
+    budgetStore
+      .create({
+        ...form,
+        income,
+        accounts,
+      })
       .then((budget) => {
         handleCloseForm();
-        handleUpdateBudgets(budget.id).then(() =>
-          navigate({ id: budget.id, name: budget.name })
-        );
+        navigate({ id: budget.id, name: budget.name });
       })
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
   };
-
-  useEffect(() => {
-    listAccountsWithDetails()
-      .then(setAccounts)
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-  }, [dispatchSnackbar]);
 
   return (
     <Dialog
@@ -176,7 +162,7 @@ function AddBudgetDialog({
             />
           </Grid>
         </Grid>
-        {accounts && (
+        {
           <Grid container spacing={2} sx={{ margin: 1 }}>
             <Grid size={5}>
               <InputLabel>Currency</InputLabel>
@@ -187,7 +173,7 @@ function AddBudgetDialog({
                   setForm({ ...form, currency: currency.target.value })
                 }
               >
-                {getCurrencies(accounts).map((currency, id) => (
+                {accountStore.getCurrencies().map((currency, id) => (
                   <MenuItem key={`${currency}-${id}`} value={currency}>
                     {currency}
                   </MenuItem>
@@ -206,8 +192,11 @@ function AddBudgetDialog({
                   disableCloseOnSelect
                   value={form.accounts}
                   options={
-                    accounts
-                      ? filterAccountByCurrency(accounts, form.currency)
+                    accountStore.accounts
+                      ? filterAccountByCurrency(
+                          accountStore.accounts,
+                          form.currency
+                        )
                       : []
                   }
                   getOptionLabel={(account) => account.name}
@@ -233,7 +222,7 @@ function AddBudgetDialog({
               )}
             </Grid>
           </Grid>
-        )}
+        }
       </DialogContent>
       <DialogActions>
         <Button onClick={handleCloseForm}>Cancel</Button>
@@ -258,9 +247,8 @@ const computeBudgetUnallocated = (
 ): number =>
   budget.income - allocations.reduce((acc, curr) => acc + curr.amount, 0);
 
-function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
+function Details({ budget }: { budget: Budget }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [budget, setBudget] = useState<Budget>();
   const [partitions, setPartitions] = useState<Partition[]>([]);
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [editPartition, setEditPartition] = useState<Partition | null>(null);
@@ -269,22 +257,11 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
   const [addAllocation, setAddAllocation] = useState(false);
 
   useEffect(() => {
-    getBudget(identifiers.id)
-      .then((budget) => {
-        setBudget(budget);
-        getBudgetPartitions(budget.id)
-          .then((partitions) => {
-            setPartitions(partitions);
-            getBudgetAllocations(partitions.map((partition) => partition.id))
-              .then(setAllocations)
-              .catch((error) =>
-                dispatchSnackbar({
-                  type: "open",
-                  severity: "error",
-                  message: error,
-                })
-              );
-          })
+    getBudgetPartitions(budget.id)
+      .then((partitions) => {
+        setPartitions(partitions);
+        getBudgetAllocations(partitions.map((partition) => partition.id))
+          .then(setAllocations)
           .catch((error) =>
             dispatchSnackbar({
               type: "open",
@@ -294,9 +271,13 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
           );
       })
       .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
+        dispatchSnackbar({
+          type: "open",
+          severity: "error",
+          message: error,
+        })
       );
-  }, [identifiers.id, dispatchSnackbar]);
+  }, [budget.id, dispatchSnackbar]);
 
   return (
     <Stack direction="row" sx={{ overflow: "scroll", maxHeight: "100%" }}>
@@ -386,7 +367,7 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
         <AddPartitionDrawer
           budget={budget}
           // FIXME: bad way to trigger a re-render.
-          onUpdate={() => (identifiers.id = { ...identifiers.id })}
+          onUpdate={() => (budget.id = { ...budget.id })}
           close={() => setAddPartition(false)}
         />
       )}
@@ -394,7 +375,7 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
       {editPartition && (
         <EditPartitionDrawer
           partition={editPartition}
-          onUpdate={() => (identifiers.id = { ...identifiers.id })}
+          onUpdate={() => (budget.id = { ...budget.id })}
           close={() => setEditPartition(null)}
         />
       )}
@@ -402,7 +383,7 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
       {addAllocation && budget && (
         <AddAllocationDrawer
           budget={budget}
-          onUpdate={() => (identifiers.id = { ...identifiers.id })}
+          onUpdate={() => (budget.id = { ...budget.id })}
           close={() => setAddAllocation(false)}
         />
       )}
@@ -411,7 +392,7 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
         <EditAllocationDrawer
           budget={budget}
           allocation={editAllocation}
-          onUpdate={() => (identifiers.id = { ...identifiers.id })}
+          onUpdate={() => (budget.id = { ...budget.id })}
           close={() => setEditAllocation(null)}
         />
       )}
@@ -442,14 +423,11 @@ function Details({ identifiers }: { identifiers: BudgetIdentifiers }) {
 export default function () {
   const { id } = useParams();
   const navigate = useBudgetNavigate();
+  const store = useBudgetStore();
 
   const [editBudget, setEditBudget] = useState<boolean>(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openFailure, setOpenFailure] = useState("");
-  const [budgets, setBudgets] = useState<Map<string, BudgetIdentifiers>>();
-
-  const getBudgetIdentifiers = () =>
-    id && budgets ? budgets.get(id) : undefined;
 
   const handleSnackbarClose = (
     _event?: SyntheticEvent | Event,
@@ -465,23 +443,6 @@ export default function () {
   const handleSelectBudget = async (budget: BudgetIdentifiers) =>
     navigate(budget);
 
-  const handleUpdateBudgets = async () => {
-    try {
-      const budgets = await listBudgets();
-      setBudgets(
-        new Map(budgets.map((budget) => [budget.id.id.String, budget]))
-      );
-    } catch (error) {
-      setOpenFailure(error as string);
-    }
-  };
-
-  useEffect(() => {
-    handleUpdateBudgets();
-  }, []);
-
-  if (!budgets) return;
-
   return (
     <Page
       toolbarStart={
@@ -489,19 +450,19 @@ export default function () {
           selected={
             id
               ? {
-                  name: budgets.get(id)!.name,
+                  name: store.getById(id)!.name,
                   value: id,
                 }
               : undefined
           }
-          items={Array.from(budgets.values()).map((budget) => ({
+          items={Array.from(store.budgets.values()).map((budget) => ({
             name: budget.name,
             value: budget.id.id.String,
           }))}
           createPlaceholder="Create budget"
           selectPlaceholder="Select budget"
           onChange={(selected) =>
-            handleSelectBudget(budgets.get(selected.value)!)
+            handleSelectBudget(store.getById(selected.value)!)
           }
           onCreate={() => setOpenAddDialog(true)}
         />
@@ -513,9 +474,7 @@ export default function () {
         },
       ]}
     >
-      {getBudgetIdentifiers() && (
-        <Details identifiers={getBudgetIdentifiers()!} />
-      )}
+      {id && <Details budget={store.getById(id)!} />}
 
       <Snackbar
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
@@ -533,16 +492,11 @@ export default function () {
         </Alert>
       </Snackbar>
 
-      <AddBudgetDialog
-        open={openAddDialog}
-        setOpen={setOpenAddDialog}
-        handleUpdateBudgets={handleUpdateBudgets}
-      />
+      <AddBudgetDialog open={openAddDialog} setOpen={setOpenAddDialog} />
 
-      {editBudget && getBudgetIdentifiers() && (
+      {editBudget && id && (
         <BudgetSettings
-          budget={getBudgetIdentifiers()!.id}
-          onChange={handleUpdateBudgets}
+          budget={store.getById(id)!}
           onClose={() => setEditBudget(false)}
         />
       )}

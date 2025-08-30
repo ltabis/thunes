@@ -13,7 +13,7 @@ import { useState } from "react";
 import { deleteAccount } from "../../api";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { useAccountNavigate } from "../../hooks/accounts";
-import { useAccountStore } from "../../stores/accounts";
+import { useAccountStore } from "../../stores/account";
 
 function DeleteAccountDialog({
   account,

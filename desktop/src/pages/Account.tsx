@@ -24,7 +24,7 @@ import { useAccountNavigate } from "../hooks/accounts";
 import Page from "./Page";
 import { Item } from "../components/form/CustomSelector";
 import CustomSelector from "../components/form/CustomSelector";
-import { useAccountStore } from "../stores/accounts";
+import { useAccountStore } from "../stores/account";
 
 function AddAccountDialog({
   open,

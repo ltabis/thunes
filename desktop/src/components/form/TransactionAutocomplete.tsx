@@ -6,7 +6,7 @@ import {
 import { EMPTY_RECORD_ID, RecordId } from "../../api";
 import dayjs, { Dayjs } from "dayjs";
 import { TransactionWithId } from "../../../../cli/bindings/TransactionWithId";
-import { useTransactionStore } from "../../stores/transactions";
+import { useTransactionStore } from "../../stores/transaction";
 import { Account } from "../../../../cli/bindings/Account";
 
 export type FormTransaction = Omit<TransactionWithId, "amount" | "date"> & {
