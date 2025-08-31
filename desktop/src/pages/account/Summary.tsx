@@ -40,7 +40,7 @@ export default function Transactions({ account }: { account: Account }) {
           {`${balance.toFixed(2)} ${currency}`}
         </Typography>
       ) : (
-        <Skeleton animation="wave" />
+        <Skeleton animation="wave" width={200} height={60} />
       )}
     </Stack>
   );

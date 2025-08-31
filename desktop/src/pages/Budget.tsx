@@ -25,6 +25,7 @@ import {
   TextField,
   Typography,
   Stack,
+  Skeleton,
 } from "@mui/material";
 import {
   Dispatch,
@@ -249,7 +250,7 @@ const computeBudgetUnallocated = (
 
 function Details({ budget }: { budget: Budget }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [partitions, setPartitions] = useState<Partition[]>([]);
+  const [partitions, setPartitions] = useState<Partition[] | null>(null);
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [editPartition, setEditPartition] = useState<Partition | null>(null);
   const [editAllocation, setEditAllocation] = useState<Allocation | null>(null);
@@ -257,31 +258,30 @@ function Details({ budget }: { budget: Budget }) {
   const [addAllocation, setAddAllocation] = useState(false);
 
   useEffect(() => {
-    getBudgetPartitions(budget.id)
-      .then((partitions) => {
+    const getBudgetParts = async () => {
+      try {
+        const partitions = await getBudgetPartitions(budget.id);
+        const allocations = await getBudgetAllocations(
+          partitions.map((partition) => partition.id)
+        );
+
+        setAllocations(allocations);
         setPartitions(partitions);
-        getBudgetAllocations(partitions.map((partition) => partition.id))
-          .then(setAllocations)
-          .catch((error) =>
-            dispatchSnackbar({
-              type: "open",
-              severity: "error",
-              message: error,
-            })
-          );
-      })
-      .catch((error) =>
+      } catch (error) {
         dispatchSnackbar({
           type: "open",
           severity: "error",
-          message: error,
-        })
-      );
+          message: error as string,
+        });
+      }
+    };
+
+    getBudgetParts();
   }, [budget.id, dispatchSnackbar]);
 
   return (
     <Stack direction="row" sx={{ overflow: "scroll", maxHeight: "100%" }}>
-      {budget && (
+      {partitions ? (
         <List sx={{ flexGrow: 10 }}>
           {partitions.flat().flatMap((partition) => {
             const allocationsForPartition = allocations.filter(
@@ -319,6 +319,12 @@ function Details({ budget }: { budget: Budget }) {
             ));
           })}
         </List>
+      ) : (
+        <Stack>
+          {[...Array(5)].map(() => (
+            <Skeleton animation="wave" width={1000} height={100} />
+          ))}
+        </Stack>
       )}
       {budget && (
         <Stack alignItems="flex-start" sx={{ flexGrow: 1 }}>

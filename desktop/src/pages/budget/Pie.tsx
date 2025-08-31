@@ -251,6 +251,6 @@ export default function ({
       />
     </Stack>
   ) : (
-    <Skeleton variant="circular" width={200} height={200} />
+    <Skeleton variant="circular" width={250} height={250} />
   );
 }
