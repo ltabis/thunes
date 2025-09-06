@@ -13,11 +13,11 @@ import {
   Typography,
 } from "@mui/material";
 import { Theme } from "../../../cli/bindings/Theme";
-import { useDispatchSettings, useSettings } from "../contexts/Settings";
 import { ReactNode } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { ExportBackup, ImportBackup } from "../api";
+import { exportBackup, importBackup } from "../api";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
+import { useSettingStore } from "../stores/setting";
 
 function SettingDescription({ children }: { children: ReactNode }) {
   return (
@@ -57,29 +57,25 @@ function SettingSection({
 const SETTINGS_GRID_PADDING = 5;
 
 export default function Settings() {
-  const settings = useSettings();
-  const dispatchSettings = useDispatchSettings()!;
+  const store = useSettingStore();
   const dispatchSnackbar = useDispatchSnackbar()!;
 
   const handleBackupDirectoryPath = async () => {
     const backups_path = await open({
-      defaultPath: settings?.backups_path,
+      defaultPath: store.settings?.backups_path,
       directory: true,
       title: "select backup directory",
     });
 
-    if (backups_path && settings) {
-      dispatchSettings({
-        type: "update",
-        settings: {
-          ...settings,
-          backups_path,
-        },
+    if (backups_path) {
+      store.update({
+        ...store.settings,
+        backups_path,
       });
     }
   };
 
-  return settings ? (
+  return (
     <Paper elevation={0}>
       <SettingSection
         title="Appearance"
@@ -95,15 +91,12 @@ export default function Settings() {
             <Select
               labelId="demo-simple-select-label"
               id="demo-simple-select"
-              value={settings.theme}
+              value={store.settings.theme}
               label="Theme"
               onChange={(event: SelectChangeEvent) => {
-                dispatchSettings({
-                  type: "update",
-                  settings: {
-                    ...settings,
-                    theme: event.target.value as Theme,
-                  },
+                store.update({
+                  ...store.settings,
+                  theme: event.target.value as Theme,
                 });
               }}
             >
@@ -125,7 +118,7 @@ export default function Settings() {
           <TextField
             fullWidth
             label="Backups path"
-            value={settings.backups_path}
+            value={store.settings.backups_path}
             onClick={handleBackupDirectoryPath}
             sx={{ cursor: "pointer" }}
           />
@@ -141,7 +134,7 @@ export default function Settings() {
           <Button
             variant="contained"
             onClick={async () => {
-              ExportBackup()
+              exportBackup()
                 .catch((error) =>
                   dispatchSnackbar({
                     type: "open",
@@ -174,7 +167,7 @@ export default function Settings() {
                 directory: false,
               });
               if (path) {
-                ImportBackup(path).catch((error) =>
+                importBackup(path).catch((error) =>
                   dispatchSnackbar({
                     type: "open",
                     severity: "error",
@@ -192,18 +185,6 @@ export default function Settings() {
           </Alert>
         </Grid>
       </SettingSection>
-
-      <Divider sx={{ marginTop: 2, marginBottom: 2 }} />
-
-      <Button
-        variant="contained"
-        onClick={() => dispatchSettings({ type: "save" })}
-        sx={{ m: 1 }}
-      >
-        Save settings
-      </Button>
     </Paper>
-  ) : (
-    <></>
   );
 }

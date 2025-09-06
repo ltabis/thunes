@@ -6,10 +6,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
-import { SettingsProvider } from "./contexts/Settings";
 
 import { useAccountStore } from "./stores/account";
 import {
+  getSettings,
   getTransactions,
   listAccountsWithDetails,
   listBudgets,
@@ -19,6 +19,7 @@ import { useTransactionStore } from "./stores/transaction";
 import { TransactionWithId } from "../../cli/bindings/TransactionWithId";
 import { useBudgetStore } from "./stores/budget";
 import { useTileStore } from "./stores/tiles";
+import { useSettingStore } from "./stores/setting";
 
 await listAccountsWithDetails().then((accounts) =>
   useAccountStore.setState({
@@ -40,13 +41,12 @@ useTransactionStore.setState({
 
 useBudgetStore.setState({ budgets: await listBudgets() });
 useTileStore.setState({ tiles: await listTiles() });
+useSettingStore.setState({ settings: await getSettings() });
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <BrowserRouter basename="/">
-      <SettingsProvider>
-        <App />
-      </SettingsProvider>
+      <App />
     </BrowserRouter>
   </React.StrictMode>
 );

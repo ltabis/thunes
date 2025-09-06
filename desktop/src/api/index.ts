@@ -130,8 +130,8 @@ export const addTags = (tags: Tag[]): Promise<void> =>
   invoke("add_tags", { tags });
 
 // Backups.
-export const ExportBackup = (): Promise<void> => invoke("backup_export");
-export const ImportBackup = (path: string): Promise<void> =>
+export const exportBackup = (): Promise<void> => invoke("backup_export");
+export const importBackup = (path: string): Promise<void> =>
   invoke("backup_import", { path });
 
 // Currency.
