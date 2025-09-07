@@ -6,8 +6,7 @@ import {
   Grid,
   Box,
 } from "@mui/material";
-import { useEffect, useState } from "react";
-import { addTile, listTiles, removeTile, updateTile } from "../api";
+import { useState } from "react";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
 import {
   closestCenter,
@@ -35,9 +34,9 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   rectSwappingStrategy,
-  arrayMove,
 } from "@dnd-kit/sortable";
 import Page from "./Page";
+import { useTileStore } from "../stores/tiles";
 
 function Tile({
   id,
@@ -84,9 +83,9 @@ function Tile({
 
 export default function () {
   const dispatchSnackbar = useDispatchSnackbar()!;
+  const store = useTileStore()!;
   const [addAccountTile, setAddAccountTile] = useState(false);
   const [addBudgetTile, setAddBudgetTile] = useState(false);
-  const [tiles, setTiles] = useState<PortfolioTile[]>([]);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -102,32 +101,8 @@ export default function () {
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
-    if (over && active.id !== over.id) {
-      updateTile({
-        ...tiles[active.id as number],
-        order: over.id as number,
-      }).catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-      updateTile({
-        ...tiles[over.id as number],
-        order: active.id as number,
-      }).catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-      setTiles((tiles) =>
-        arrayMove(tiles, active.id as number, over.id as number)
-      );
-    }
+    if (over) store.swap(active.id as number, over.id as number);
   }
-
-  useEffect(() => {
-    listTiles()
-      .then(setTiles)
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-  }, [dispatchSnackbar]);
 
   return (
     <Page
@@ -140,26 +115,23 @@ export default function () {
         onDragEnd={handleDragEnd}
       >
         <SortableContext
-          items={tiles.map((_tile, index) => index)}
+          items={store.tiles.map((_tile, index) => index)}
           strategy={rectSwappingStrategy}
         >
           <Grid container spacing={2} sx={{ m: 2 }}>
-            {tiles.map((tile, index) => (
+            {store.tiles.map((tile, index) => (
               <Tile
                 key={`${tile.type}.${index}`}
                 id={index}
                 tile={tile}
                 onRemove={() => {
-                  removeTile(tile.id)
-                    .then(listTiles)
-                    .then(setTiles)
-                    .catch((error) =>
-                      dispatchSnackbar({
-                        type: "open",
-                        severity: "error",
-                        message: error,
-                      })
-                    );
+                  store.delete(tile).catch((error) =>
+                    dispatchSnackbar({
+                      type: "open",
+                      severity: "error",
+                      message: error,
+                    })
+                  );
                 }}
               />
             ))}
@@ -199,9 +171,8 @@ export default function () {
         <AddAccountTile
           close={() => setAddAccountTile(false)}
           onCreate={(data) => {
-            addTile({ content: { type: "Currency", data } })
-              .then(listTiles)
-              .then(setTiles)
+            store
+              .create({ content: { type: "Currency", data } })
               .catch((error) =>
                 dispatchSnackbar({
                   type: "open",
@@ -217,16 +188,13 @@ export default function () {
         <AddBudgetTile
           close={() => setAddBudgetTile(false)}
           onCreate={(data) => {
-            addTile({ content: { type: "Budget", data } })
-              .then(listTiles)
-              .then(setTiles)
-              .catch((error) =>
-                dispatchSnackbar({
-                  type: "open",
-                  severity: "error",
-                  message: error,
-                })
-              );
+            store.create({ content: { type: "Budget", data } }).catch((error) =>
+              dispatchSnackbar({
+                type: "open",
+                severity: "error",
+                message: error,
+              })
+            );
           }}
         />
       )}

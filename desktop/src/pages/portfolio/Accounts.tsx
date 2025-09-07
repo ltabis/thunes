@@ -41,7 +41,7 @@ export function RenderTile({
       );
   }, [tile.currency, dispatchSnackbar]);
 
-  if (!data) return <Skeleton animation="wave" />;
+  if (!data) return <Skeleton variant="rectangular" width={300} height={300} />;
 
   let chart = <></>;
 

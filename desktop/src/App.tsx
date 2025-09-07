@@ -16,20 +16,17 @@ import PieChartIcon from "@mui/icons-material/PieChart";
 import Account from "./pages/Account";
 import { Route, Routes, Outlet, useNavigate } from "react-router-dom";
 import Portfolio from "./pages/Portfolio";
-import React, { useEffect } from "react";
+import React from "react";
 import Settings from "./pages/Settings";
 import { darkTheme, lightTheme } from "./Themes";
-import { useDispatchSettings, useSettings } from "./contexts/Settings";
-import { getSettings } from "./api";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { SnackbarProvider, useDispatchSnackbar } from "./contexts/Snackbar";
+import { SnackbarProvider } from "./contexts/Snackbar";
 import Budget from "./pages/Budget";
+import { useSettingStore } from "./stores/setting";
 
 function Layout() {
-  const settings = useSettings();
-  const dispatchSettings = useDispatchSettings()!;
-  const dispatchSnackbar = useDispatchSnackbar()!;
+  const store = useSettingStore();
   const navigate = useNavigate();
   const drawerWidth = 240;
 
@@ -37,17 +34,19 @@ function Layout() {
     {
       label: "Portfolio",
       icon: DashboardIcon,
-      path: "/",
+      path: () => "/",
     },
     {
       label: "Accounts",
       icon: AccountBalanceWalletIcon,
-      path: "/account",
+      path: () =>
+        store.opened.account ? `/account/${store.opened.account}` : "/account",
     },
     {
       label: "Budgets",
       icon: PieChartIcon,
-      path: "/budget",
+      path: () =>
+        store.opened.budget ? `/budget/${store.opened.budget}` : "/budget",
     },
   ];
 
@@ -55,22 +54,14 @@ function Layout() {
     {
       label: "Settings",
       icon: SettingsIcon,
-      path: "/settings",
+      path: () => "/settings",
     },
   ];
-
-  useEffect(() => {
-    getSettings()
-      .then((settings) => dispatchSettings({ type: "update", settings }))
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
-  }, [dispatchSettings, dispatchSnackbar]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <ThemeProvider
-        theme={settings?.theme === "dark" ? darkTheme : lightTheme}
+        theme={store.settings?.theme === "dark" ? darkTheme : lightTheme}
       >
         <CssBaseline />
         <SnackbarProvider>
@@ -94,7 +85,7 @@ function Layout() {
                     disablePadding
                     sx={{ display: "block" }}
                   >
-                    <ListItemButton onClick={() => navigate(item.path)}>
+                    <ListItemButton onClick={() => navigate(item.path())}>
                       <ListItemIcon>
                         {React.createElement(item.icon)}
                       </ListItemIcon>
@@ -110,7 +101,7 @@ function Layout() {
                     disablePadding
                     sx={{ display: "block" }}
                   >
-                    <ListItemButton onClick={() => navigate(item.path)}>
+                    <ListItemButton onClick={() => navigate(item.path())}>
                       <ListItemIcon>
                         {React.createElement(item.icon)}
                       </ListItemIcon>

@@ -12,7 +12,6 @@ import { AddAccountOptions } from "../../../cli/bindings/AddAccountOptions";
 import { AccountIdentifiers } from "../../../cli/bindings/AccountIdentifiers";
 import { CreateSplitBudgetOptions } from "../../../cli/bindings/CreateSplitBudgetOptions";
 import { Budget } from "../../../cli/bindings/Budget";
-import { BudgetIdentifiers } from "../../../cli/bindings/BudgetIdentifiers";
 import { CategoryWithId } from "../../../cli/bindings/CategoryWithId";
 import { CreateAllocationOptions } from "../../../cli/bindings/CreateAllocationOptions";
 import { UpdateAllocationOptions } from "../../../cli/bindings/UpdateAllocationOptions";
@@ -49,10 +48,12 @@ export const getTransactions = (
 export const addTransaction = (
   accountId: RecordId,
   options: AddTransactionOptions
-): Promise<void> => invoke("add_transaction", { accountId, options });
+): Promise<TransactionWithId> =>
+  invoke("add_transaction", { accountId, options });
 export const addTransactionTransfer = (
   options: AddTransactionTransferOptions
-): Promise<void> => invoke("add_transaction_transfer", { options });
+): Promise<TransactionWithId> =>
+  invoke("add_transaction_transfer", { options });
 export const updateTransaction = (
   transaction: TransactionWithId
 ): Promise<void> => invoke("update_transaction", { transaction });
@@ -83,8 +84,7 @@ export const updateAccount = (account: Account): Promise<void> =>
   invoke("update_account", { account });
 
 // Budgets
-export const listBudgets = (): Promise<BudgetIdentifiers[]> =>
-  invoke("list_budgets");
+export const listBudgets = (): Promise<Budget[]> => invoke("list_budgets");
 export const addBudget = (options: CreateSplitBudgetOptions): Promise<Budget> =>
   invoke("add_budget", { options });
 export const getBudget = (budgetId: RecordId): Promise<Budget> =>
@@ -130,8 +130,8 @@ export const addTags = (tags: Tag[]): Promise<void> =>
   invoke("add_tags", { tags });
 
 // Backups.
-export const ExportBackup = (): Promise<void> => invoke("backup_export");
-export const ImportBackup = (path: string): Promise<void> =>
+export const exportBackup = (): Promise<void> => invoke("backup_export");
+export const importBackup = (path: string): Promise<void> =>
   invoke("backup_import", { path });
 
 // Currency.

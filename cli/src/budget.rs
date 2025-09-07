@@ -60,19 +60,10 @@ pub struct BudgetIdentifiers {
     pub id: surrealdb::RecordId,
 }
 
-pub async fn list(db: &Surreal<Db>) -> Result<Vec<BudgetIdentifiers>, surrealdb::Error> {
-    let budgets: Vec<Budget> = db
-        .query("SELECT * FROM budget FETCH accounts")
+pub async fn list(db: &Surreal<Db>) -> Result<Vec<Budget>, surrealdb::Error> {
+    db.query("SELECT * FROM budget FETCH accounts")
         .await?
-        .take(0)?;
-
-    Ok(budgets
-        .into_iter()
-        .map(|budget| BudgetIdentifiers {
-            name: budget.name,
-            id: budget.id,
-        })
-        .collect())
+        .take(0)
 }
 
 #[derive(ts_rs::TS)]
