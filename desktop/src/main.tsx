@@ -21,32 +21,33 @@ import { useBudgetStore } from "./stores/budget";
 import { useTileStore } from "./stores/tiles";
 import { useSettingStore } from "./stores/setting";
 
-await listAccountsWithDetails().then((accounts) =>
-  useAccountStore.setState({
-    accounts: new Map(
-      accounts.map((account) => [account.id.id.String, account])
-    ),
-  })
-);
+Promise.all([
+  listAccountsWithDetails().then(async (accounts) => {
+    useAccountStore.setState({
+      accounts: new Map(
+        accounts.map((account) => [account.id.id.String, account])
+      ),
+    });
 
-const transactions = new Map<string, TransactionWithId[]>();
+    const transactions = new Map<string, TransactionWithId[]>();
 
-for (const [id, account] of useAccountStore.getState().accounts) {
-  await getTransactions(account.id).then((t) => transactions.set(id, t));
-}
+    for (const [id, account] of useAccountStore.getState().accounts) {
+      await getTransactions(account.id).then((t) => transactions.set(id, t));
+    }
 
-useTransactionStore.setState({
-  transactions,
-});
-
-useBudgetStore.setState({ budgets: await listBudgets() });
-useTileStore.setState({ tiles: await listTiles() });
-useSettingStore.setState({ settings: await getSettings() });
-
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <BrowserRouter basename="/">
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
+    useTransactionStore.setState({
+      transactions,
+    });
+  }),
+  listBudgets().then((budgets) => useBudgetStore.setState({ budgets })),
+  listTiles().then((tiles) => useTileStore.setState({ tiles })),
+  getSettings().then((settings) => useSettingStore.setState({ settings })),
+]).then(() =>
+  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+    <React.StrictMode>
+      <BrowserRouter basename="/">
+        <App />
+      </BrowserRouter>
+    </React.StrictMode>
+  )
 );
