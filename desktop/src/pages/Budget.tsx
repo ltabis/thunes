@@ -59,6 +59,7 @@ import Page from "./Page";
 import CustomSelector from "../components/form/CustomSelector";
 import { useBudgetStore } from "../stores/budget";
 import { useAccountStore } from "../stores/account";
+import { useSettingStore } from "../stores/setting";
 
 function AddBudgetDialog({
   open,
@@ -321,8 +322,13 @@ function Details({ budget }: { budget: Budget }) {
         </List>
       ) : (
         <Stack>
-          {[...Array(5)].map(() => (
-            <Skeleton animation="wave" width={1000} height={100} />
+          {[...Array(5)].map((_, id) => (
+            <Skeleton
+              key={`skeleton-${id}`}
+              animation="wave"
+              width={1000}
+              height={100}
+            />
           ))}
         </Stack>
       )}
@@ -430,6 +436,7 @@ export default function () {
   const { id } = useParams();
   const navigate = useBudgetNavigate();
   const store = useBudgetStore();
+  const settingsStore = useSettingStore();
 
   const [editBudget, setEditBudget] = useState<boolean>(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -446,8 +453,10 @@ export default function () {
     setOpenFailure("");
   };
 
-  const handleSelectBudget = async (budget: BudgetIdentifiers) =>
+  const handleSelectBudget = async (budget: BudgetIdentifiers) => {
+    settingsStore.open(budget.id.id.String, "budget");
     navigate(budget);
+  };
 
   return (
     <Page

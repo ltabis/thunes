@@ -34,17 +34,19 @@ function Layout() {
     {
       label: "Portfolio",
       icon: DashboardIcon,
-      path: "/",
+      path: () => "/",
     },
     {
       label: "Accounts",
       icon: AccountBalanceWalletIcon,
-      path: "/account",
+      path: () =>
+        store.opened.account ? `/account/${store.opened.account}` : "/account",
     },
     {
       label: "Budgets",
       icon: PieChartIcon,
-      path: "/budget",
+      path: () =>
+        store.opened.budget ? `/budget/${store.opened.budget}` : "/budget",
     },
   ];
 
@@ -52,7 +54,7 @@ function Layout() {
     {
       label: "Settings",
       icon: SettingsIcon,
-      path: "/settings",
+      path: () => "/settings",
     },
   ];
 
@@ -83,7 +85,7 @@ function Layout() {
                     disablePadding
                     sx={{ display: "block" }}
                   >
-                    <ListItemButton onClick={() => navigate(item.path)}>
+                    <ListItemButton onClick={() => navigate(item.path())}>
                       <ListItemIcon>
                         {React.createElement(item.icon)}
                       </ListItemIcon>
@@ -99,7 +101,7 @@ function Layout() {
                     disablePadding
                     sx={{ display: "block" }}
                   >
-                    <ListItemButton onClick={() => navigate(item.path)}>
+                    <ListItemButton onClick={() => navigate(item.path())}>
                       <ListItemIcon>
                         {React.createElement(item.icon)}
                       </ListItemIcon>

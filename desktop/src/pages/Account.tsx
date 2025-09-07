@@ -25,6 +25,7 @@ import Page from "./Page";
 import { Item } from "../components/form/CustomSelector";
 import CustomSelector from "../components/form/CustomSelector";
 import { useAccountStore } from "../stores/account";
+import { useSettingStore } from "../stores/setting";
 
 function AddAccountDialog({
   open,
@@ -119,6 +120,7 @@ export default function () {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openFailure, setOpenFailure] = useState("");
   const accountStore = useAccountStore();
+  const settingsStore = useSettingStore();
 
   const handleSnackbarClose = (
     _event?: SyntheticEvent | Event,
@@ -131,8 +133,10 @@ export default function () {
     setOpenFailure("");
   };
 
-  const handleSelectAccount = async (account: AccountIdentifiers) =>
+  const handleSelectAccount = async (account: AccountIdentifiers) => {
+    settingsStore.open(account.id.id.String, "account");
     navigate(account);
+  };
 
   return (
     <Page
