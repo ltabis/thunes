@@ -1366,6 +1366,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "double-ended-peekable"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0d05e1c0dbad51b52c38bda7adceef61b9efc2baf04acfe8726a8c4630a6f57"
+
+[[package]]
 name = "dpi"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2996,6 +3002,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
+name = "lru"
+version = "0.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "234cf4f4a04dc1f57e24b96cc0cd600cf2af460d4161ac5ecdd0af8e1f3b2a38"
+dependencies = [
+ "hashbrown 0.15.2",
+]
+
+[[package]]
 name = "lz4-sys"
 version = "1.11.1+lz4-1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4192,6 +4207,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "quick_cache"
+version = "0.6.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8565e62e02af316570d4b492f17af1481d6c07cea60f4e7edd71700da5052ba9"
+dependencies = [
+ "ahash 0.8.11",
+ "equivalent",
+ "hashbrown 0.15.2",
+ "parking_lot",
+]
+
+[[package]]
 name = "quinn"
 version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4560,6 +4587,15 @@ dependencies = [
 
 [[package]]
 name = "revision"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22f53179a035f881adad8c4d58a2c599c6b4a8325b989c68d178d7a34d1b1e4c"
+dependencies = [
+ "revision-derive 0.10.0",
+]
+
+[[package]]
+name = "revision"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54b8ee532f15b2f0811eb1a50adf10d036e14a6cdae8d99893e7f3b921cb227d"
@@ -4567,10 +4603,21 @@ dependencies = [
  "chrono",
  "geo",
  "regex",
- "revision-derive",
+ "revision-derive 0.11.0",
  "roaring",
  "rust_decimal",
  "uuid",
+]
+
+[[package]]
+name = "revision-derive"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f0ec466e5d8dca9965eb6871879677bef5590cf7525ad96cae14376efb75073"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.100",
 ]
 
 [[package]]
@@ -5501,7 +5548,7 @@ dependencies = [
  "pharos",
  "reblessive",
  "reqwest",
- "revision",
+ "revision 0.11.0",
  "ring",
  "rust_decimal",
  "rustls",
@@ -5576,13 +5623,13 @@ dependencies = [
  "pharos",
  "phf 0.11.3",
  "pin-project-lite",
- "quick_cache",
+ "quick_cache 0.5.2",
  "radix_trie",
  "rand 0.8.5",
  "rayon",
  "reblessive",
  "regex",
- "revision",
+ "revision 0.11.0",
  "ring",
  "rmpv",
  "roaring",
@@ -5600,6 +5647,7 @@ dependencies = [
  "storekey",
  "strsim",
  "subtle",
+ "surrealkv",
  "sysinfo",
  "tempfile",
  "thiserror 1.0.69",
@@ -5610,10 +5658,29 @@ dependencies = [
  "unicase",
  "url",
  "uuid",
- "vart",
+ "vart 0.8.1",
  "wasm-bindgen-futures",
  "wasmtimer",
  "ws_stream_wasm",
+]
+
+[[package]]
+name = "surrealkv"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08ea269bf03cba66960f8ec9deaafe1186d9cbda2aa86ebf6ddafced72f7e45d"
+dependencies = [
+ "ahash 0.8.11",
+ "bytes",
+ "chrono",
+ "crc32fast",
+ "double-ended-peekable",
+ "getrandom 0.2.15",
+ "lru",
+ "parking_lot",
+ "quick_cache 0.6.15",
+ "revision 0.10.0",
+ "vart 0.9.2",
 ]
 
 [[package]]
@@ -6782,6 +6849,12 @@ name = "vart"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "87782b74f898179396e93c0efabb38de0d58d50bbd47eae00c71b3a1144dbbae"
+
+[[package]]
+name = "vart"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03dccea250abfe68c00eee55f95af111e041b75bc11796cb83d1c05c5029efd9"
 
 [[package]]
 name = "vcpkg"
