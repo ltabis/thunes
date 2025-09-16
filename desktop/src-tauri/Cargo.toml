@@ -43,6 +43,11 @@ tracing-subscriber = { version = "0.3.19" }
 tauri-plugin-dialog = { version = "2.2.1" }
 chrono = { version = "0.4.40" }
 
+[dev-dependencies]
+tauri = { version = "2", features = ["test"] }
+tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread", "rt"] }
+surrealdb = { version = "2.2.2", features = ["kv-mem"] }
+
 [profile.release]
 incremental = false
 codegen-units = 1
