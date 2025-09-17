@@ -53,6 +53,19 @@ pub async fn backup_import(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
+    database
+        .query(
+            r#"
+REMOVE DATABASE accounts;
+REMOVE NAMESPACE user;
+"#,
+        )
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to cleanup database".to_string()
+        })?;
+
     database.import(path).await.map_err(|error| {
         tracing::error!(%error, "database error");
         "failed to import data".to_string()

@@ -39,7 +39,7 @@ export default function ({
         amount: parseInt(value!.amount),
       }}
       options={Array.from(
-        transactionStore.transactions.get(account.id.id.String)!
+        transactionStore.transactions.get(account.id.id.String) || []
       )}
       getOptionLabel={(option) => option.description}
       getOptionKey={(option) => option.id.id.String}
