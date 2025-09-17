@@ -12,6 +12,9 @@ It is mainly built for my needs, but I figured it would be interesting to share 
 [![Last Commit](https://img.shields.io/github/last-commit/ltabis/budgeteer)](https://github.com/ltabis/budgeteer/commits/main)
 [![Release](https://img.shields.io/github/v/release/ltabis/budgeteer?include_prereleases)](https://github.com/ltabis/budgeteer/releases) -->
 
+![account](./assets/account.png)
+![budget](./assets/budget.png)
+
 ## Features
 
 - Track income and expenses for any account with any currency
@@ -23,11 +26,8 @@ It is mainly built for my needs, but I figured it would be interesting to share 
 ## Getting Started
 
 Go to [releases](https://github.com/ltabis/thunes/releases) and download the latest version of the app for your platform.
-<!-- You can also download the [demo database]() and import it in the app to try it out. -->
 
-<!-- ## Screenshots
-
-TODO: -->
+You can also download the [demo database](./demo) and import it in the app to try it out.
 
 ## Contributing
 
