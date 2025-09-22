@@ -172,7 +172,7 @@ export default function () {
         },
       ]}
     >
-      <Box>
+      <Box sx={{ maxHeight: "100%" }}>
         {id && <Transactions account={accountStore.accounts.get(id)!} />}
 
         <Snackbar
