@@ -243,6 +243,8 @@ pub async fn create_transaction_transfer(
 #[derive(Default, Debug, serde::Deserialize)]
 pub struct ReadTransactionOptions {
     #[ts(as = "Option<String>", optional)]
+    pub search: Option<String>,
+    #[ts(as = "Option<String>", optional)]
     pub start: Option<surrealdb::Datetime>,
     #[ts(as = "Option<String>", optional)]
     pub end: Option<surrealdb::Datetime>,
@@ -271,6 +273,10 @@ pub async fn read_transactions(
         }
     }
 
+    if options.search.is_some() {
+        query.push_str(" AND string::lowercase($search) IN string::lowercase(description)");
+    }
+
     query.push_str(" ORDER BY date DESC");
 
     let transactions: Vec<TransactionWithId> = db
@@ -284,6 +290,7 @@ pub async fn read_transactions(
         ))
         .bind(("start", options.start.unwrap_or_default()))
         .bind(("end", options.end.unwrap_or_default()))
+        .bind(("search", options.search.unwrap_or_default()))
         .bind(("account_id", account_id))
         .await?
         .take(0)?;

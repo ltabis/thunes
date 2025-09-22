@@ -284,7 +284,7 @@ pub async fn read_expenses(
         RETURN SELECT *
             FROM transaction
             WHERE account.id in $budget.accounts.map(|$a| $a.id)
-            AND <datetime>$before <= date AND date <= <datetime>$after;
+            AND date >= <datetime>$before AND date <= <datetime>$after;
         "#,
         )
         .bind(("budget_id", budget_id))
