@@ -44,6 +44,7 @@ import AccountAutocomplete from "../../components/form/AccountAutocomplete";
 import { Account } from "../../../../cli/bindings/Account";
 import { useTransactionStore } from "../../stores/transaction";
 import { type RowComponentProps, List } from "react-window";
+import ChipDatePicker from "../../components/ChipDatePicker";
 
 function EditTransactionDrawer({
   account,
@@ -548,7 +549,7 @@ export default function Transactions({ account }: { account: Account }) {
   return (
     <Paper elevation={0} sx={{ maxHeight: "100%" }}>
       <Stack direction="column">
-        <Stack direction="row">
+        <Stack direction="row" sx={{ gap: 1 }}>
           <InputAdornment position="start">
             <SearchIcon />
           </InputAdornment>
@@ -562,6 +563,36 @@ export default function Transactions({ account }: { account: Account }) {
               });
             }}
             placeholder="Search by description"
+          />
+
+          <ChipDatePicker
+            label="from"
+            date={filter.start ? dayjs(filter.start) : undefined}
+            onChange={(date) =>
+              setFilter(account, {
+                ...filter,
+                // FIXME: Dirty, but enables us to set the seconds to 0 and prevent the backend to
+                //        compare dates with the timestamp.
+                start: date
+                  ? dayjs(date.format("YYYY-MM-DD")).toISOString()
+                  : undefined,
+              })
+            }
+          />
+
+          <ChipDatePicker
+            label="to"
+            date={filter.end ? dayjs(filter.end) : undefined}
+            onChange={(date) =>
+              setFilter(account, {
+                ...filter,
+                // FIXME: Dirty, but enables us to set the seconds to 0 and prevent the backend to
+                //        compare dates with the timestamp.
+                end: date
+                  ? dayjs(date.format("YYYY-MM-DD")).toISOString()
+                  : undefined,
+              })
+            }
           />
         </Stack>
       </Stack>
