@@ -310,8 +310,8 @@ pub async fn read_expenses(
                 .map(|allocation| {
                     let transactions: Vec<TransactionWithId> = transactions
                         .iter()
+                        .filter(|&transaction| transaction.category == allocation.category.id)
                         .cloned()
-                        .filter(|transaction| transaction.category == allocation.category.id)
                         .collect();
                     let total = transactions
                         .iter()
