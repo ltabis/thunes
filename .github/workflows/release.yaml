@@ -12,6 +12,8 @@ jobs:
       release_body: ${{ steps.git-cliff.outputs.content }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Generate changelog
         uses: orhun/git-cliff-action@v4
         id: git-cliff
@@ -64,7 +66,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: thunes-v__VERSION__
-          releaseName: "Thunes v__VERSION__"
+          releaseName: "thunes v__VERSION__"
           releaseBody: ${{ needs.changelog.outputs.release_body }}
           releaseDraft: true
           prerelease: false
