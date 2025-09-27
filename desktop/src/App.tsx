@@ -65,7 +65,7 @@ function Layout() {
       >
         <CssBaseline />
         <SnackbarProvider>
-          <Box sx={{ display: "flex" }}>
+          <Box sx={{ display: "flex", height: "100vh" }}>
             <Drawer
               sx={{
                 width: drawerWidth,
@@ -111,15 +111,16 @@ function Layout() {
                 ))}
               </List>
             </Drawer>
+
             <Box
+              data-testid="main box!"
               component="main"
               sx={{
+                border: 5,
                 flexGrow: 1,
                 display: "flex",
                 bgcolor: "background.default",
-                p: 3,
-                maxHeight: "100vh",
-                overflow: "scroll",
+                overflow: "auto",
               }}
             >
               <Outlet />

@@ -547,7 +547,11 @@ export default function Transactions({ account }: { account: Account }) {
   }, [dispatchSnackbar]);
 
   return (
-    <Paper elevation={0} sx={{ maxHeight: "100%" }}>
+    <Paper
+      elevation={0}
+      sx={{ height: "100%" }}
+      data-testid="transaction-stuff"
+    >
       <Stack direction="column">
         <Stack direction="row" sx={{ gap: 1 }}>
           <InputAdornment position="start">
@@ -595,30 +599,32 @@ export default function Transactions({ account }: { account: Account }) {
             }
           />
         </Stack>
+        {transactions && categories ? (
+          <List
+            rowComponent={SingleTransaction}
+            rowCount={transactions.length}
+            rowHeight={75}
+            defaultHeight={10}
+            rowProps={{
+              transactions,
+              categories,
+              account,
+              onClick: (transaction) => setSelectedTransaction(transaction),
+            }}
+            onRowsRendered={() => console.log("re-rendered")}
+            style={{
+              flexGrow: 1,
+              // maxHeight: "100vh",
+            }}
+          />
+        ) : (
+          <>
+            <Skeleton animation="wave" />
+            <Skeleton animation="wave" />
+            <Skeleton animation="wave" />
+          </>
+        )}
       </Stack>
-      {transactions && categories ? (
-        <List
-          rowComponent={SingleTransaction}
-          rowCount={transactions.length}
-          rowHeight={75}
-          defaultHeight={10}
-          rowProps={{
-            transactions,
-            categories,
-            account,
-            onClick: (transaction) => setSelectedTransaction(transaction),
-          }}
-          style={{
-            maxHeight: "100vh",
-          }}
-        />
-      ) : (
-        <>
-          <Skeleton animation="wave" />
-          <Skeleton animation="wave" />
-          <Skeleton animation="wave" />
-        </>
-      )}
 
       <SpeedDial
         color="primary"
