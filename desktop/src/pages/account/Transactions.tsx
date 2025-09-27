@@ -1,12 +1,10 @@
 import {
-  Box,
   Button,
   Chip,
   DialogActions,
   DialogContent,
   DialogTitle,
   Drawer,
-  List,
   ListItem,
   ListItemAvatar,
   ListItemButton,
@@ -45,6 +43,8 @@ import TransactionAutocomplete, {
 import AccountAutocomplete from "../../components/form/AccountAutocomplete";
 import { Account } from "../../../../cli/bindings/Account";
 import { useTransactionStore } from "../../stores/transaction";
+import { type RowComponentProps, List } from "react-window";
+import ChipDatePicker from "../../components/ChipDatePicker";
 
 function EditTransactionDrawer({
   account,
@@ -452,9 +452,70 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
   return <EditTags value={value} handleChange={handleChange} />;
 }
 
+function SingleTransaction({
+  transactions,
+  account,
+  categories,
+  onClick,
+  index,
+  style,
+}: RowComponentProps<{
+  transactions: TransactionWithId[];
+  account: Account;
+  categories: Map<string, CategoryWithId>;
+  onClick: (transaction: TransactionWithId) => void;
+}>) {
+  const transaction = transactions[index];
+
+  return (
+    <ListItemButton
+      style={style}
+      onClick={() => onClick(transaction)}
+      key={transaction.id.id.String}
+    >
+      <ListItem
+        secondaryAction={
+          transaction.amount > 0 ? (
+            <Typography variant="body1" color="success">
+              {`+ ${transaction.amount} ${account.currency}`}
+            </Typography>
+          ) : (
+            <Typography variant="body1">
+              {`- ${transaction.amount * -1} ${account.currency}`}
+            </Typography>
+          )
+        }
+      >
+        <ListItemAvatar>
+          {categories &&
+            categoryIconToMuiIcon(
+              categories.get(transaction.category.id.String)!
+            )}
+        </ListItemAvatar>
+        <ListItemText
+          primary={transaction.description}
+          secondary={dayjs(transaction.date).format("DD MMMM YYYY")}
+        />
+        <ListItemText
+          primary={
+            <Stack direction="row" spacing={1}>
+              {transaction.tags.map((tag) => (
+                <Chip
+                  key={tag.label}
+                  label={tag.label}
+                  sx={{ backgroundColor: tag.color }}
+                />
+              ))}
+            </Stack>
+          }
+        />
+      </ListItem>
+    </ListItemButton>
+  );
+}
+
 export default function Transactions({ account }: { account: Account }) {
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const transactionStore = useTransactionStore();
   // FIXME: Pull the category directly from the transaction.
   const [categories, setCategories] = useState<Map<
     string,
@@ -465,16 +526,11 @@ export default function Transactions({ account }: { account: Account }) {
 
   const [addTransaction, setAddTransaction] = useState(false);
   const [addTransfer, setAddTransfer] = useState(false);
-  const [search, setSearch] = useState("");
-
-  let transactions = transactionStore.transactions.get(account.id.id.String);
-
-  // FIXME: Search transactions with backend.
-  transactions = search
-    ? transactions?.filter((transaction) =>
-        transaction.description.toLowerCase().includes(search)
-      )
-    : transactions;
+  const filter = useTransactionStore((state) => state.filter);
+  const transactions = useTransactionStore((state) =>
+    state.transactions.get(account.id.id.String)
+  );
+  const setFilter = useTransactionStore((state) => state.setFilter);
 
   useEffect(() => {
     getCategories()
@@ -488,75 +544,74 @@ export default function Transactions({ account }: { account: Account }) {
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
-  }, [dispatchSnackbar, search]);
+  }, [dispatchSnackbar]);
 
   return (
-    <Paper elevation={0} sx={{ flexGrow: 1 }}>
+    <Paper elevation={0} sx={{ maxHeight: "100%" }}>
       <Stack direction="column">
-        <Stack direction="row">
+        <Stack direction="row" sx={{ gap: 1 }}>
           <InputAdornment position="start">
             <SearchIcon />
           </InputAdornment>
           <InputBase
-            value={search}
-            onChange={(elem) => setSearch(elem.target.value.toLowerCase())}
+            value={filter.search ?? ""}
+            onChange={(elem) => {
+              // FIXME: going too fast does not update the filter search character by character.
+              setFilter(account, {
+                ...filter,
+                search: elem.target.value,
+              });
+            }}
             placeholder="Search by description"
+          />
+
+          <ChipDatePicker
+            label="from"
+            date={filter.start ? dayjs(filter.start) : undefined}
+            onChange={(date) =>
+              setFilter(account, {
+                ...filter,
+                // FIXME: Dirty, but enables us to set the seconds to 0 and prevent the backend to
+                //        compare dates with the timestamp.
+                start: date
+                  ? dayjs(date.format("YYYY-MM-DD")).toISOString()
+                  : undefined,
+              })
+            }
+          />
+
+          <ChipDatePicker
+            label="to"
+            date={filter.end ? dayjs(filter.end) : undefined}
+            onChange={(date) =>
+              setFilter(account, {
+                ...filter,
+                // FIXME: Dirty, but enables us to set the seconds to 0 and prevent the backend to
+                //        compare dates with the timestamp.
+                end: date
+                  ? dayjs(date.format("YYYY-MM-DD")).toISOString()
+                  : undefined,
+              })
+            }
           />
         </Stack>
       </Stack>
-      {transactions ? (
-        <Box sx={{ width: "100%" }}>
-          <List
-            sx={{
-              bgcolor: "background.paper",
-            }}
-          >
-            {transactions.map((transaction) => (
-              <ListItemButton
-                onClick={() => setSelectedTransaction(transaction)}
-                key={transaction.id.id.String}
-              >
-                <ListItem
-                  secondaryAction={
-                    transaction.amount > 0 ? (
-                      <Typography variant="body1" color="success">
-                        {`+ ${transaction.amount} ${account.currency}`}
-                      </Typography>
-                    ) : (
-                      <Typography variant="body1">
-                        {`- ${transaction.amount * -1} ${account.currency}`}
-                      </Typography>
-                    )
-                  }
-                >
-                  <ListItemAvatar>
-                    {categories &&
-                      categoryIconToMuiIcon(
-                        categories.get(transaction.category.id.String)!
-                      )}
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={transaction.description}
-                    secondary={dayjs(transaction.date).format("DD MMMM YYYY")}
-                  />
-                  <ListItemText
-                    primary={
-                      <Stack direction="row" spacing={1}>
-                        {transaction.tags.map((tag) => (
-                          <Chip
-                            key={tag.label}
-                            label={tag.label}
-                            sx={{ backgroundColor: tag.color }}
-                          />
-                        ))}
-                      </Stack>
-                    }
-                  />
-                </ListItem>
-              </ListItemButton>
-            ))}
-          </List>
-        </Box>
+      {transactions && categories ? (
+        <List
+          rowComponent={SingleTransaction}
+          rowCount={transactions.length}
+          rowHeight={75}
+          defaultHeight={10}
+          rowProps={{
+            transactions,
+            categories,
+            account,
+            onClick: (transaction) => setSelectedTransaction(transaction),
+          }}
+          style={{
+            maxHeight: "100vh",
+          }}
+        />
       ) : (
         <>
           <Skeleton animation="wave" />

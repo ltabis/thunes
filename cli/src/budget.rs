@@ -284,7 +284,7 @@ pub async fn read_expenses(
         RETURN SELECT *
             FROM transaction
             WHERE account.id in $budget.accounts.map(|$a| $a.id)
-            AND <datetime>$before <= date AND date <= <datetime>$after;
+            AND date >= <datetime>$before AND date <= <datetime>$after;
         "#,
         )
         .bind(("budget_id", budget_id))
@@ -310,8 +310,8 @@ pub async fn read_expenses(
                 .map(|allocation| {
                     let transactions: Vec<TransactionWithId> = transactions
                         .iter()
+                        .filter(|&transaction| transaction.category == allocation.category.id)
                         .cloned()
-                        .filter(|transaction| transaction.category == allocation.category.id)
                         .collect();
                     let total = transactions
                         .iter()

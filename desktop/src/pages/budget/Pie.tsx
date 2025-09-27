@@ -249,6 +249,10 @@ export default function ({
         height={height ?? 300}
         hideLegend
       />
+
+      <center>
+        {expenses.period_start} {"-"} {expenses.period_end}
+      </center>
     </Stack>
   ) : (
     <Skeleton variant="circular" width={250} height={250} />
