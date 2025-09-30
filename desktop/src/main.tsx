@@ -9,6 +9,7 @@ import { BrowserRouter } from "react-router-dom";
 
 import { useAccountStore } from "./stores/account";
 import {
+  getCategories,
   getSettings,
   getTransactions,
   listAccountsWithDetails,
@@ -20,6 +21,7 @@ import { TransactionWithId } from "../../cli/bindings/TransactionWithId";
 import { useBudgetStore } from "./stores/budget";
 import { useTileStore } from "./stores/tiles";
 import { useSettingStore } from "./stores/setting";
+import { useCategoryStore } from "./stores/category";
 
 Promise.all([
   listAccountsWithDetails().then(async (accounts) => {
@@ -42,6 +44,24 @@ Promise.all([
   listBudgets().then((budgets) => useBudgetStore.setState({ budgets })),
   listTiles().then((tiles) => useTileStore.setState({ tiles })),
   getSettings().then((settings) => useSettingStore.setState({ settings })),
+  getCategories().then((categories) => {
+    const groups = Array.from(categories.values()).filter(
+      (category) => !category.parent
+    );
+    const all = Array.from(categories.values()).map((category) => {
+      if (!category.parent) category.parent = category.id;
+      return category;
+    });
+
+    useCategoryStore.setState({
+      categories: new Map(
+        all.map((category) => [category.id.id.String, category])
+      ),
+      categoryGroups: new Map(
+        groups.map((category) => [category.id.id.String, category])
+      ),
+    });
+  }),
 ]).then(() =>
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>

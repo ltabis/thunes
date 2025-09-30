@@ -45,6 +45,7 @@ import { Account } from "../../../../cli/bindings/Account";
 import { useTransactionStore } from "../../stores/transaction";
 import { type RowComponentProps, List } from "react-window";
 import ChipDatePicker from "../../components/ChipDatePicker";
+import ChipCategoryPicker from "../../components/ChipCategoryPicker";
 
 function EditTransactionDrawer({
   account,
@@ -147,7 +148,7 @@ function EditTransactionDrawer({
             onChange={(category) =>
               setForm({
                 ...form,
-                category: category,
+                category: category.id,
               })
             }
           />
@@ -253,15 +254,6 @@ function AddTransactionDrawer({
           <EditTags
             value={form.tags}
             handleChange={(tags) => setForm({ ...form, tags })}
-          />
-          <CategorySelector
-            category={form.category}
-            onChange={(category) =>
-              setForm({
-                ...form,
-                category,
-              })
-            }
           />
         </Stack>
       </DialogContent>
@@ -591,6 +583,16 @@ export default function Transactions({ account }: { account: Account }) {
                 end: date
                   ? dayjs(date.format("YYYY-MM-DD")).toISOString()
                   : undefined,
+              })
+            }
+          />
+
+          <ChipCategoryPicker
+            category={filter.category}
+            onChange={(category) =>
+              setFilter(account, {
+                ...filter,
+                category: category?.id,
               })
             }
           />
