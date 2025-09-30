@@ -244,6 +244,8 @@ pub async fn create_transaction_transfer(
 pub struct ReadTransactionOptions {
     #[ts(as = "Option<String>", optional)]
     pub search: Option<String>,
+    #[ts(type = "{ tb: string, id: { String: string }}", optional)]
+    pub category: Option<surrealdb::RecordId>,
     #[ts(as = "Option<String>", optional)]
     pub start: Option<surrealdb::Datetime>,
     #[ts(as = "Option<String>", optional)]
@@ -261,6 +263,14 @@ pub async fn read_transactions(
 ) -> Result<Vec<TransactionWithId>, surrealdb::Error> {
     let mut query = "SELECT * FROM transaction WHERE account = $account_id".to_string();
 
+    if options.search.is_some() {
+        query.push_str(" AND string::lowercase($search) IN string::lowercase(description)");
+    }
+
+    if options.category.is_some() {
+        query.push_str(" AND category = $category");
+    }
+
     if options.last_x_days.is_some() {
         query.push_str(" AND date >= time::now() - $last_x_days AND date <= time::now()");
     } else {
@@ -271,10 +281,6 @@ pub async fn read_transactions(
         if options.end.is_some() {
             query.push_str(" AND date <= $end");
         }
-    }
-
-    if options.search.is_some() {
-        query.push_str(" AND string::lowercase($search) IN string::lowercase(description)");
     }
 
     query.push_str(" ORDER BY date DESC");
@@ -288,9 +294,13 @@ pub async fn read_transactions(
                 .map(|n| format!("{n}d"))
                 .unwrap_or_default(),
         ))
+        .bind(("search", options.search.unwrap_or_default()))
+        .bind((
+            "category",
+            options.category.unwrap_or(("category", "other").into()),
+        ))
         .bind(("start", options.start.unwrap_or_default()))
         .bind(("end", options.end.unwrap_or_default()))
-        .bind(("search", options.search.unwrap_or_default()))
         .bind(("account_id", account_id))
         .await?
         .take(0)?;

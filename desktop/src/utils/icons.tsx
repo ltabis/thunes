@@ -35,7 +35,7 @@ export function categoryIconToMuiIcon(
   );
 }
 
-function getMuiIcon(icon: Icon) {
+export function getMuiIcon(icon: Icon) {
   switch (icon) {
     case "transport":
       return <AirplanemodeActiveIcon fontSize="small" />;
