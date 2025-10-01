@@ -255,6 +255,15 @@ function AddTransactionDrawer({
             value={form.tags}
             handleChange={(tags) => setForm({ ...form, tags })}
           />
+          <CategorySelector
+            category={form.category}
+            onChange={(category) =>
+              setForm({
+                ...form,
+                category: category.id,
+              })
+            }
+          />
         </Stack>
       </DialogContent>
       <DialogActions>
