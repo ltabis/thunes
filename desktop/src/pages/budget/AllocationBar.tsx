@@ -7,46 +7,24 @@ import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { ReadExpensesResult } from "../../../../cli/bindings/ReadExpensesResult";
 import { ExpensesBudget } from "../../../../cli/bindings/ExpensesBudget";
 import { categoryIconToMuiIcon } from "../../utils/icons";
-import { ExpensesAllocation } from "../../../../cli/bindings/ExpensesAllocation";
 
 export function Inner({ budget }: { budget: ExpensesBudget }) {
   const allocations = budget.partitions.flatMap(
     (partition) => partition.allocations
   );
 
-  const allocationsByCategory = new Map<string, ExpensesAllocation>();
-  allocations.forEach((allocation) => {
-    const single = allocationsByCategory.get(
-      allocation.inner.category.id.id.String
-    );
-
-    if (single) {
-      allocationsByCategory.set(single.inner.category.id.id.String, {
-        ...single,
-        inner: {
-          ...single.inner,
-          amount: single.inner.amount + allocation.inner.amount,
-        },
-        total: single.total + allocation.total,
-      });
-    } else {
-      allocationsByCategory.set(
-        allocation.inner.category.id.id.String,
-        allocation
-      );
-    }
-  });
-
   return (
     <Stack spacing={2}>
-      {Array.from(allocationsByCategory.values()).map((allocation) => {
+      {Array.from(allocations.values()).map((allocation) => {
         let textColor = "textPrimary";
         let barColor: "info" | "error" = "info";
         let percentage =
-          ((allocation.total * -1) / allocation.inner.amount) * 100;
-        const label = `${(allocation.total * -1).toFixed(
+          ((allocation.transactions_total * -1) /
+            allocation.allocations_total) *
+          100;
+        const label = `${(allocation.transactions_total * -1).toFixed(
           2
-        )} / ${allocation.inner.amount.toFixed(2)}`;
+        )} / ${allocation.allocations_total.toFixed(2)}`;
 
         if (percentage > 100) {
           percentage = 100;
@@ -62,10 +40,10 @@ export function Inner({ budget }: { budget: ExpensesBudget }) {
               justifyContent: "center",
               alignItems: "center",
             }}
-            key={allocation.inner.id.id.String}
+            key={allocation.category.id.id.String}
           >
-            <Tooltip title={allocation.inner.category.name}>
-              {categoryIconToMuiIcon(allocation.inner.category)}
+            <Tooltip title={allocation.category.name}>
+              {categoryIconToMuiIcon(allocation.category)}
             </Tooltip>
 
             <Box sx={{ display: "flex", alignItems: "center" }}>

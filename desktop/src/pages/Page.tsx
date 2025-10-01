@@ -2,11 +2,11 @@ import {
   Box,
   AppBar,
   Toolbar,
-  Divider,
   IconButton,
   Typography,
   Menu,
   MenuItem,
+  Stack,
 } from "@mui/material";
 import { useState } from "react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -39,7 +39,7 @@ export default function ({
   const handleClose = () => setActionsAnchorEl(null);
 
   return (
-    <Box sx={{ flexGrow: 1, maxHeight: "100%", overflow: "scroll" }}>
+    <Stack sx={{ flexGrow: 1, maxHeight: "100vh" }}>
       <AppBar position="sticky" color="default">
         <Toolbar>
           {toolbarStart}
@@ -77,9 +77,7 @@ export default function ({
         </Toolbar>
       </AppBar>
 
-      <Divider sx={{ margin: 2 }} />
-
-      {children}
-    </Box>
+      <Box sx={{ minHeight: 0, m: 2 }}>{children}</Box>
+    </Stack>
   );
 }

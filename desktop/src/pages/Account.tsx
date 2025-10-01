@@ -1,6 +1,5 @@
 import {
   Alert,
-  Box,
   Button,
   Dialog,
   DialogActions,
@@ -172,34 +171,32 @@ export default function () {
         },
       ]}
     >
-      <Box sx={{ maxHeight: "100%" }}>
-        {id && <Transactions account={accountStore.accounts.get(id)!} />}
+      {id && <Transactions account={accountStore.accounts.get(id)!} />}
 
-        <Snackbar
-          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-          open={openFailure.length !== 0}
-          autoHideDuration={5000}
+      <Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        open={openFailure.length !== 0}
+        autoHideDuration={5000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert
           onClose={handleSnackbarClose}
+          severity="error"
+          variant="filled"
+          sx={{ width: "100%" }}
         >
-          <Alert
-            onClose={handleSnackbarClose}
-            severity="error"
-            variant="filled"
-            sx={{ width: "100%" }}
-          >
-            failed to open the account: {openFailure}
-          </Alert>
-        </Snackbar>
+          failed to open the account: {openFailure}
+        </Alert>
+      </Snackbar>
 
-        <AddAccountDialog open={openAddDialog} setOpen={setOpenAddDialog} />
+      <AddAccountDialog open={openAddDialog} setOpen={setOpenAddDialog} />
 
-        {settingsDialog && id && (
-          <SettingsDrawer
-            account={accountStore.accounts.get(id)!}
-            onClose={() => setSettingsDialog(false)}
-          />
-        )}
-      </Box>
+      {settingsDialog && id && (
+        <SettingsDrawer
+          account={accountStore.accounts.get(id)!}
+          onClose={() => setSettingsDialog(false)}
+        />
+      )}
     </Page>
   );
 }

@@ -3,7 +3,7 @@ use crate::transaction::{CategoryWithId, TransactionWithId};
 use crate::Error;
 use chrono::Datelike;
 use surrealdb::engine::local::Db;
-use surrealdb::Surreal;
+use surrealdb::{RecordId, Surreal};
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
@@ -145,10 +145,21 @@ pub async fn delete(
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct ExpensesAllocation {
-    pub inner: Allocation,
-    pub transactions: Vec<TransactionWithId>,
+pub struct AllocationGroup {
     pub total: f64,
+    pub category: CategoryWithId,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub partition: RecordId,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ExpensesAllocation {
+    pub transactions_total: f64,
+    pub allocations_total: f64,
+    pub category: CategoryWithId,
+    pub transactions: Vec<TransactionWithId>,
 }
 
 #[derive(ts_rs::TS)]
@@ -157,7 +168,8 @@ pub struct ExpensesAllocation {
 pub struct ExpensesPartition {
     pub inner: Partition,
     pub allocations: Vec<ExpensesAllocation>,
-    pub total: f64,
+    pub transactions_total: f64,
+    pub allocations_total: f64,
 }
 
 #[derive(ts_rs::TS)]
@@ -166,7 +178,8 @@ pub struct ExpensesPartition {
 pub struct ExpensesBudget {
     pub inner: Budget,
     pub partitions: Vec<ExpensesPartition>,
-    pub total: f64,
+    pub transactions_total: f64,
+    pub allocations_total: f64,
 }
 
 #[derive(ts_rs::TS)]
@@ -280,7 +293,7 @@ pub async fn read_expenses(
         RETURN $budget;
         LET $partitions = (SELECT * FROM partition WHERE budget = $budget.id);
         RETURN $partitions;
-        RETURN SELECT * FROM allocation WHERE partition IN $partitions.map(|$p| $p.id) FETCH category;
+        RETURN SELECT math::sum(amount) AS total, category, partition FROM allocation WHERE partition IN $partitions.map(|$p| $p.id) GROUP BY category FETCH category;
         RETURN SELECT *
             FROM transaction
             WHERE account.id in $budget.accounts.map(|$a| $a.id)
@@ -298,56 +311,59 @@ pub async fn read_expenses(
         .take::<Option<Budget>>(1)?
         .ok_or(Error::RecordNotFound)?;
     let partitions = response.take::<Vec<Partition>>(3)?;
-    let allocations = response.take::<Vec<Allocation>>(4)?;
+    let allocation_groups = response.take::<Vec<AllocationGroup>>(4)?;
     let transactions = response.take::<Vec<TransactionWithId>>(5)?;
 
     let partitions: Vec<ExpensesPartition> = partitions
         .into_iter()
-        .map(|partition| {
-            let allocations: Vec<ExpensesAllocation> = allocations
+        .map(|partition: Partition| {
+            let allocations: Vec<ExpensesAllocation> = allocation_groups
                 .iter()
                 .filter(|allocation| allocation.partition == partition.id)
-                .map(|allocation| {
+                .map(|allocation_group| {
                     let transactions: Vec<TransactionWithId> = transactions
                         .iter()
-                        .filter(|&transaction| transaction.category == allocation.category.id)
+                        .filter(|&transaction| transaction.category == allocation_group.category.id)
                         .cloned()
                         .collect();
-                    let total = transactions
+                    let transactions_total = transactions
                         .iter()
                         .fold(0.0, |acc, transactions| acc + transactions.inner.amount);
 
                     ExpensesAllocation {
-                        inner: allocation.clone(),
                         transactions,
-                        total,
+                        transactions_total,
+                        allocations_total: allocation_group.total,
+                        category: allocation_group.category.clone(),
                     }
                 })
                 .collect();
 
-            let total = allocations
-                .iter()
-                .fold(0.0, |acc, allocation| acc + allocation.total);
-
             ExpensesPartition {
+                allocations_total: allocations
+                    .iter()
+                    .fold(0.0, |acc, allocation| acc + allocation.allocations_total),
+                transactions_total: allocations
+                    .iter()
+                    .fold(0.0, |acc, allocation| acc + allocation.transactions_total),
                 inner: partition,
                 allocations,
-                total,
             }
         })
         .collect();
-
-    let total = partitions
-        .iter()
-        .fold(0.0, |acc, partition| acc + partition.total);
 
     Ok(ReadExpensesResult {
         period_start: before.to_string(),
         period_end: after.to_string(),
         budget: ExpensesBudget {
+            allocations_total: partitions
+                .iter()
+                .fold(0.0, |acc, partition| acc + partition.allocations_total),
+            transactions_total: partitions
+                .iter()
+                .fold(0.0, |acc, partition| acc + partition.transactions_total),
             inner: budget,
             partitions,
-            total,
         },
     })
 }

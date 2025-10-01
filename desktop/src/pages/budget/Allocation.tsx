@@ -89,7 +89,7 @@ export function AddAllocationDrawer({
             onChange={(category) =>
               setForm({
                 ...form,
-                category,
+                category: category.id,
               })
             }
           />
@@ -201,7 +201,7 @@ export function EditAllocationDrawer({
             onChange={(category) =>
               setForm({
                 ...form,
-                category,
+                category: category.id,
               })
             }
           />

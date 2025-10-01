@@ -1,3 +1,5 @@
+use thunes_cli::Record;
+
 pub async fn setup() -> tauri::App<tauri::test::MockRuntime> {
     use tauri::Manager;
 
@@ -19,6 +21,13 @@ pub async fn setup() -> tauri::App<tauri::test::MockRuntime> {
         .await
         .map_err(|error| error.to_string())
         .expect("failed to switch namespace and database");
+
+    let result: Result<Vec<Record>, surrealdb::Error> = db
+        .insert("category")
+        .content(thunes_lib::default_categories::default_categories())
+        .await;
+
+    result.expect("failed to create default categories");
 
     app.manage(tokio::sync::Mutex::new(db));
 

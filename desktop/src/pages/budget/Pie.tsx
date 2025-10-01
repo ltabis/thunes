@@ -21,21 +21,12 @@ const PIE_OPTION_OFFSET = 10;
 
 function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
   const options = expenses.inner.view;
-  let total_allocated = 0;
-  const basePartitions = expenses.partitions.map((partition) => {
-    const value = partition.allocations
-      .map((allocation) => allocation.inner.amount)
-      .reduce((acc, curr) => acc + curr, 0);
-
-    total_allocated += value;
-
-    return {
-      label: partition.inner.name,
-      value,
-      color: partition.inner.color,
-      partitionId: partition.inner.id,
-    };
-  });
+  const basePartitions = expenses.partitions.map((partition) => ({
+    label: partition.inner.name,
+    value: partition.allocations_total,
+    color: partition.inner.color,
+    partitionId: partition.inner.id,
+  }));
 
   const series = [];
   let innerRadiusStart = 100 + PIE_OPTION_OFFSET;
@@ -52,9 +43,9 @@ function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
         ...expenses.partitions
           .map((partition) =>
             partition.allocations.map((allocation) => ({
-              value: allocation.inner.amount,
-              color: allocation.inner.category.color,
-              label: allocation.inner.name,
+              value: allocation.allocations_total,
+              color: allocation.category.color,
+              label: allocation.category.name,
             }))
           )
           .flat(),
@@ -88,7 +79,7 @@ function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
       data: [
         ...expenses.partitions
           .map((partition) => {
-            const total = partition.total * -1;
+            const total = partition.transactions_total * -1;
             const max = basePartitions.find(
               (p) => p.partitionId.id.String === partition.inner.id.id.String
             )!.value;
@@ -101,7 +92,7 @@ function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
                 label: `'${partition.inner.name}' Monthly expenses`,
               },
               {
-                value: max + partition.total,
+                value: max + partition.transactions_total,
                 color: "none",
               },
             ];
@@ -129,7 +120,7 @@ function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
       ...basePartitions,
       {
         label: "Not allocated",
-        value: expenses.inner.income - total_allocated,
+        value: expenses.inner.income - expenses.allocations_total,
         color: "white",
       },
     ],

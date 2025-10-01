@@ -45,6 +45,7 @@ import { Account } from "../../../../cli/bindings/Account";
 import { useTransactionStore } from "../../stores/transaction";
 import { type RowComponentProps, List } from "react-window";
 import ChipDatePicker from "../../components/ChipDatePicker";
+import ChipCategoryPicker from "../../components/ChipCategoryPicker";
 
 function EditTransactionDrawer({
   account,
@@ -147,7 +148,7 @@ function EditTransactionDrawer({
             onChange={(category) =>
               setForm({
                 ...form,
-                category: category,
+                category: category.id,
               })
             }
           />
@@ -259,7 +260,7 @@ function AddTransactionDrawer({
             onChange={(category) =>
               setForm({
                 ...form,
-                category,
+                category: category.id,
               })
             }
           />
@@ -547,8 +548,8 @@ export default function Transactions({ account }: { account: Account }) {
   }, [dispatchSnackbar]);
 
   return (
-    <Paper elevation={0} sx={{ maxHeight: "100%" }}>
-      <Stack direction="column">
+    <Paper elevation={0} sx={{ height: "100%" }}>
+      <Stack direction="column" sx={{ height: "100%" }}>
         <Stack direction="row" sx={{ gap: 1 }}>
           <InputAdornment position="start">
             <SearchIcon />
@@ -594,31 +595,40 @@ export default function Transactions({ account }: { account: Account }) {
               })
             }
           />
+
+          <ChipCategoryPicker
+            category={filter.category}
+            onChange={(category) =>
+              setFilter(account, {
+                ...filter,
+                category: category?.id,
+              })
+            }
+          />
         </Stack>
+        {transactions && categories ? (
+          <List
+            rowComponent={SingleTransaction}
+            rowCount={transactions.length}
+            rowHeight={75}
+            rowProps={{
+              transactions,
+              categories,
+              account,
+              onClick: (transaction) => setSelectedTransaction(transaction),
+            }}
+            style={{
+              flexGrow: 1,
+            }}
+          />
+        ) : (
+          <>
+            <Skeleton animation="wave" />
+            <Skeleton animation="wave" />
+            <Skeleton animation="wave" />
+          </>
+        )}
       </Stack>
-      {transactions && categories ? (
-        <List
-          rowComponent={SingleTransaction}
-          rowCount={transactions.length}
-          rowHeight={75}
-          defaultHeight={10}
-          rowProps={{
-            transactions,
-            categories,
-            account,
-            onClick: (transaction) => setSelectedTransaction(transaction),
-          }}
-          style={{
-            maxHeight: "100vh",
-          }}
-        />
-      ) : (
-        <>
-          <Skeleton animation="wave" />
-          <Skeleton animation="wave" />
-          <Skeleton animation="wave" />
-        </>
-      )}
 
       <SpeedDial
         color="primary"
