@@ -80,7 +80,8 @@ export function RenderTile({
         action={
           <Stack direction="row" alignItems="center">
             <Typography variant="subtitle1">
-              {data.budget.total.toFixed(2)} {data.budget.inner.currency}
+              {data.budget.transactions_total.toFixed(2)}{" "}
+              {data.budget.inner.currency}
             </Typography>
             <IconButton onClick={() => onRemove()}>
               <ClearIcon />
