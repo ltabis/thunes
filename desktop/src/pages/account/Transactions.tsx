@@ -18,6 +18,7 @@ import {
   Typography,
   SpeedDialIcon,
   InputAdornment,
+  debounce,
   InputBase,
 } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -46,6 +47,7 @@ import { useTransactionStore } from "../../stores/transaction";
 import { type RowComponentProps, List } from "react-window";
 import ChipDatePicker from "../../components/ChipDatePicker";
 import ChipCategoryPicker from "../../components/ChipCategoryPicker";
+import { useAccountStore } from "../../stores/account";
 
 function EditTransactionDrawer({
   account,
@@ -527,11 +529,34 @@ export default function Transactions({ account }: { account: Account }) {
 
   const [addTransaction, setAddTransaction] = useState(false);
   const [addTransfer, setAddTransfer] = useState(false);
-  const filter = useTransactionStore((state) => state.filter);
+
   const transactions = useTransactionStore((state) =>
     state.transactions.get(account.id.id.String)
   );
-  const setFilter = useTransactionStore((state) => state.setFilter);
+  const storeAccount = useAccountStore(
+    (state) => state.accounts.get(account.id.id.String)!
+  );
+  const updateAccount = useAccountStore((state) => state.update);
+  const commitAccount = useAccountStore((state) => state.commit);
+  const syncTransactions = useTransactionStore((state) => state.sync);
+
+  // FIXME: This does not really debounces the input, only waits a bit before updating the
+  //        search filter.
+  // TODO:  Implement real debounce when typing in the search field.
+  useEffect(() => {
+    // Update the filter and resulting transactions only when the
+    // user stops typing for a specific amount of time.
+    debounce(async (search) => {
+      await commitAccount({
+        ...storeAccount,
+        filter: {
+          ...storeAccount.filter,
+          search,
+        },
+      });
+      await syncTransactions(storeAccount);
+    }, 500)(storeAccount.filter.search);
+  }, [storeAccount, commitAccount, syncTransactions]);
 
   useEffect(() => {
     getCategories()
@@ -554,56 +579,85 @@ export default function Transactions({ account }: { account: Account }) {
           <InputAdornment position="start">
             <SearchIcon />
           </InputAdornment>
+
           <InputBase
-            value={filter.search ?? ""}
-            onChange={(elem) => {
-              // FIXME: going too fast does not update the filter search character by character.
-              setFilter(account, {
-                ...filter,
-                search: elem.target.value,
+            value={storeAccount.filter.search ?? ""}
+            placeholder={"Search by description"}
+            onChange={(search) => {
+              updateAccount({
+                ...storeAccount,
+                filter: {
+                  ...storeAccount.filter,
+                  search: search.target.value,
+                },
               });
             }}
-            placeholder="Search by description"
           />
 
           <ChipDatePicker
             label="from"
-            date={filter.start ? dayjs(filter.start) : undefined}
-            onChange={(date) =>
-              setFilter(account, {
-                ...filter,
-                // FIXME: Dirty, but enables us to set the seconds to 0 and prevent the backend to
-                //        compare dates with the timestamp.
-                start: date
-                  ? dayjs(date.format("YYYY-MM-DD")).toISOString()
-                  : undefined,
-              })
+            date={
+              storeAccount.filter.start
+                ? dayjs(storeAccount.filter.start)
+                : undefined
             }
+            onChange={async (date) => {
+              const copy = {
+                ...account,
+                filter: {
+                  ...storeAccount.filter,
+                  // FIXME: Dirty, but enables us to set the seconds to 0 and prevent the backend to
+                  //        compare dates with the timestamp.
+                  start: date
+                    ? dayjs(date.format("YYYY-MM-DD")).toISOString()
+                    : undefined,
+                },
+              };
+              await commitAccount(copy);
+              updateAccount(copy);
+              await syncTransactions(copy);
+            }}
           />
 
           <ChipDatePicker
             label="to"
-            date={filter.end ? dayjs(filter.end) : undefined}
-            onChange={(date) =>
-              setFilter(account, {
-                ...filter,
-                // FIXME: Dirty, but enables us to set the seconds to 0 and prevent the backend to
-                //        compare dates with the timestamp.
-                end: date
-                  ? dayjs(date.format("YYYY-MM-DD")).toISOString()
-                  : undefined,
-              })
+            date={
+              storeAccount.filter.end
+                ? dayjs(storeAccount.filter.end)
+                : undefined
             }
+            onChange={async (date) => {
+              const copy = {
+                ...storeAccount,
+                filter: {
+                  ...storeAccount.filter,
+                  // FIXME: Dirty, but enables us to set the seconds to 0 and prevent the backend to
+                  //        compare dates with the timestamp.
+                  end: date
+                    ? dayjs(date.format("YYYY-MM-DD")).toISOString()
+                    : undefined,
+                },
+              };
+              await commitAccount(copy);
+              updateAccount(copy);
+              await syncTransactions(copy);
+            }}
           />
 
           <ChipCategoryPicker
-            category={filter.category}
-            onChange={(category) =>
-              setFilter(account, {
-                ...filter,
-                category: category?.id,
-              })
-            }
+            category={storeAccount.filter.category}
+            onChange={async (category) => {
+              const copy = {
+                ...storeAccount,
+                filter: {
+                  ...storeAccount.filter,
+                  category: category?.id,
+                },
+              };
+              await commitAccount(copy);
+              updateAccount(copy);
+              await syncTransactions(copy);
+            }}
           />
         </Stack>
         {transactions && categories ? (

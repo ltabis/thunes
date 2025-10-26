@@ -260,26 +260,38 @@ pub struct ReadTransactionOptions {
 pub async fn read_transactions(
     db: &Surreal<Db>,
     account_id: RecordId,
-    options: ReadTransactionOptions,
-) -> Result<Vec<TransactionWithId>, surrealdb::Error> {
+    filter: Option<ReadTransactionOptions>,
+) -> Result<Vec<TransactionWithId>, Error> {
+    let filter = match filter {
+        Some(filter) => filter,
+        None => {
+            let filter: Option<ReadTransactionOptions> = db
+                .query(r#"SELECT filter FROM type::thing("account", $account_id)"#)
+                .bind(("account_id", account_id.clone()))
+                .await?
+                .take(0)?;
+            filter.ok_or(Error::RecordNotFound)?
+        }
+    };
+
     let mut query = "SELECT * FROM transaction WHERE account = $account_id".to_string();
 
-    if options.search.is_some() {
+    if filter.search.is_some() {
         query.push_str(" AND string::lowercase($search) IN string::lowercase(description)");
     }
 
-    if options.category.is_some() {
+    if filter.category.is_some() {
         query.push_str(" AND category = $category");
     }
 
-    if options.last_x_days.is_some() {
+    if filter.last_x_days.is_some() {
         query.push_str(" AND date >= time::now() - $last_x_days AND date <= time::now()");
     } else {
-        if options.start.is_some() {
+        if filter.start.is_some() {
             query.push_str(" AND date >= $start");
         }
 
-        if options.end.is_some() {
+        if filter.end.is_some() {
             query.push_str(" AND date <= $end");
         }
     }
@@ -290,18 +302,18 @@ pub async fn read_transactions(
         .query(query)
         .bind((
             "last_x_days",
-            options
+            filter
                 .last_x_days
                 .map(|n| format!("{n}d"))
                 .unwrap_or_default(),
         ))
-        .bind(("search", options.search.unwrap_or_default()))
+        .bind(("search", filter.search.unwrap_or_default()))
         .bind((
             "category",
-            options.category.unwrap_or(("category", "other").into()),
+            filter.category.unwrap_or(("category", "other").into()),
         ))
-        .bind(("start", options.start.unwrap_or_default()))
-        .bind(("end", options.end.unwrap_or_default()))
+        .bind(("start", filter.start.unwrap_or_default()))
+        .bind(("end", filter.end.unwrap_or_default()))
         .bind(("account_id", account_id))
         .await?
         .take(0)?;

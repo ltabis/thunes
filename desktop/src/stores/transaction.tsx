@@ -10,32 +10,26 @@ import { Account } from "../../../cli/bindings/Account";
 import { TransactionWithId } from "../../../cli/bindings/TransactionWithId";
 import { AddTransactionOptions } from "../../../cli/bindings/AddTransactionOptions";
 import { AddTransactionTransferOptions } from "../../../cli/bindings/AddTransactionTransferOptions";
-import { ReadTransactionOptions } from "../../../cli/bindings/ReadTransactionOptions";
 
 interface TransactionsState {
   transactions: Map<string, TransactionWithId[]>;
-  filter: ReadTransactionOptions;
   create: (account: Account, options: AddTransactionOptions) => Promise<void>;
   createTransfer: (options: AddTransactionTransferOptions) => Promise<void>;
   update: (account: Account, transaction: TransactionWithId) => Promise<void>;
   delete: (account: Account, transaction: TransactionWithId) => Promise<void>;
-  setFilter: (
-    account: Account,
-    filter: ReadTransactionOptions
-  ) => Promise<void>;
+  sync: (account: Account) => Promise<void>;
 }
 
 // TODO: generalize errors with snack bars.
 
-export const useTransactionStore = create<TransactionsState>((set, get) => ({
+export const useTransactionStore = create<TransactionsState>((set) => ({
   transactions: new Map(),
-  filter: {},
   create: async (
     account: Account,
     options: AddTransactionOptions
   ): Promise<void> => {
     await addTransaction(account.id, options);
-    const transactions = await getTransactions(account.id, get().filter);
+    const transactions = await getTransactions(account.id, account.filter);
 
     set((state) => ({
       transactions: new Map(state.transactions).set(
@@ -48,8 +42,8 @@ export const useTransactionStore = create<TransactionsState>((set, get) => ({
     options: AddTransactionTransferOptions
   ): Promise<void> => {
     await addTransactionTransfer(options);
-    const transactionsFrom = await getTransactions(options.from, get().filter);
-    const transactionsTo = await getTransactions(options.to, get().filter);
+    const transactionsFrom = await getTransactions(options.from);
+    const transactionsTo = await getTransactions(options.to);
 
     set((state) => ({
       transactions: new Map(state.transactions)
@@ -59,7 +53,7 @@ export const useTransactionStore = create<TransactionsState>((set, get) => ({
   },
   update: async (account: Account, transaction: TransactionWithId) => {
     await updateTransaction(transaction);
-    const transactions = await getTransactions(account.id, get().filter);
+    const transactions = await getTransactions(account.id, account.filter);
 
     set((state) => ({
       transactions: new Map(state.transactions).set(
@@ -70,7 +64,7 @@ export const useTransactionStore = create<TransactionsState>((set, get) => ({
   },
   delete: async (account: Account, transaction: TransactionWithId) => {
     await deleteTransaction(transaction.id);
-    const transactions = await getTransactions(account.id, get().filter);
+    const transactions = await getTransactions(account.id, account.filter);
 
     set((state) => ({
       transactions: new Map(state.transactions).set(
@@ -79,11 +73,10 @@ export const useTransactionStore = create<TransactionsState>((set, get) => ({
       ),
     }));
   },
-  setFilter: async (account: Account, filter: ReadTransactionOptions) => {
-    const transactions = await getTransactions(account.id, filter);
+  sync: async (account: Account) => {
+    const transactions = await getTransactions(account.id, account.filter);
 
     set((state) => ({
-      filter,
       transactions: new Map(state.transactions).set(
         account.id.id.String,
         transactions

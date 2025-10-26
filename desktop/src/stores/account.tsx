@@ -6,7 +6,8 @@ import { AddAccountOptions } from "../../../cli/bindings/AddAccountOptions";
 interface AccountState {
   accounts: Map<string, Account>;
   create: (account: AddAccountOptions) => Promise<Account>;
-  update: (account: Account) => Promise<void>;
+  update: (account: Account) => void;
+  commit: (account: Account) => Promise<void>;
   getCurrencies: () => string[];
   filterByCurrency: (currency: string) => Account[];
 }
@@ -25,12 +26,12 @@ export const useAccountStore = create<AccountState>((set, get) => ({
     }));
     return newAccount;
   },
-  update: async (account: Account) => {
-    await updateAccount(account);
+  update: (account: Account) => {
     set((state) => ({
       accounts: new Map(state.accounts).set(account.id.id.String, account),
     }));
   },
+  commit: async (account: Account) => await updateAccount(account),
   // FIXME: real dirty.
   getCurrencies: () => {
     const accounts = get().accounts;
@@ -41,7 +42,6 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       ).values()
     );
   },
-
   filterByCurrency: (currency) => {
     const accounts = get().accounts;
 

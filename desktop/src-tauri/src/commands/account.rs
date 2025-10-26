@@ -214,11 +214,11 @@ pub async fn add_transaction_transfer(
 pub async fn get_transactions(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
     account_id: RecordId,
-    options: Option<ReadTransactionOptions>,
+    filter: Option<ReadTransactionOptions>,
 ) -> Result<Vec<TransactionWithId>, String> {
     let database = database.lock().await;
 
-    thunes_cli::read_transactions(&database, account_id, options.unwrap_or_default())
+    thunes_cli::read_transactions(&database, account_id, filter)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
