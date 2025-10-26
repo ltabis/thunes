@@ -6234,6 +6234,7 @@ dependencies = [
  "time",
  "time-macros",
  "tokio",
+ "tracing",
  "ts-rs",
 ]
 

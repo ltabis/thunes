@@ -1,5 +1,9 @@
 use tauri::{App, Manager};
-use thunes_cli::{settings::Settings, Record};
+use thunes_cli::{
+    migrations::{m1_account_filter::AccountFilterMigration, run_migrations},
+    settings::Settings,
+    Record,
+};
 
 pub mod commands {
     pub mod account;
@@ -53,6 +57,10 @@ fn setup(app: &mut App) -> std::result::Result<(), Box<dyn std::error::Error>> {
             .use_db("accounts")
             .await
             .map_err(|error| error.to_string())?;
+
+        run_migrations(vec![Box::new(AccountFilterMigration {})], &db)
+            .await
+            .map_err(|()| "failed to run migrations, check the logs".to_string())?;
 
         // FIXME: move db seeding to an install script.
         // Categories
