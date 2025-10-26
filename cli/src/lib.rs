@@ -4,6 +4,7 @@ use transaction::{Tag, TransactionWithId};
 
 pub mod account;
 pub mod budget;
+pub mod migrations;
 pub mod portfolio;
 pub mod script;
 pub mod settings;
@@ -240,7 +241,7 @@ pub async fn create_transaction_transfer(
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(Default, Debug, serde::Deserialize)]
+#[derive(Default, Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ReadTransactionOptions {
     #[ts(as = "Option<String>", optional)]
     pub search: Option<String>,

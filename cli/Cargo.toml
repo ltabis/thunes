@@ -32,3 +32,4 @@ ts-rs = { version = "11.0.1", features = ["serde-json-impl"] }
 surrealdb = { version = "2.3.7", features = ["kv-rocksdb"] }
 tokio = { version = "1.47.0", features = ["macros", "rt-multi-thread"] }
 chrono = { version = "0.4.41" }
+tracing = { version = "0.1.41" }
