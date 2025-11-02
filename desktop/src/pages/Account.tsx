@@ -36,9 +36,7 @@ function AddAccountDialog({
   const accountStore = useAccountStore();
   const navigate = useAccountNavigate();
   const dispatchSnackbar = useDispatchSnackbar()!;
-  const [form, setForm] = useState<
-    Omit<Account, "id" | "transaction_grid_sort_model">
-  >({
+  const [form, setForm] = useState<Omit<Account, "id">>({
     name: "",
     currency: "",
   });

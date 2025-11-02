@@ -3,7 +3,6 @@ import { AddTransactionOptions } from "../../../cli/bindings/AddTransactionOptio
 import { AddTransactionTransferOptions } from "../../../cli/bindings/AddTransactionTransferOptions";
 import { Tag } from "../../../cli/bindings/Tag";
 import { TransactionWithId } from "../../../cli/bindings/TransactionWithId";
-import { GetTransactionOptions } from "../../../cli/bindings/GetTransactionOptions";
 import { Account } from "../../../cli/bindings/Account";
 import { BalanceOptions } from "../../../cli/bindings/BalanceOptions";
 import { Settings } from "../../../cli/bindings/Settings";
@@ -24,6 +23,7 @@ import { ReadCurrencyOptions } from "../../../cli/bindings/ReadCurrencyOptions";
 import { Currency } from "../../../cli/bindings/Currency";
 import { WriteTileOptions } from "../../../cli/bindings/WriteTileOptions";
 import { PortfolioTile } from "../../../cli/bindings/PortfolioTile";
+import { ReadTransactionOptions } from "../../../cli/bindings/ReadTransactionOptions";
 
 // TODO: could this be automated ?
 
@@ -42,9 +42,9 @@ export const getAllBalance = (): Promise<CurrencyBalance[]> =>
   invoke("get_all_balance");
 export const getTransactions = (
   accountId: RecordId,
-  options?: GetTransactionOptions
+  filter?: ReadTransactionOptions
 ): Promise<TransactionWithId[]> =>
-  invoke("get_transactions", { accountId, options });
+  invoke("get_transactions", { accountId, filter });
 export const addTransaction = (
   accountId: RecordId,
   options: AddTransactionOptions

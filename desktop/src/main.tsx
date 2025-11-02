@@ -34,7 +34,9 @@ Promise.all([
     const transactions = new Map<string, TransactionWithId[]>();
 
     for (const [id, account] of useAccountStore.getState().accounts) {
-      await getTransactions(account.id).then((t) => transactions.set(id, t));
+      await getTransactions(account.id, account.filter).then((t) =>
+        transactions.set(id, t)
+      );
     }
 
     useTransactionStore.setState({
