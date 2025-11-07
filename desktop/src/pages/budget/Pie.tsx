@@ -5,7 +5,10 @@ import { getBudgetExpenses, RecordId, updateBudget } from "../../api";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { ReadExpensesResult } from "../../../../cli/bindings/ReadExpensesResult";
 import { ExpensesBudget } from "../../../../cli/bindings/ExpensesBudget";
+import { ExpensesPeriod } from "../../../../cli/bindings/ExpensesPeriod";
 import {
+  Button,
+  ButtonGroup,
   Checkbox,
   IconButton,
   ListItemIcon,
@@ -16,6 +19,9 @@ import {
   Stack,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import dayjs from "dayjs";
+import { DatePicker } from "@mui/x-date-pickers";
+import { ReadExpensesOptions } from "../../../../cli/bindings/ReadExpensesOptions";
 
 const PIE_OPTION_OFFSET = 10;
 
@@ -157,18 +163,24 @@ export default function ({
     setAnchorEl(null);
   };
   const [expenses, setExpenses] = useState<ReadExpensesResult | null>(null);
+  const [parameters, setParameters] = useState<
+    Omit<ReadExpensesOptions, "start_date"> & { start_date: dayjs.Dayjs }
+  >({
+    period: "Monthly",
+    start_date: dayjs().date(1),
+  });
   const dispatchSnackbar = useDispatchSnackbar()!;
 
   useEffect(() => {
     getBudgetExpenses(budget, {
-      period: "Monthly",
-      period_index: 0,
+      ...parameters,
+      start_date: parameters.start_date.toISOString(),
     })
       .then((expenses) => setExpenses(expenses))
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
-  }, [budget, dispatchSnackbar]);
+  }, [budget, parameters, dispatchSnackbar]);
 
   return expenses ? (
     <Stack>
@@ -183,12 +195,7 @@ export default function ({
         >
           <FilterListIcon />
         </IconButton>
-        <Menu
-          id="long-menu"
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleClose}
-        >
+        <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
           {Object.entries(expenses.budget.inner.view).map(([key, value]) => (
             <MenuItem
               key={key}
@@ -214,6 +221,7 @@ export default function ({
                 });
               }}
             >
+              <ListItemText primary={key} />
               <ListItemIcon>
                 <Checkbox
                   edge="start"
@@ -222,9 +230,47 @@ export default function ({
                   disableRipple
                 />
               </ListItemIcon>
-              <ListItemText primary={key} />
             </MenuItem>
           ))}
+          <MenuItem key="budget-date-start-picker">
+            <Stack direction="row" spacing={2} alignItems="center">
+              <ListItemText primary="Start date" />
+              <DatePicker
+                value={parameters.start_date}
+                onChange={(start_date) =>
+                  start_date &&
+                  setParameters({
+                    ...parameters,
+                    start_date,
+                  })
+                }
+              />
+            </Stack>
+          </MenuItem>
+          <MenuItem key="budget-period-picker">
+            <Stack direction="row" spacing={2} alignItems="center">
+              <ListItemText primary="Period" />
+              <ButtonGroup variant="outlined">
+                {["Monthly", "Trimestrial", "Yearly"].map((period) => (
+                  <Button
+                    key={period}
+                    color={
+                      period === parameters.period ? "primary" : "secondary"
+                    }
+                    value={period}
+                    onClick={() =>
+                      setParameters({
+                        ...parameters,
+                        period: period as ExpensesPeriod,
+                      })
+                    }
+                  >
+                    {period}
+                  </Button>
+                ))}
+              </ButtonGroup>
+            </Stack>
+          </MenuItem>
         </Menu>
       </Stack>
 
@@ -242,6 +288,11 @@ export default function ({
       />
 
       <center>
+        {/*         
+        TODO: format date using dayjs
+          {dayjs(expenses.period_start).format("YYYY-MM-DD")} {"-"}{" "}
+          {dayjs(expenses.period_end).format("YYYY-MM-DD")}
+        */}
         {expenses.period_start} {"-"} {expenses.period_end}
       </center>
     </Stack>

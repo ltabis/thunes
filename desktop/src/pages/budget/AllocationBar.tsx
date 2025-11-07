@@ -7,6 +7,7 @@ import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { ReadExpensesResult } from "../../../../cli/bindings/ReadExpensesResult";
 import { ExpensesBudget } from "../../../../cli/bindings/ExpensesBudget";
 import { categoryIconToMuiIcon } from "../../utils/icons";
+import dayjs from "dayjs";
 
 export function Inner({ budget }: { budget: ExpensesBudget }) {
   const allocations = budget.partitions.flatMap(
@@ -85,7 +86,7 @@ export default function ({
   useEffect(() => {
     getBudgetExpenses(budget.id, {
       period: "Monthly",
-      period_index: 0,
+      start_date: dayjs().date(1).toISOString(),
     })
       .then((expenses) => setExpenses(expenses))
       .catch((error) =>
