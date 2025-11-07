@@ -33,8 +33,6 @@ time = { version = "0.3.41", features = [
     "serde",
 ] }
 time-macros = { version = "0.2.22", features = ["parsing"] }
-rhai-http = { version = "0.4.0" }
-rhai = { version = "1.21.0" }
 thunes-cli = { path = "../../cli" }
 surrealdb = { version = "2.2.2", features = ["kv-rocksdb"] }
 tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
