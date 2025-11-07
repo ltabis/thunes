@@ -131,7 +131,7 @@ mod tests {
         .await
         .expect("failed to create allocations");
 
-        let now = chrono::Utc::now();
+        let now = chrono::Utc::now().with_day(1).unwrap();
 
         add_transaction(
             app.state(),
@@ -141,18 +141,12 @@ mod tests {
                 category: Some(category.clone()),
                 description: "Going to work".to_string(),
                 tags: vec![],
-                date: Some(
-                    now.date_naive()
-                        .with_day(1)
-                        .unwrap()
-                        .and_hms_opt(1, 0, 0)
-                        .unwrap()
-                        .and_utc(),
-                ),
+                date: Some(now.date_naive().and_hms_opt(1, 0, 0).unwrap().and_utc()),
             },
         )
         .await
         .unwrap();
+
         add_transaction(
             app.state(),
             account.id.clone(),
@@ -201,7 +195,7 @@ mod tests {
             budget.id,
             ReadExpensesOptions {
                 period: ExpensesPeriod::Monthly,
-                period_index: 0,
+                start_date: now,
             },
         )
         .await

@@ -205,7 +205,8 @@ pub enum ExpensesPeriod {
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct ReadExpensesOptions {
     pub period: ExpensesPeriod,
-    pub period_index: u32,
+    #[ts(as = "String")]
+    pub start_date: chrono::DateTime<chrono::Utc>,
 }
 
 pub async fn read_expenses(
@@ -215,75 +216,27 @@ pub async fn read_expenses(
 ) -> Result<ReadExpensesResult, Error> {
     // Not using surrealdb time functions here because there is no way (right now)
     // to add a month to a datetime object.
-    let now = chrono::Utc::now();
 
-    let (before, after) = match options.period {
+    let start = options
+        .start_date
+        .with_time(chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap())
+        .unwrap();
+
+    let (start, end) = match options.period {
         ExpensesPeriod::Monthly => {
-            let before = now
-                .date_naive()
-                .with_day(1)
-                .unwrap()
-                .checked_sub_months(chrono::Months::new(options.period_index))
-                .unwrap();
+            let end = start.checked_add_months(chrono::Months::new(1)).unwrap();
 
-            let after = now
-                .date_naive()
-                .with_day(1)
-                .unwrap()
-                .checked_add_months(chrono::Months::new(1))
-                .unwrap()
-                .checked_sub_months(chrono::Months::new(options.period_index))
-                .unwrap()
-                .checked_sub_days(chrono::Days::new(1))
-                .unwrap();
-
-            (before, after)
+            (start, end)
         }
         ExpensesPeriod::Trimestrial => {
-            let before = now
-                .date_naive()
-                .with_day(1)
-                .unwrap()
-                .checked_sub_months(chrono::Months::new(2))
-                .unwrap()
-                .checked_sub_months(chrono::Months::new(options.period_index))
-                .unwrap();
+            let end = start.checked_add_months(chrono::Months::new(3)).unwrap();
 
-            let after = now
-                .date_naive()
-                .with_day(1)
-                .unwrap()
-                .checked_add_months(chrono::Months::new(1))
-                .unwrap()
-                .checked_sub_months(chrono::Months::new(options.period_index))
-                .unwrap()
-                .checked_sub_days(chrono::Days::new(1))
-                .unwrap();
-
-            (before, after)
+            (start, end)
         }
         ExpensesPeriod::Yearly => {
-            let year = now.year() - options.period_index as i32;
+            let end = start.with_year(start.year() + 1).unwrap();
 
-            let before = now
-                .date_naive()
-                .with_year(year)
-                .unwrap()
-                .with_month(1)
-                .unwrap()
-                .with_day(1)
-                .unwrap();
-
-            let after = now
-                .date_naive()
-                .with_year(year)
-                .unwrap()
-                .with_month(12)
-                .unwrap()
-                .with_day(31)
-                .unwrap();
-
-            (before, after)
+            (start, end)
         }
     };
 
@@ -297,12 +250,12 @@ pub async fn read_expenses(
         RETURN SELECT *
             FROM transaction
             WHERE account.id in $budget.accounts.map(|$a| $a.id)
-            AND date >= <datetime>$before AND date <= <datetime>$after;
+            AND date >= <datetime>$start AND date <= <datetime>$end;
         "#,
         )
         .bind(("budget_id", budget_id))
-        .bind(("before", before))
-        .bind(("after", after))
+        .bind(("start", start))
+        .bind(("end", end))
         .await
         .unwrap();
 
@@ -353,8 +306,8 @@ pub async fn read_expenses(
         .collect();
 
     Ok(ReadExpensesResult {
-        period_start: before.to_string(),
-        period_end: after.to_string(),
+        period_start: start.to_string(),
+        period_end: end.to_string(),
         budget: ExpensesBudget {
             allocations_total: partitions
                 .iter()

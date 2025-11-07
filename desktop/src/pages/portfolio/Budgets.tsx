@@ -22,6 +22,7 @@ import BudgetSelector from "../../components/form/BudgetSelector";
 import { BudgetIdentifiers } from "../../../../cli/bindings/BudgetIdentifiers";
 import { ClearIcon } from "@mui/x-date-pickers";
 import { useBudgetNavigate } from "../../hooks/budget";
+import dayjs from "dayjs";
 
 export function RenderTile({
   tile,
@@ -41,7 +42,7 @@ export function RenderTile({
       { tb: "budget", id: { String: tile.budget } },
       {
         period: "Monthly",
-        period_index: 0,
+        start_date: dayjs().date(1).toISOString(),
       }
     )
       .then(setData)
