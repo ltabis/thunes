@@ -26,8 +26,6 @@ time = { version = "0.3.41", features = [
     "serde",
 ] }
 time-macros = { version = "0.2.22", features = ["parsing"] }
-rhai-http = { version = "0.5.0" }
-rhai = { version = "1.22.2" }
 ts-rs = { version = "11.0.1", features = ["serde-json-impl"] }
 surrealdb = { version = "2.3.7", features = ["kv-rocksdb"] }
 tokio = { version = "1.47.0", features = ["macros", "rt-multi-thread"] }

@@ -6,7 +6,6 @@ pub mod account;
 pub mod budget;
 pub mod migrations;
 pub mod portfolio;
-pub mod script;
 pub mod settings;
 pub mod transaction;
 

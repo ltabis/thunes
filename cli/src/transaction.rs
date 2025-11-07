@@ -1,7 +1,4 @@
-use rhai::{CustomType, TypeBuilder};
 use surrealdb::RecordId;
-
-use crate::script::time_helper;
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
@@ -77,20 +74,4 @@ pub struct TransactionWithId {
     pub account: RecordId,
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub category: surrealdb::RecordId,
-}
-
-#[derive(Clone, Debug, serde::Deserialize, rhai::CustomType)]
-pub struct TransactionRhai {
-    /// Get the date of the transaction.
-    #[rhai_type(readonly)]
-    pub date: time_helper::Date,
-    /// Currency amount of the transaction, can be negative or positive depending of the transaction type.
-    #[rhai_type(readonly)]
-    pub amount: rhai::FLOAT,
-    /// Description of the transaction.
-    #[rhai_type(readonly)]
-    pub description: String,
-    /// Tags associated with the transaction.
-    #[rhai_type(readonly)]
-    pub tags: rhai::Array,
 }
