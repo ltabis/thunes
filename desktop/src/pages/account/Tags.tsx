@@ -57,6 +57,9 @@ export function EditTags({ value, handleChange }: EditTagsProps) {
 
         return filtered;
       }}
+      sx={{
+        maxWidth: 300,
+      }}
     />
   );
 }
