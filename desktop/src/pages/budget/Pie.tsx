@@ -7,6 +7,7 @@ import { ReadExpensesResult } from "../../../../cli/bindings/ReadExpensesResult"
 import { ExpensesBudget } from "../../../../cli/bindings/ExpensesBudget";
 import { ExpensesPeriod } from "../../../../cli/bindings/ExpensesPeriod";
 import {
+  Alert,
   Button,
   ButtonGroup,
   Checkbox,
@@ -22,10 +23,15 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
 import { ReadExpensesOptions } from "../../../../cli/bindings/ReadExpensesOptions";
+import CircleIcon from "@mui/icons-material/Circle";
+
+type PieValueTypeBudget = PieValueType & { exceeded?: number };
 
 const PIE_OPTION_OFFSET = 10;
 
-function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
+function computeBudgetPieSeries(
+  expenses: ExpensesBudget
+): PieSeriesType<PieValueTypeBudget>[] {
   const options = expenses.inner.view;
   const basePartitions = expenses.partitions.map((partition) => ({
     label: partition.inner.name,
@@ -57,7 +63,7 @@ function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
           .flat(),
         {
           value:
-            expenses.inner.income -
+            expenses.income_total -
             basePartitions.reduce((acc, curr) => acc + curr.value, 0),
           color: "none",
         },
@@ -69,17 +75,18 @@ function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
 
   if (options?.expenses) {
     series.push({
+      id: "expenses",
       type: "pie",
       innerRadius: innerRadiusStart,
       outerRadius: innerRadiusStart + 10,
       paddingAngle: 1,
       cornerRadius: 5,
-      valueFormatter: (item: PieValueType & { exceeded?: number }) => {
+      valueFormatter: (item: PieValueTypeBudget) => {
         // FIXME: must be returned by the backend.
         return item.exceeded
-          ? `WARNING: budget exceeded (${item.exceeded.toFixed(2)} ${
-              expenses.inner.currency
-            })`
+          ? `WARNING: exceeded budget of ${item.exceeded.toFixed(2)} (by ${(
+              item.exceeded - item.value
+            ).toFixed(2)} ${expenses.inner.currency})`
           : `${item.value.toFixed(2)} ${expenses.inner.currency}`;
       },
       data: [
@@ -106,7 +113,7 @@ function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
           .flat(),
         {
           value:
-            expenses.inner.income -
+            expenses.income_total -
             basePartitions.reduce((acc, curr) => acc + curr.value, 0),
           color: "none",
         },
@@ -136,7 +143,7 @@ function computeBudgetPieSeries(expenses: ExpensesBudget): PieSeriesType[] {
     innerRadius: 50,
     outerRadius: 100,
     arcLabel: (item: { value: number }) =>
-      `${((item.value / expenses.inner.income) * 100).toFixed(0)}%`,
+      `${((item.value / expenses.income_total) * 100).toFixed(0)}%`,
   } as PieSeriesType);
 
   return series;
@@ -182,7 +189,12 @@ export default function ({
       );
   }, [budget, parameters, dispatchSnackbar]);
 
-  return expenses ? (
+  if (!expenses)
+    return <Skeleton variant="circular" width={250} height={250} />;
+
+  const pieSeries = computeBudgetPieSeries(expenses.budget);
+
+  return (
     <Stack>
       <Stack maxWidth={"80%"} justifyContent={"flex-end"} direction={"row"}>
         <IconButton
@@ -275,7 +287,7 @@ export default function ({
       </Stack>
 
       <PieChart
-        series={computeBudgetPieSeries(expenses.budget)}
+        series={pieSeries}
         onItemClick={(_event, partitionData) => {
           const partition = expenses.budget.partitions[partitionData.dataIndex];
           // TODO: Edit partition or allocation on click
@@ -295,8 +307,27 @@ export default function ({
         */}
         {expenses.period_start} {"-"} {expenses.period_end}
       </center>
+
+      <Stack alignItems="center">
+        {pieSeries
+          .find((series) => series.id === "expenses")
+          ?.data.filter((item) => item.exceeded !== undefined)
+          .map((item) => (
+            <Alert
+              icon={<CircleIcon sx={{ color: item.color ?? "white" }} />}
+              severity="warning"
+              key={item.label?.toString()}
+            >
+              {item.exceeded
+                ? `exceeded budget of ${item.exceeded.toFixed(2)} ${
+                    expenses.budget.inner.currency
+                  } (by ${(item.exceeded - item.value).toFixed(2)} ${
+                    expenses.budget.inner.currency
+                  }) for the ${item.label?.toString()} partition`
+                : `${item.value.toFixed(2)} ${expenses.budget.inner.currency}`}
+            </Alert>
+          )) ?? <></>}
+      </Stack>
     </Stack>
-  ) : (
-    <Skeleton variant="circular" width={250} height={250} />
   );
 }
