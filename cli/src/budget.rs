@@ -180,6 +180,7 @@ pub struct ExpensesBudget {
     pub partitions: Vec<ExpensesPartition>,
     pub transactions_total: f64,
     pub allocations_total: f64,
+    pub income_total: f64,
 }
 
 #[derive(ts_rs::TS)]
@@ -267,6 +268,12 @@ pub async fn read_expenses(
     let allocation_groups = response.take::<Vec<AllocationGroup>>(4)?;
     let transactions = response.take::<Vec<TransactionWithId>>(5)?;
 
+    let period_factor = match options.period {
+        ExpensesPeriod::Monthly => 1.0,
+        ExpensesPeriod::Trimestrial => 3.0,
+        ExpensesPeriod::Yearly => 12.0,
+    };
+
     let partitions: Vec<ExpensesPartition> = partitions
         .into_iter()
         .map(|partition: Partition| {
@@ -295,7 +302,10 @@ pub async fn read_expenses(
             ExpensesPartition {
                 allocations_total: allocations
                     .iter()
-                    .fold(0.0, |acc, allocation| acc + allocation.allocations_total),
+                    .fold(0.0, |acc, allocation| acc + allocation.allocations_total)
+                    // Need to apply the period factor on each allocations instead of applying it on the total
+                    // because the frontend breaks down the allocations to display details. 
+                    * period_factor,
                 transactions_total: allocations
                     .iter()
                     .fold(0.0, |acc, allocation| acc + allocation.transactions_total),
@@ -315,6 +325,7 @@ pub async fn read_expenses(
             transactions_total: partitions
                 .iter()
                 .fold(0.0, |acc, partition| acc + partition.transactions_total),
+            income_total: budget.income * period_factor,
             inner: budget,
             partitions,
         },
