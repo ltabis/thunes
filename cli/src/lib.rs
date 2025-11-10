@@ -1,4 +1,5 @@
 use account::Account;
+use chrono::offset::LocalResult;
 use surrealdb::{engine::local::Db, RecordId, Surreal};
 use transaction::{Tag, TransactionWithId};
 
@@ -19,9 +20,55 @@ pub const TIME_FORMAT_DAY: &[time::format_description::FormatItem<'_>] =
     time_macros::format_description!("[day]");
 
 #[derive(Debug)]
+pub enum ChronoLocalResultError {
+    Ambiguous,
+    None,
+}
+
+impl<T> From<LocalResult<T>> for ChronoLocalResultError {
+    fn from(value: LocalResult<T>) -> Self {
+        match value {
+            LocalResult::Single(_) => panic!("not an error"),
+            LocalResult::Ambiguous(_, _) => Self::Ambiguous,
+            LocalResult::None => Self::None,
+        }
+    }
+}
+
+impl std::fmt::Display for ChronoLocalResultError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                ChronoLocalResultError::Ambiguous => "ambiguous",
+                ChronoLocalResultError::None => "none",
+            }
+        )
+    }
+}
+
+#[derive(Debug)]
 pub enum Error {
     Database(surrealdb::Error),
     RecordNotFound,
+    Time(ChronoLocalResultError),
+}
+
+impl Error {
+    pub fn trace(&self) {
+        match self {
+            Self::Database(error) => {
+                tracing::error!(%error, "database error");
+            }
+            Self::RecordNotFound => {
+                tracing::error!("Record not found");
+            }
+            Self::Time(error) => {
+                tracing::error!(%error, "Time error");
+            }
+        }
+    }
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -38,6 +85,7 @@ impl std::fmt::Display for Error {
             match self {
                 Error::Database(error) => error.to_string(),
                 Error::RecordNotFound => "Record not found".to_string(),
+                Error::Time(error) => error.to_string(),
             }
         )
     }

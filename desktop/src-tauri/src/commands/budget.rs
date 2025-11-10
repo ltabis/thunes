@@ -5,7 +5,6 @@ use thunes_cli::budget::{
     Allocation, Budget, CreateAllocationOptions, CreatePartitionOptions, Partition,
     ReadExpensesOptions, ReadExpensesResult, UpdateAllocationOptions,
 };
-use thunes_cli::Error as ThunesError;
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
@@ -30,16 +29,9 @@ pub async fn add_budget(
 
     thunes_cli::budget::create_split(&database, options)
         .await
-        .map_err(|error| match error {
-            ThunesError::Database(error) => {
-                tracing::error!(%error, "database error");
-                "failed to add budget".to_string()
-            }
-            // Note: should not happen. See the function internals.
-            ThunesError::RecordNotFound => {
-                tracing::error!("budget not found after creation");
-                "failed to create budget".to_string()
-            }
+        .map_err(|error| {
+            error.trace();
+            "failed to add budget".to_string()
         })
 }
 
@@ -53,15 +45,9 @@ pub async fn get_budget(
 
     thunes_cli::budget::read(&database, budget_id)
         .await
-        .map_err(|error| match error {
-            ThunesError::Database(error) => {
-                tracing::error!(%error, "database error");
-                "failed to get budget".to_string()
-            }
-            ThunesError::RecordNotFound => {
-                tracing::error!("budget not found");
-                "failed to get budget, not found".to_string()
-            }
+        .map_err(|error| {
+            error.trace();
+            "failed to get budget".to_string()
         })
 }
 

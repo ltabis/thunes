@@ -5,7 +5,7 @@ use thunes_cli::account::Account;
 use thunes_cli::transaction::TransactionWithId;
 use thunes_cli::{
     AccountIdentifiers, AddTransactionOptions, AddTransactionTransferOptions, BalanceOptions,
-    CurrencyBalance, Error as ThunesError, ReadTransactionOptions,
+    CurrencyBalance, ReadTransactionOptions,
 };
 
 pub type Accounts = std::collections::HashMap<String, Account>;
@@ -48,16 +48,9 @@ pub async fn add_account(
 
     thunes_cli::account::create(&database, options)
         .await
-        .map_err(|error| match error {
-            ThunesError::Database(error) => {
-                tracing::error!(%error, "database error");
-                "failed to add account".to_string()
-            }
-            // Note: should not happen. See the function internals.
-            ThunesError::RecordNotFound => {
-                tracing::error!("account not found after creation");
-                "failed to create account".to_string()
-            }
+        .map_err(|error| {
+            error.trace();
+            "failed to add account".into()
         })
 }
 
@@ -71,15 +64,9 @@ pub async fn get_account(
 
     thunes_cli::account::read(&database, account_id)
         .await
-        .map_err(|error| match error {
-            ThunesError::Database(error) => {
-                tracing::error!(%error, "database error");
-                "failed to get account".to_string()
-            }
-            ThunesError::RecordNotFound => {
-                tracing::error!("account not found");
-                "failed to get account, not found".to_string()
-            }
+        .map_err(|error| {
+            error.trace();
+            "failed to get account".into()
         })
 }
 
@@ -126,16 +113,9 @@ pub async fn get_balance(
 
     thunes_cli::balance(&database, account_id, options.unwrap_or_default())
         .await
-        .map_err(|error| match error {
-            ThunesError::Database(error) => {
-                tracing::error!(%error, "database error");
-                "failed to get balance".to_string()
-            }
-            // Note: should not happen. See the function internals.
-            ThunesError::RecordNotFound => {
-                tracing::error!("balance not found after computation");
-                "failed to get balance".to_string()
-            }
+        .map_err(|error| {
+            error.trace();
+            "failed to get balance".into()
         })
 }
 
@@ -164,15 +144,9 @@ pub async fn get_currency_from_account(
 
     thunes_cli::get_currency_from_account(&database, account_id)
         .await
-        .map_err(|error| match error {
-            ThunesError::Database(error) => {
-                tracing::error!(%error, "database error");
-                "failed to get currency".to_string()
-            }
-            ThunesError::RecordNotFound => {
-                tracing::error!("account not found");
-                "account not found".to_string()
-            }
+        .map_err(|error| {
+            error.trace();
+            "failed to get currency".into()
         })
 }
 

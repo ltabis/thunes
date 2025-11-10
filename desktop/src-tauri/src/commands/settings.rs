@@ -2,6 +2,9 @@ use surrealdb::{engine::local::Db, Surreal};
 use tauri::State;
 use thunes_cli::{settings::Settings, Record};
 
+pub const TIME_FORMAT: &[time::format_description::FormatItem<'_>] =
+    time_macros::format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].surql");
+
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_settings(
@@ -92,14 +95,10 @@ pub async fn backup_export(
 
     let mut path = settings.backups_path;
 
-    let format =
-        time::format_description::parse("[year]-[month]-[day]T[hour]:[minute]:[second].surql")
-            .expect("format is not valid");
-
     path.push(
         time::OffsetDateTime::now_utc()
-            .format(&format)
-            .expect("failed to format"),
+            .format(&TIME_FORMAT)
+            .map_err(|_| "Server error".to_string())?,
     );
 
     database.export(path).await.map_err(|error| {
