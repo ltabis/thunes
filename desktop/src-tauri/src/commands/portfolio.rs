@@ -2,7 +2,6 @@ use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tauri::State;
 use thunes_cli::portfolio::tile::{Tile, WriteOptions};
-use thunes_cli::Error as ThunesError;
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
@@ -14,15 +13,9 @@ pub async fn add_tile(
 
     thunes_cli::portfolio::tile::write(&database, options)
         .await
-        .map_err(|error| match error {
-            ThunesError::Database(error) => {
-                tracing::error!(%error, "database error");
-                "failed to save tile".to_string()
-            }
-            ThunesError::RecordNotFound => {
-                tracing::error!("tile not found");
-                "tile not found".to_string()
-            }
+        .map_err(|error| {
+            error.trace();
+            "failed to save tile".to_string()
         })
 }
 
@@ -36,15 +29,9 @@ pub async fn get_tile(
 
     thunes_cli::portfolio::tile::read(&database, id)
         .await
-        .map_err(|error| match error {
-            ThunesError::Database(error) => {
-                tracing::error!(%error, "database error");
-                "failed to get tile".to_string()
-            }
-            ThunesError::RecordNotFound => {
-                tracing::error!("tile not found");
-                "tile not found".to_string()
-            }
+        .map_err(|error| {
+            error.trace();
+            "failed to get tile".to_string()
         })
 }
 

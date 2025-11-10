@@ -1,6 +1,7 @@
 use crate::account::Account;
 use crate::transaction::{CategoryWithId, TransactionWithId};
-use crate::Error;
+use crate::{ChronoLocalResultError, Error};
+use chrono::offset::LocalResult;
 use chrono::Datelike;
 use surrealdb::engine::local::Db;
 use surrealdb::{RecordId, Surreal};
@@ -217,25 +218,33 @@ pub async fn read_expenses(
 ) -> Result<ReadExpensesResult, Error> {
     // Not using surrealdb time functions here because there is no way (right now)
     // to add a month to a datetime object.
-
-    let start = options
-        .start_date
-        .with_time(chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap())
-        .unwrap();
+    let start = match options.start_date.with_time(
+        chrono::NaiveTime::from_hms_opt(0, 0, 0)
+            .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?,
+    ) {
+        LocalResult::Single(start) => start,
+        error => return Err(Error::Time(ChronoLocalResultError::from(error))),
+    };
 
     let (start, end) = match options.period {
         ExpensesPeriod::Monthly => {
-            let end = start.checked_add_months(chrono::Months::new(1)).unwrap();
+            let end = start
+                .checked_add_months(chrono::Months::new(1))
+                .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
 
             (start, end)
         }
         ExpensesPeriod::Trimestrial => {
-            let end = start.checked_add_months(chrono::Months::new(3)).unwrap();
+            let end = start
+                .checked_add_months(chrono::Months::new(3))
+                .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
 
             (start, end)
         }
         ExpensesPeriod::Yearly => {
-            let end = start.with_year(start.year() + 1).unwrap();
+            let end = start
+                .with_year(start.year() + 1)
+                .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
 
             (start, end)
         }
@@ -258,7 +267,7 @@ pub async fn read_expenses(
         .bind(("start", start))
         .bind(("end", end))
         .await
-        .unwrap();
+        .map_err(Error::Database)?;
 
     // FIXME: Build the result structure using the query directly.
     let budget = response

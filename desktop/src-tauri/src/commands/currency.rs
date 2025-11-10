@@ -2,7 +2,6 @@ use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tauri::State;
 use thunes_cli::portfolio::currency::{Currency, ReadCurrencyOptions};
-use thunes_cli::Error as ThunesError;
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
@@ -29,14 +28,8 @@ pub async fn get_currency(
 
     thunes_cli::portfolio::currency::read(&database, options)
         .await
-        .map_err(|error| match error {
-            ThunesError::Database(error) => {
-                tracing::error!(%error, "database error");
-                "failed to get currency data".to_string()
-            }
-            ThunesError::RecordNotFound => {
-                tracing::error!("currency not found");
-                "currency data not found".to_string()
-            }
+        .map_err(|error| {
+            error.trace();
+            "failed to get currency data".to_string()
         })
 }
