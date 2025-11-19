@@ -1,14 +1,15 @@
 use surrealdb::{engine::local::Db, Surreal};
 use tauri::State;
+use thunes_cli::transaction::category::CategoryWithId;
 
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn get_categories(
     database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-) -> Result<Vec<thunes_cli::transaction::CategoryWithId>, String> {
+) -> Result<Vec<CategoryWithId>, String> {
     let database = database.lock().await;
 
-    thunes_cli::get_categories(&database)
+    thunes_cli::transaction::category::read(&database)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");

@@ -1,7 +1,7 @@
 use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 use tauri::State;
-use thunes_cli::transaction::Tag;
+use thunes_cli::transaction::tag::Tag;
 
 #[tauri::command]
 pub async fn get_tags(
@@ -9,10 +9,12 @@ pub async fn get_tags(
 ) -> Result<Vec<Tag>, String> {
     let database = database.lock().await;
 
-    thunes_cli::get_tags(&database).await.map_err(|error| {
-        tracing::error!(%error, "database error");
-        "failed to get tags".to_string()
-    })
+    thunes_cli::transaction::tag::read(&database)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to get tags".to_string()
+        })
 }
 
 #[tauri::command]
@@ -22,7 +24,7 @@ pub async fn add_tags(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    thunes_cli::add_tags(&database, tags)
+    thunes_cli::transaction::tag::create(&database, tags)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");

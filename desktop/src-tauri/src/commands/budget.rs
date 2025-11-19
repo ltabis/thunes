@@ -1,11 +1,14 @@
 use surrealdb::engine::local::Db;
 use surrealdb::{RecordId, Surreal};
 use tauri::State;
-use thunes_cli::budget::{
-    Allocation, Budget, CreateAllocationOptions, CreatePartitionOptions, Partition,
-    ReadExpensesOptions, ReadExpensesResult, UpdateAllocationOptions,
+use thunes_cli::budget::allocation::{
+    Allocation, CreateAllocationOptions, UpdateAllocationOptions,
 };
-
+use thunes_cli::budget::expenses::ReadExpensesOptions;
+use thunes_cli::budget::expenses::ReadExpensesResult;
+use thunes_cli::budget::partition::CreatePartitionOptions;
+use thunes_cli::budget::partition::Partition;
+use thunes_cli::budget::Budget;
 #[tauri::command]
 #[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
 pub async fn list_budgets(
@@ -92,7 +95,7 @@ pub async fn get_budget_expenses(
 ) -> Result<ReadExpensesResult, String> {
     let database = database.lock().await;
 
-    thunes_cli::budget::read_expenses(&database, budget_id, options)
+    thunes_cli::budget::expenses::read(&database, budget_id, options)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -109,7 +112,7 @@ pub async fn create_budget_partition(
 ) -> Result<Partition, String> {
     let database = database.lock().await;
 
-    thunes_cli::budget::create_partition(&database, budget_id, options)
+    thunes_cli::budget::partition::create(&database, budget_id, options)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -125,7 +128,7 @@ pub async fn get_budget_partitions(
 ) -> Result<Vec<Partition>, String> {
     let database = database.lock().await;
 
-    thunes_cli::budget::read_partitions(&database, budget_id)
+    thunes_cli::budget::partition::read(&database, budget_id)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -141,7 +144,7 @@ pub async fn update_budget_partition(
 ) -> Result<Partition, String> {
     let database = database.lock().await;
 
-    thunes_cli::budget::update_partition(&database, options)
+    thunes_cli::budget::partition::update(&database, options)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -157,7 +160,7 @@ pub async fn delete_budget_partition(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    thunes_cli::budget::delete_partition(&database, partition)
+    thunes_cli::budget::partition::delete(&database, partition)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -173,7 +176,7 @@ pub async fn create_budget_allocation(
 ) -> Result<Allocation, String> {
     let database = database.lock().await;
 
-    thunes_cli::budget::create_allocation(&database, options)
+    thunes_cli::budget::allocation::create(&database, options)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -189,7 +192,7 @@ pub async fn get_budget_allocations(
 ) -> Result<Vec<Allocation>, String> {
     let database = database.lock().await;
 
-    thunes_cli::budget::read_allocations(&database, partitions)
+    thunes_cli::budget::allocation::read(&database, partitions)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -205,7 +208,7 @@ pub async fn update_budget_allocation(
 ) -> Result<Allocation, String> {
     let database = database.lock().await;
 
-    thunes_cli::budget::update_allocation(&database, options)
+    thunes_cli::budget::allocation::update(&database, options)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -221,7 +224,7 @@ pub async fn delete_budget_allocation(
 ) -> Result<(), String> {
     let database = database.lock().await;
 
-    thunes_cli::budget::delete_allocation(&database, allocation)
+    thunes_cli::budget::allocation::delete(&database, allocation)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
