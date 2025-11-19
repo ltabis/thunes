@@ -1,12 +1,8 @@
 use surrealdb::engine::local::Db;
 use surrealdb::{RecordId, Surreal};
 use tauri::State;
-use thunes_cli::account::Account;
-use thunes_cli::transaction::TransactionWithId;
-use thunes_cli::{
-    AccountIdentifiers, AddTransactionOptions, AddTransactionTransferOptions, BalanceOptions,
-    CurrencyBalance, ReadTransactionOptions,
-};
+use thunes_cli::account::BalanceOptions;
+use thunes_cli::account::{Account, AccountIdentifiers};
 
 pub type Accounts = std::collections::HashMap<String, Account>;
 
@@ -17,10 +13,12 @@ pub async fn list_accounts(
 ) -> Result<Vec<AccountIdentifiers>, String> {
     let database = database.lock().await;
 
-    thunes_cli::list_accounts(&database).await.map_err(|error| {
-        tracing::error!(%error, "database error");
-        "failed to list accounts".to_string()
-    })
+    thunes_cli::account::list_accounts(&database)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to list accounts".to_string()
+        })
 }
 
 #[tauri::command]
@@ -30,7 +28,7 @@ pub async fn list_accounts_with_details(
 ) -> Result<Vec<Account>, String> {
     let database = database.lock().await;
 
-    thunes_cli::list_accounts_with_details(&database)
+    thunes_cli::account::list_accounts_with_details(&database)
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
@@ -111,26 +109,11 @@ pub async fn get_balance(
 ) -> Result<f64, String> {
     let database = database.lock().await;
 
-    thunes_cli::balance(&database, account_id, options.unwrap_or_default())
+    thunes_cli::account::balance(&database, account_id, options.unwrap_or_default())
         .await
         .map_err(|error| {
             error.trace();
             "failed to get balance".into()
-        })
-}
-
-#[tauri::command]
-#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
-pub async fn get_all_balance(
-    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-) -> Result<Vec<CurrencyBalance>, String> {
-    let database = database.lock().await;
-
-    thunes_cli::balances_by_currency(&database)
-        .await
-        .map_err(|error| {
-            tracing::error!(%error, "database error");
-            "failed to get all balances".to_string()
         })
 }
 
@@ -142,92 +125,10 @@ pub async fn get_currency_from_account(
 ) -> Result<String, String> {
     let database = database.lock().await;
 
-    thunes_cli::get_currency_from_account(&database, account_id)
+    thunes_cli::account::get_currency(&database, account_id)
         .await
         .map_err(|error| {
             error.trace();
             "failed to get currency".into()
-        })
-}
-
-#[tauri::command]
-#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
-pub async fn add_transaction(
-    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    account_id: RecordId,
-    options: AddTransactionOptions,
-) -> Result<TransactionWithId, String> {
-    let database = database.lock().await;
-
-    thunes_cli::create_transaction(&database, account_id, options)
-        .await
-        .map_err(|error| {
-            tracing::error!(%error, "database error");
-            "failed to add transaction".to_string()
-        })
-}
-
-#[tauri::command]
-#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
-pub async fn add_transaction_transfer(
-    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    options: AddTransactionTransferOptions,
-) -> Result<TransactionWithId, String> {
-    let database = database.lock().await;
-
-    thunes_cli::create_transaction_transfer(&database, options)
-        .await
-        .map_err(|error| {
-            tracing::error!(%error, "database error");
-            "failed to add transaction".to_string()
-        })
-}
-
-#[tauri::command]
-#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
-pub async fn get_transactions(
-    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    account_id: RecordId,
-    filter: Option<ReadTransactionOptions>,
-) -> Result<Vec<TransactionWithId>, String> {
-    let database = database.lock().await;
-
-    thunes_cli::read_transactions(&database, account_id, filter)
-        .await
-        .map_err(|error| {
-            tracing::error!(%error, "database error");
-            "failed to get currency".to_string()
-        })
-}
-
-#[tauri::command]
-#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
-pub async fn update_transaction(
-    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    transaction: TransactionWithId,
-) -> Result<(), String> {
-    let database = database.lock().await;
-
-    thunes_cli::update_transaction(&database, transaction)
-        .await
-        .map_err(|error| {
-            tracing::error!(%error, "database error");
-            "failed to update transaction".to_string()
-        })
-}
-
-#[tauri::command]
-#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
-pub async fn delete_transaction(
-    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
-    transaction: RecordId,
-) -> Result<(), String> {
-    let database = database.lock().await;
-
-    thunes_cli::delete_transaction(&database, transaction)
-        .await
-        .map_err(|error| {
-            tracing::error!(%error, "database error");
-            "failed to update transaction".to_string()
         })
 }

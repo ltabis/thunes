@@ -13,6 +13,7 @@ pub mod commands {
     pub mod portfolio;
     pub mod settings;
     pub mod tags;
+    pub mod transaction;
 }
 
 pub mod default_categories;
@@ -116,14 +117,14 @@ pub fn run() {
             commands::account::list_accounts_with_details,
             commands::account::add_account,
             commands::account::delete_account,
-            commands::account::get_transactions,
             commands::account::get_currency_from_account,
             commands::account::get_balance,
-            commands::account::get_all_balance,
-            commands::account::add_transaction,
-            commands::account::add_transaction_transfer,
-            commands::account::update_transaction,
-            commands::account::delete_transaction,
+            commands::transaction::get_all_balance,
+            commands::transaction::add_transaction,
+            commands::transaction::add_transaction_transfer,
+            commands::transaction::get_transactions,
+            commands::transaction::update_transaction,
+            commands::transaction::delete_transaction,
             commands::budget::list_budgets,
             commands::budget::add_budget,
             commands::budget::get_budget,
@@ -143,8 +144,8 @@ pub fn run() {
             commands::categories::get_categories,
             commands::settings::get_settings,
             commands::settings::save_settings,
-            commands::settings::backup_export,
-            commands::settings::backup_import,
+            commands::settings::export_backup,
+            commands::settings::import_backup,
             commands::currency::list_currencies,
             commands::currency::get_currency,
             commands::portfolio::add_tile,

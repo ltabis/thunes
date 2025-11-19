@@ -1,0 +1,207 @@
+use crate::budget::partition::Partition;
+use crate::budget::Budget;
+use crate::transaction::category::CategoryWithId;
+use crate::transaction::TransactionWithId;
+use crate::{ChronoLocalResultError, Error};
+use chrono::offset::LocalResult;
+use chrono::Datelike;
+use surrealdb::engine::local::Db;
+use surrealdb::{RecordId, Surreal};
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ExpensesAllocation {
+    pub transactions_total: f64,
+    pub allocations_total: f64,
+    pub category: CategoryWithId,
+    pub transactions: Vec<TransactionWithId>,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ExpensesPartition {
+    pub inner: Partition,
+    pub allocations: Vec<ExpensesAllocation>,
+    pub transactions_total: f64,
+    pub allocations_total: f64,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ExpensesBudget {
+    pub inner: Budget,
+    pub partitions: Vec<ExpensesPartition>,
+    pub transactions_total: f64,
+    pub allocations_total: f64,
+    pub income_total: f64,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ReadExpensesResult {
+    pub period_start: String,
+    pub period_end: String,
+    pub budget: ExpensesBudget,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Deserialize)]
+pub enum ExpensesPeriod {
+    Monthly,
+    Trimestrial,
+    Yearly,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AllocationGroup {
+    pub total: f64,
+    pub category: CategoryWithId,
+    #[ts(type = "{ tb: string, id: { String: string }}")]
+    pub partition: RecordId,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct ReadExpensesOptions {
+    pub period: ExpensesPeriod,
+    #[ts(as = "String")]
+    pub start_date: chrono::DateTime<chrono::Utc>,
+}
+
+pub async fn read(
+    db: &Surreal<Db>,
+    budget_id: surrealdb::RecordId,
+    options: ReadExpensesOptions,
+) -> Result<ReadExpensesResult, Error> {
+    // Not using surrealdb time functions here because there is no way (right now)
+    // to add a month to a datetime object.
+    let start = match options.start_date.with_time(
+        chrono::NaiveTime::from_hms_opt(0, 0, 0)
+            .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?,
+    ) {
+        LocalResult::Single(start) => start,
+        error => return Err(Error::Time(ChronoLocalResultError::from(error))),
+    };
+
+    let (start, end) = match options.period {
+        ExpensesPeriod::Monthly => {
+            let end = start
+                .checked_add_months(chrono::Months::new(1))
+                .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
+
+            (start, end)
+        }
+        ExpensesPeriod::Trimestrial => {
+            let end = start
+                .checked_add_months(chrono::Months::new(3))
+                .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
+
+            (start, end)
+        }
+        ExpensesPeriod::Yearly => {
+            let end = start
+                .with_year(start.year() + 1)
+                .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
+
+            (start, end)
+        }
+    };
+
+    let mut response = db
+        .query(
+            r#"LET $budget = (SELECT * FROM ONLY $budget_id FETCH accounts);
+        RETURN $budget;
+        LET $partitions = (SELECT * FROM partition WHERE budget = $budget.id);
+        RETURN $partitions;
+        RETURN SELECT math::sum(amount) AS total, category, partition FROM allocation WHERE partition IN $partitions.map(|$p| $p.id) GROUP BY category FETCH category;
+        RETURN SELECT *
+            FROM transaction
+            WHERE account.id in $budget.accounts.map(|$a| $a.id)
+            AND date >= <datetime>$start AND date <= <datetime>$end;
+        "#,
+        )
+        .bind(("budget_id", budget_id))
+        .bind(("start", start))
+        .bind(("end", end))
+        .await
+        .map_err(Error::Database)?;
+
+    // FIXME: Build the result structure using the query directly.
+    let budget = response
+        .take::<Option<Budget>>(1)?
+        .ok_or(Error::RecordNotFound)?;
+    let partitions = response.take::<Vec<Partition>>(3)?;
+    let allocation_groups = response.take::<Vec<AllocationGroup>>(4)?;
+    let transactions = response.take::<Vec<TransactionWithId>>(5)?;
+
+    let period_factor = match options.period {
+        ExpensesPeriod::Monthly => 1.0,
+        ExpensesPeriod::Trimestrial => 3.0,
+        ExpensesPeriod::Yearly => 12.0,
+    };
+
+    let partitions: Vec<ExpensesPartition> = partitions
+        .into_iter()
+        .map(|partition: Partition| {
+            let allocations: Vec<ExpensesAllocation> = allocation_groups
+                .iter()
+                .filter(|allocation| allocation.partition == partition.id)
+                .map(|allocation_group| {
+                    let transactions: Vec<TransactionWithId> = transactions
+                        .iter()
+                        .filter(|&transaction| transaction.category == allocation_group.category.id)
+                        .cloned()
+                        .collect();
+                    let transactions_total = transactions
+                        .iter()
+                        .fold(0.0, |acc, transactions| acc + transactions.inner.amount);
+
+                    ExpensesAllocation {
+                        transactions,
+                        transactions_total,
+                        allocations_total: allocation_group.total,
+                        category: allocation_group.category.clone(),
+                    }
+                })
+                .collect();
+
+            ExpensesPartition {
+                allocations_total: allocations
+                    .iter()
+                    .fold(0.0, |acc, allocation| acc + allocation.allocations_total)
+                    // Need to apply the period factor on each allocations instead of applying it on the total
+                    // because the frontend breaks down the allocations to display details. 
+                    * period_factor,
+                transactions_total: allocations
+                    .iter()
+                    .fold(0.0, |acc, allocation| acc + allocation.transactions_total),
+                inner: partition,
+                allocations,
+            }
+        })
+        .collect();
+
+    Ok(ReadExpensesResult {
+        period_start: start.to_string(),
+        period_end: end.to_string(),
+        budget: ExpensesBudget {
+            allocations_total: partitions
+                .iter()
+                .fold(0.0, |acc, partition| acc + partition.allocations_total),
+            transactions_total: partitions
+                .iter()
+                .fold(0.0, |acc, partition| acc + partition.transactions_total),
+            income_total: budget.income * period_factor,
+            inner: budget,
+            partitions,
+        },
+    })
+}

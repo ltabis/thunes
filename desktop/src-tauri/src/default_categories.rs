@@ -1,4 +1,4 @@
-use thunes_cli::transaction::{CategoryWithId, Icon};
+use thunes_cli::transaction::category::{CategoryWithId, Icon};
 
 // FIXME: Add new icons
 // FIXME: Set the best icon color following the background color

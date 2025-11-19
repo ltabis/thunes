@@ -1,6 +1,6 @@
 use surrealdb::{engine::local::Db, Surreal};
 
-use crate::{AccountWithBalance, Error};
+use crate::{transaction::AccountWithBalance, Error};
 
 #[derive(ts_rs::TS)]
 #[ts(export, rename = "CurrencyTileType")]

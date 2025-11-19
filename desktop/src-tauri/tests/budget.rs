@@ -9,15 +9,19 @@ mod tests {
     use thunes_cli::{
         account::{Account, AddAccountOptions},
         budget::{
-            Budget, CreateAllocationOptions, CreatePartitionOptions, CreateSplitBudgetOptions,
-            ExpensesPeriod, ReadExpensesOptions,
+            allocation::CreateAllocationOptions,
+            expenses::{ExpensesPeriod, ReadExpensesOptions},
+            partition::CreatePartitionOptions,
+            Budget, CreateSplitBudgetOptions,
         },
+        transaction::AddTransactionOptions,
     };
     use thunes_lib::commands::{
-        account::{add_account, add_transaction},
+        account::add_account,
         budget::{
             add_budget, create_budget_allocation, create_budget_partition, get_budget_expenses,
         },
+        transaction::add_transaction,
     };
 
     async fn setup() -> (tauri::App<tauri::test::MockRuntime>, Budget, Account) {
@@ -136,7 +140,7 @@ mod tests {
         add_transaction(
             app.state(),
             account.id.clone(),
-            thunes_cli::AddTransactionOptions {
+            AddTransactionOptions {
                 amount: 25.0,
                 category: Some(category.clone()),
                 description: "Going to work".to_string(),
@@ -150,7 +154,7 @@ mod tests {
         add_transaction(
             app.state(),
             account.id.clone(),
-            thunes_cli::AddTransactionOptions {
+            AddTransactionOptions {
                 amount: 200.0,
                 category: Some(category.clone()),
                 description: "Going to summit".to_string(),
@@ -170,7 +174,7 @@ mod tests {
         add_transaction(
             app.state(),
             account.id.clone(),
-            thunes_cli::AddTransactionOptions {
+            AddTransactionOptions {
                 amount: 30.0,
                 category: Some(category.clone()),
                 description: "Going to work".to_string(),
