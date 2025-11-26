@@ -3,6 +3,7 @@ use surrealdb::RecordId;
 
 pub mod account;
 pub mod budget;
+pub mod currency;
 pub mod migrations;
 pub mod portfolio;
 pub mod settings;
