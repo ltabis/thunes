@@ -27,6 +27,10 @@ import CircleIcon from "@mui/icons-material/Circle";
 
 type PieValueTypeBudget = PieValueType & { exceeded?: number };
 
+export type Parameters = Omit<ReadExpensesOptions, "start_date"> & {
+  start_date: dayjs.Dayjs;
+};
+
 const PIE_OPTION_OFFSET = 10;
 
 function computeBudgetPieSeries(
@@ -153,11 +157,15 @@ function computeBudgetPieSeries(
 export default function ({
   budget,
   onClick,
+  onSetParameters,
   width,
   height,
 }: {
   budget: RecordId;
   onClick?: (partition: Partition) => void;
+  // FIXME: a little bit crass to make other components aware of this one parameters.
+  //        It should be refactored into something better, like saving the state of this component in database.
+  onSetParameters?: (parameters: Parameters) => void;
   width?: number;
   height?: number;
 }) {
@@ -170,9 +178,7 @@ export default function ({
     setAnchorEl(null);
   };
   const [expenses, setExpenses] = useState<ReadExpensesResult | null>(null);
-  const [parameters, setParameters] = useState<
-    Omit<ReadExpensesOptions, "start_date"> & { start_date: dayjs.Dayjs }
-  >({
+  const [parameters, setParameters] = useState<Parameters>({
     period: "Monthly",
     start_date: dayjs().date(1),
   });
@@ -249,13 +255,20 @@ export default function ({
               <ListItemText primary="Start date" />
               <DatePicker
                 value={parameters.start_date}
-                onChange={(start_date) =>
-                  start_date &&
-                  setParameters({
-                    ...parameters,
-                    start_date,
-                  })
-                }
+                onChange={(start_date) => {
+                  if (start_date) {
+                    setParameters({
+                      ...parameters,
+                      start_date,
+                    });
+                    if (onSetParameters) {
+                      onSetParameters({
+                        ...parameters,
+                        start_date,
+                      });
+                    }
+                  }
+                }}
               />
             </Stack>
           </MenuItem>
@@ -270,12 +283,18 @@ export default function ({
                       period === parameters.period ? "primary" : "secondary"
                     }
                     value={period}
-                    onClick={() =>
+                    onClick={() => {
                       setParameters({
                         ...parameters,
                         period: period as ExpensesPeriod,
-                      })
-                    }
+                      });
+                      if (onSetParameters) {
+                        onSetParameters({
+                          ...parameters,
+                          period: period as ExpensesPeriod,
+                        });
+                      }
+                    }}
                   >
                     {period}
                   </Button>

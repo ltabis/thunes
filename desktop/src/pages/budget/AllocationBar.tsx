@@ -8,6 +8,7 @@ import { ReadExpensesResult } from "../../../../cli/bindings/ReadExpensesResult"
 import { ExpensesBudget } from "../../../../cli/bindings/ExpensesBudget";
 import { categoryIconToMuiIcon } from "../../utils/icons";
 import dayjs from "dayjs";
+import { Parameters as PieParameters } from "./Pie";
 
 export function Inner({ budget }: { budget: ExpensesBudget }) {
   const allocations = budget.partitions.flatMap(
@@ -18,7 +19,6 @@ export function Inner({ budget }: { budget: ExpensesBudget }) {
     <Stack spacing={2}>
       {Array.from(allocations.values()).map((allocation) => {
         let textColor = "textPrimary";
-        let barColor: "info" | "error" = "info";
         let percentage =
           ((allocation.transactions_total * -1) /
             allocation.allocations_total) *
@@ -30,7 +30,6 @@ export function Inner({ budget }: { budget: ExpensesBudget }) {
         if (percentage > 100) {
           percentage = 100;
           textColor = "error";
-          barColor = "error";
         }
 
         return (
@@ -52,10 +51,13 @@ export function Inner({ budget }: { budget: ExpensesBudget }) {
                 <LinearProgress
                   variant="determinate"
                   value={percentage}
-                  // FIXME: Use category color.
-                  color={barColor}
+                  color="primary"
                   sx={{
                     width: 200,
+                    backgroundColor: "grey",
+                    "& .MuiLinearProgress-bar": {
+                      backgroundColor: allocation.category.color,
+                    },
                   }}
                 />
               </Box>
@@ -75,8 +77,10 @@ export function Inner({ budget }: { budget: ExpensesBudget }) {
 // TODO: remove me.
 export default function ({
   budget,
+  parameters,
 }: {
   budget: Budget;
+  parameters: PieParameters | null;
   onClick?: (partition: Allocation) => void;
   onChange?: (budget: Budget) => void;
 }) {
@@ -84,15 +88,23 @@ export default function ({
   const dispatchSnackbar = useDispatchSnackbar()!;
 
   useEffect(() => {
-    getBudgetExpenses(budget.id, {
-      period: "Monthly",
-      start_date: dayjs().date(1).toISOString(),
-    })
+    getBudgetExpenses(
+      budget.id,
+      parameters
+        ? {
+            ...parameters,
+            start_date: parameters.start_date.toISOString(),
+          }
+        : {
+            period: "Monthly",
+            start_date: dayjs().date(1).toISOString(),
+          }
+    )
       .then((expenses) => setExpenses(expenses))
       .catch((error) =>
         dispatchSnackbar({ type: "open", severity: "error", message: error })
       );
-  }, [budget, dispatchSnackbar]);
+  }, [budget, parameters, dispatchSnackbar]);
 
   if (!expenses) return;
 
