@@ -52,7 +52,7 @@ import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import { AddPartitionDrawer, EditPartitionDrawer } from "./budget/Partition";
 import { Partition } from "../../../cli/bindings/Partition";
 import { Allocation } from "../../../cli/bindings/Allocation";
-import BudgetPie from "./budget/Pie";
+import BudgetPie, { Parameters as PieParameters } from "./budget/Pie";
 import AllocationBar from "./budget/AllocationBar";
 import BudgetSettings from "./budget/Settings";
 import Page from "./Page";
@@ -255,6 +255,9 @@ function Details({ budget }: { budget: Budget }) {
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [editPartition, setEditPartition] = useState<Partition | null>(null);
   const [editAllocation, setEditAllocation] = useState<Allocation | null>(null);
+  const [pieParameters, setPieParameters] = useState<PieParameters | null>(
+    null
+  );
   const [addPartition, setAddPartition] = useState(false);
   const [addAllocation, setAddAllocation] = useState(false);
 
@@ -368,9 +371,10 @@ function Details({ budget }: { budget: Budget }) {
             <BudgetPie
               budget={budget.id}
               onClick={(partition) => setEditPartition(partition)}
+              onSetParameters={(parameters) => setPieParameters(parameters)}
               width={500}
             />
-            <AllocationBar budget={budget} />
+            <AllocationBar budget={budget} parameters={pieParameters} />
           </Stack>
         </Stack>
       )}

@@ -167,7 +167,10 @@ pub async fn read(
                     ExpensesAllocation {
                         transactions,
                         transactions_total,
-                        allocations_total: allocation_group.total,
+                        allocations_total: allocation_group.total
+                        // Need to apply the period factor on each allocations instead of applying it on the total
+                        // because the frontend breaks down the allocations to display details. 
+                        * period_factor,
                         category: allocation_group.category.clone(),
                     }
                 })
@@ -176,10 +179,7 @@ pub async fn read(
             ExpensesPartition {
                 allocations_total: allocations
                     .iter()
-                    .fold(0.0, |acc, allocation| acc + allocation.allocations_total)
-                    // Need to apply the period factor on each allocations instead of applying it on the total
-                    // because the frontend breaks down the allocations to display details. 
-                    * period_factor,
+                    .fold(0.0, |acc, allocation| acc + allocation.allocations_total),
                 transactions_total: allocations
                     .iter()
                     .fold(0.0, |acc, allocation| acc + allocation.transactions_total),
