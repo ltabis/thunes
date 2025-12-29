@@ -51,53 +51,29 @@ mod tests {
         (app, budget, account)
     }
 
-    #[tokio::test]
-    pub async fn test_basic_50_30_20() {
-        let (_app, budget, _account) = setup().await;
-
-        assert_eq!(budget.currency, "EUR");
-        assert_eq!(budget.name, "My budget");
-        assert_eq!(budget.income, 2000.0);
-    }
-
-    #[tokio::test]
-    pub async fn test_add_partitions_and_allocations() {
-        let (app, budget, _account) = setup().await;
-
-        let partition = create_budget_partition(
+    async fn setup_expenses() -> (tauri::App<tauri::test::MockRuntime>, Budget, Account) {
+        let app = crate::common::setup().await;
+        let account = add_account(
             app.state(),
-            budget.id.clone(),
-            CreatePartitionOptions {
-                name: "Job expenses".to_string(),
-                color: "blue".to_string(),
+            AddAccountOptions {
+                currency: "EUR".to_string(),
+                name: "My Account".to_string(),
             },
         )
         .await
-        .expect("failed to create partition");
+        .expect("failed to create account");
 
-        let allocation = create_budget_allocation(
+        let budget = add_budget(
             app.state(),
-            CreateAllocationOptions {
-                name: "Commute".to_string(),
-                category: None,
-                amount: 200.0,
-                partition: partition.id.clone(),
+            CreateSplitBudgetOptions {
+                name: "My budget".to_string(),
+                income: 2000.0,
+                currency: "EUR".to_string(),
+                accounts: vec![account.id.clone()],
             },
         )
         .await
-        .expect("failed to create allocations");
-
-        assert_eq!(partition.budget, budget.id);
-        assert_eq!(partition.name, "Job expenses");
-
-        assert_eq!(allocation.partition, partition.id);
-        assert_eq!(allocation.name, "Commute");
-        assert_eq!(allocation.amount, 200.0);
-    }
-
-    #[tokio::test]
-    pub async fn test_get_expenses_multiple_allocations_with_same_category() {
-        let (app, budget, account) = setup().await;
+        .expect("failed to create budget");
 
         let partition = create_budget_partition(
             app.state(),
@@ -194,6 +170,58 @@ mod tests {
         .await
         .unwrap();
 
+        (app, budget, account)
+    }
+
+    #[tokio::test]
+    pub async fn test_basic_50_30_20() {
+        let (_app, budget, _account) = setup().await;
+
+        assert_eq!(budget.currency, "EUR");
+        assert_eq!(budget.name, "My budget");
+        assert_eq!(budget.income, 2000.0);
+    }
+
+    #[tokio::test]
+    pub async fn test_add_partitions_and_allocations() {
+        let (app, budget, _account) = setup().await;
+
+        let partition = create_budget_partition(
+            app.state(),
+            budget.id.clone(),
+            CreatePartitionOptions {
+                name: "Job expenses".to_string(),
+                color: "blue".to_string(),
+            },
+        )
+        .await
+        .expect("failed to create partition");
+
+        let allocation = create_budget_allocation(
+            app.state(),
+            CreateAllocationOptions {
+                name: "Commute".to_string(),
+                category: None,
+                amount: 200.0,
+                partition: partition.id.clone(),
+            },
+        )
+        .await
+        .expect("failed to create allocations");
+
+        assert_eq!(partition.budget, budget.id);
+        assert_eq!(partition.name, "Job expenses");
+
+        assert_eq!(allocation.partition, partition.id);
+        assert_eq!(allocation.name, "Commute");
+        assert_eq!(allocation.amount, 200.0);
+    }
+
+    #[tokio::test]
+    pub async fn test_get_expenses_monthly() {
+        let (app, budget, _account) = setup_expenses().await;
+
+        let now = chrono::Utc::now().with_day(1).unwrap();
         let expenses = get_budget_expenses(
             app.state(),
             budget.id,
@@ -207,5 +235,45 @@ mod tests {
 
         assert_eq!(expenses.budget.transactions_total, 225.0);
         assert_eq!(expenses.budget.allocations_total, 350.0);
+    }
+
+    #[tokio::test]
+    pub async fn test_get_expenses_trimestrial() {
+        let (app, budget, _account) = setup_expenses().await;
+
+        let now = chrono::Utc::now().with_day(1).unwrap();
+        let expenses = get_budget_expenses(
+            app.state(),
+            budget.id,
+            ReadExpensesOptions {
+                period: ExpensesPeriod::Trimestrial,
+                start_date: now,
+            },
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(expenses.budget.transactions_total, 225.0);
+        assert_eq!(expenses.budget.allocations_total, 350.0 * 3.0);
+    }
+
+    #[tokio::test]
+    pub async fn test_get_expenses_yearly() {
+        let (app, budget, _account) = setup_expenses().await;
+
+        let now = chrono::Utc::now().with_day(1).unwrap();
+        let expenses = get_budget_expenses(
+            app.state(),
+            budget.id,
+            ReadExpensesOptions {
+                period: ExpensesPeriod::Yearly,
+                start_date: now,
+            },
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(expenses.budget.transactions_total, 225.0);
+        assert_eq!(expenses.budget.allocations_total, 350.0 * 12.0);
     }
 }

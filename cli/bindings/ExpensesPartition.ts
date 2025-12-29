@@ -2,4 +2,4 @@
 import type { ExpensesAllocation } from "./ExpensesAllocation";
 import type { Partition } from "./Partition";
 
-export type ExpensesPartition = { inner: Partition, allocations: Array<ExpensesAllocation>, transactions_total: number, allocations_total: number, };
+export type ExpensesPartition = { transactions_total: number, allocations_total: number, inner: Partition, allocations: Array<ExpensesAllocation>, };

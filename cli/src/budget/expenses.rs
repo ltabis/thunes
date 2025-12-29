@@ -12,7 +12,9 @@ use surrealdb::{RecordId, Surreal};
 #[ts(export)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ExpensesAllocation {
+    // Total transaction amount for the allocation.
     pub transactions_total: f64,
+    // Total theoretical maximum amount for the given allocation.
     pub allocations_total: f64,
     pub category: CategoryWithId,
     pub transactions: Vec<TransactionWithId>,
@@ -22,20 +24,25 @@ pub struct ExpensesAllocation {
 #[ts(export)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ExpensesPartition {
+    // Sums up all transactions part of the allocations of this partition.
+    pub transactions_total: f64,
+    // Total theoretical maximum amount for the given allocations of this partition.
+    pub allocations_total: f64,
     pub inner: Partition,
     pub allocations: Vec<ExpensesAllocation>,
-    pub transactions_total: f64,
-    pub allocations_total: f64,
 }
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ExpensesBudget {
+    // Sums up all transactions that match all allocation of the budget.
+    pub transactions_total: f64,
+    // Total theoretical maximum amount for the given budget. Sums up all allocations
+    // of all the partitions of this budget.
+    pub allocations_total: f64,
     pub inner: Budget,
     pub partitions: Vec<ExpensesPartition>,
-    pub transactions_total: f64,
-    pub allocations_total: f64,
     pub income_total: f64,
 }
 
