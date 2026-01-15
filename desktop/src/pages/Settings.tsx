@@ -18,6 +18,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { exportBackup, importBackup } from "../api";
 import { useDispatchSnackbar } from "../contexts/Snackbar";
 import { useSettingStore } from "../stores/setting";
+import { useNavigate } from "react-router-dom";
 
 function SettingDescription({ children }: { children: ReactNode }) {
   return (
@@ -57,6 +58,7 @@ function SettingSection({
 const SETTINGS_GRID_PADDING = 5;
 
 export default function Settings() {
+  const navigate = useNavigate();
   const store = useSettingStore();
   const dispatchSnackbar = useDispatchSnackbar()!;
 
@@ -105,6 +107,25 @@ export default function Settings() {
               <MenuItem value={"dark"}>Dark</MenuItem>
             </Select>
           </FormControl>
+        </Grid>
+      </SettingSection>
+
+      <SettingSection
+        title="Configuration"
+        description="Custom labels, transaction categories and currencies"
+      >
+        <Grid size={SETTINGS_GRID_PADDING}>
+          <SettingDescription>Add and customize currencies</SettingDescription>
+        </Grid>
+        <Grid size={5}>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              navigate("/currency");
+            }}
+          >
+            Edit
+          </Button>
         </Grid>
       </SettingSection>
 

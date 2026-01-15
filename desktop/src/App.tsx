@@ -24,6 +24,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { SnackbarProvider } from "./contexts/Snackbar";
 import Budget from "./pages/Budget";
 import { useSettingStore } from "./stores/setting";
+import Currency from "./pages/Currency";
 
 function Layout() {
   const store = useSettingStore();
@@ -138,6 +139,7 @@ export default function App() {
         <Route path="account/:id?" element={<Account />} />
         <Route path="budget/:id?" element={<Budget />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="currency" element={<Currency />} />
       </Route>
     </Routes>
   );
