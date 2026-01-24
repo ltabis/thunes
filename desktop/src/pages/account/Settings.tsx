@@ -32,7 +32,7 @@ function DeleteAccountDialog({
         navigate();
       })
       .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
+        dispatchSnackbar({ type: "open", severity: "error", message: error }),
       );
   };
 
@@ -57,16 +57,11 @@ export default function ({
   onClose: () => void;
 }) {
   const accountStore = useAccountStore();
-  const dispatchSnackbar = useDispatchSnackbar()!;
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [form, setForm] = useState<Account>(account);
 
   const handleSettingsUpdate = (account: Account) => {
-    accountStore
-      .update(account)
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
-      );
+    accountStore.update(account);
     onClose();
   };
 

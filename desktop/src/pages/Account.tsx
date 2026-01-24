@@ -39,6 +39,7 @@ function AddAccountDialog({
   const [form, setForm] = useState<Omit<Account, "id">>({
     name: "",
     currency: "",
+    filter: {},
   });
 
   const handleCloseForm = () => {
@@ -53,7 +54,7 @@ function AddAccountDialog({
         navigate({ id: account.id, name: account.name });
       })
       .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
+        dispatchSnackbar({ type: "open", severity: "error", message: error }),
       );
   };
 
@@ -121,7 +122,7 @@ export default function () {
 
   const handleSnackbarClose = (
     _event?: SyntheticEvent | Event,
-    reason?: SnackbarCloseReason
+    reason?: SnackbarCloseReason,
   ) => {
     if (reason === "clickaway") {
       return;
