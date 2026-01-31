@@ -1,6 +1,7 @@
 use surrealdb::engine::local::Db;
 use surrealdb::{RecordId, Surreal};
 use tauri::State;
+use thunes_cli::budget::category::{ReadCategoryOptions, ReadCategoryResult};
 use thunes_cli::transaction::{
     AddTransactionOptions, AddTransactionTransferOptions, CurrencyBalance, ReadTransactionOptions,
     TransactionWithId,
@@ -100,5 +101,22 @@ pub async fn get_all_balance(
         .map_err(|error| {
             tracing::error!(%error, "database error");
             "failed to get all balances".to_string()
+        })
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(database), ret(level = tracing::Level::DEBUG))]
+pub async fn get_transactions_by_category(
+    database: State<'_, tokio::sync::Mutex<Surreal<Db>>>,
+    budget_id: surrealdb::RecordId,
+    options: ReadCategoryOptions,
+) -> Result<ReadCategoryResult, String> {
+    let database = database.lock().await;
+
+    thunes_cli::budget::category::read(&database, budget_id, options)
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database error");
+            "failed to get transactions by category".to_string()
         })
 }

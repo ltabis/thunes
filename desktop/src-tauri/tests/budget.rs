@@ -2,6 +2,11 @@
 mod common;
 
 #[cfg(test)]
+mod budget {
+    mod category;
+}
+
+#[cfg(test)]
 mod tests {
     use chrono::Datelike;
     use surrealdb::RecordId;
@@ -9,10 +14,8 @@ mod tests {
     use thunes_cli::{
         account::{Account, AddAccountOptions},
         budget::{
-            allocation::CreateAllocationOptions,
-            expenses::{ExpensesPeriod, ReadExpensesOptions},
-            partition::CreatePartitionOptions,
-            Budget, CreateSplitBudgetOptions,
+            allocation::CreateAllocationOptions, expenses::ReadExpensesOptions,
+            partition::CreatePartitionOptions, Budget, CreateSplitBudgetOptions, ExpensesPeriod,
         },
         transaction::AddTransactionOptions,
     };
@@ -24,7 +27,7 @@ mod tests {
         transaction::add_transaction,
     };
 
-    async fn setup() -> (tauri::App<tauri::test::MockRuntime>, Budget, Account) {
+    pub async fn setup() -> (tauri::App<tauri::test::MockRuntime>, Budget, Account) {
         let app = crate::common::setup().await;
         let account = add_account(
             app.state(),
@@ -51,7 +54,7 @@ mod tests {
         (app, budget, account)
     }
 
-    async fn setup_expenses() -> (tauri::App<tauri::test::MockRuntime>, Budget, Account) {
+    pub async fn setup_expenses() -> (tauri::App<tauri::test::MockRuntime>, Budget, Account) {
         let app = crate::common::setup().await;
         let account = add_account(
             app.state(),

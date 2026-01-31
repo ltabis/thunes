@@ -1,9 +1,12 @@
 use crate::account::Account;
-use crate::Error;
+use crate::{ChronoLocalResultError, Error};
+use chrono::offset::LocalResult;
+use chrono::{DateTime, Datelike, Utc};
 use surrealdb::engine::local::Db;
 use surrealdb::Surreal;
 
 pub mod allocation;
+pub mod category;
 pub mod expenses;
 pub mod partition;
 
@@ -14,6 +17,58 @@ pub mod partition;
 pub struct View {
     expenses: bool,
     allocations: bool,
+}
+
+#[derive(ts_rs::TS)]
+#[ts(export)]
+#[derive(Debug, Clone, serde::Deserialize)]
+pub enum ExpensesPeriod {
+    Monthly,
+    Trimestrial,
+    Yearly,
+}
+
+impl ExpensesPeriod {
+    #[allow(clippy::result_large_err)]
+    pub fn into_datetime(
+        &self,
+        start: DateTime<Utc>,
+    ) -> Result<(DateTime<Utc>, DateTime<Utc>), Error> {
+        match self {
+            ExpensesPeriod::Monthly => {
+                let end = start
+                    .checked_add_months(chrono::Months::new(1))
+                    .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
+
+                Ok((start, end))
+            }
+            ExpensesPeriod::Trimestrial => {
+                let end = start
+                    .checked_add_months(chrono::Months::new(3))
+                    .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
+
+                Ok((start, end))
+            }
+            ExpensesPeriod::Yearly => {
+                let end = start
+                    .with_year(start.year() + 1)
+                    .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
+
+                Ok((start, end))
+            }
+        }
+    }
+}
+
+#[allow(clippy::result_large_err)]
+pub fn reset_datetime_hms(datetime: DateTime<Utc>) -> Result<DateTime<Utc>, Error> {
+    match datetime.with_time(
+        chrono::NaiveTime::from_hms_opt(0, 0, 0)
+            .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?,
+    ) {
+        LocalResult::Single(datetime) => Ok(datetime),
+        error => Err(Error::Time(ChronoLocalResultError::from(error))),
+    }
 }
 
 #[derive(ts_rs::TS)]

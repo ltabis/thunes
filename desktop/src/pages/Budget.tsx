@@ -60,6 +60,8 @@ import CustomSelector from "../components/form/CustomSelector";
 import { useBudgetStore } from "../stores/budget";
 import { useAccountStore } from "../stores/account";
 import { useSettingStore } from "../stores/setting";
+import { ExpensesPeriod } from "../../../cli/bindings/ExpensesPeriod";
+import dayjs from "dayjs";
 
 function AddBudgetDialog({
   open,
@@ -88,10 +90,10 @@ function AddBudgetDialog({
   // FIXME: filter using the backend.
   const filterAccountByCurrency = (
     accounts: Map<string, Account>,
-    currency: string
+    currency: string,
   ) =>
     Array.from(accounts.values()).filter(
-      (account) => account.currency === currency
+      (account) => account.currency === currency,
     );
 
   const handleCloseForm = () => {
@@ -115,7 +117,7 @@ function AddBudgetDialog({
         navigate({ id: budget.id, name: budget.name });
       })
       .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
+        dispatchSnackbar({ type: "open", severity: "error", message: error }),
       );
   };
 
@@ -197,7 +199,7 @@ function AddBudgetDialog({
                     accountStore.accounts
                       ? filterAccountByCurrency(
                           accountStore.accounts,
-                          form.currency
+                          form.currency,
                         )
                       : []
                   }
@@ -245,7 +247,7 @@ function AddBudgetDialog({
 
 const computeBudgetUnallocated = (
   budget: Budget,
-  allocations: Allocation[]
+  allocations: Allocation[],
 ): number =>
   budget.income - allocations.reduce((acc, curr) => acc + curr.amount, 0);
 
@@ -256,7 +258,7 @@ function Details({ budget }: { budget: Budget }) {
   const [editPartition, setEditPartition] = useState<Partition | null>(null);
   const [editAllocation, setEditAllocation] = useState<Allocation | null>(null);
   const [pieParameters, setPieParameters] = useState<PieParameters | null>(
-    null
+    null,
   );
   const [addPartition, setAddPartition] = useState(false);
   const [addAllocation, setAddAllocation] = useState(false);
@@ -266,7 +268,7 @@ function Details({ budget }: { budget: Budget }) {
       try {
         const partitions = await getBudgetPartitions(budget.id);
         const allocations = await getBudgetAllocations(
-          partitions.map((partition) => partition.id)
+          partitions.map((partition) => partition.id),
         );
 
         setAllocations(allocations);
@@ -290,7 +292,7 @@ function Details({ budget }: { budget: Budget }) {
           {partitions.flat().flatMap((partition) => {
             const allocationsForPartition = allocations.filter(
               (allocation) =>
-                allocation.partition.id.String === partition.id.id.String
+                allocation.partition.id.String === partition.id.id.String,
             );
 
             return allocationsForPartition.map((allocation, index) => (
@@ -361,7 +363,7 @@ function Details({ budget }: { budget: Budget }) {
               <ListItemText
                 primary={`${computeBudgetUnallocated(
                   budget,
-                  allocations
+                  allocations,
                 ).toFixed(2)} ${budget.currency}`}
                 secondary="unused"
               />
@@ -374,7 +376,20 @@ function Details({ budget }: { budget: Budget }) {
               onSetParameters={(parameters) => setPieParameters(parameters)}
               width={500}
             />
-            <AllocationBar budget={budget} parameters={pieParameters} />
+            <AllocationBar
+              budget={budget}
+              parameters={
+                pieParameters
+                  ? {
+                      ...pieParameters,
+                      start_date: pieParameters.start_date.toISOString(),
+                    }
+                  : {
+                      period: "Monthly" as ExpensesPeriod,
+                      start_date: dayjs().date(1).toISOString(),
+                    }
+              }
+            />
           </Stack>
         </Stack>
       )}
@@ -448,7 +463,7 @@ export default function () {
 
   const handleSnackbarClose = (
     _event?: SyntheticEvent | Event,
-    reason?: SnackbarCloseReason
+    reason?: SnackbarCloseReason,
   ) => {
     if (reason === "clickaway") {
       return;

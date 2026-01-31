@@ -1,21 +1,15 @@
 import {
   Button,
-  Chip,
   DialogActions,
   DialogContent,
   DialogTitle,
   Drawer,
-  ListItem,
-  ListItemAvatar,
-  ListItemButton,
-  ListItemText,
   Paper,
   Skeleton,
   SpeedDial,
   SpeedDialAction,
   Stack,
   TextField,
-  Typography,
   SpeedDialIcon,
   InputAdornment,
   debounce,
@@ -31,7 +25,6 @@ import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
 import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { filterFloat } from "../../utils";
-import { categoryIconToMuiIcon } from "../../utils/icons";
 import { CategoryWithId } from "../../../../cli/bindings/CategoryWithId";
 import CategorySelector from "../../components/form/CategorySelector";
 import ReceiptIcon from "@mui/icons-material/Receipt";
@@ -44,10 +37,10 @@ import TransactionAutocomplete, {
 import AccountAutocomplete from "../../components/form/AccountAutocomplete";
 import { Account } from "../../../../cli/bindings/Account";
 import { useTransactionStore } from "../../stores/transaction";
-import { type RowComponentProps, List } from "react-window";
 import ChipDatePicker from "../../components/ChipDatePicker";
 import ChipCategoryPicker from "../../components/ChipCategoryPicker";
 import { useAccountStore } from "../../stores/account";
+import ListTransactionsByCategory from "../../components/ListTransactions";
 
 function EditTransactionDrawer({
   account,
@@ -92,7 +85,7 @@ function EditTransactionDrawer({
         handleCloseForm();
       })
       .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
+        dispatchSnackbar({ type: "open", severity: "error", message: error }),
       );
   };
 
@@ -103,7 +96,7 @@ function EditTransactionDrawer({
         handleCloseForm();
       })
       .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
+        dispatchSnackbar({ type: "open", severity: "error", message: error }),
       );
   };
 
@@ -182,6 +175,7 @@ function AddTransactionDrawer({
   const transactionStore = useTransactionStore();
   const [form, setForm] = useState<FormTransaction>({
     id: EMPTY_RECORD_ID,
+    account: EMPTY_RECORD_ID,
     amount: "0",
     description: "",
     tags: [],
@@ -210,7 +204,7 @@ function AddTransactionDrawer({
         date: form.date.toISOString(),
       })
       .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
+        dispatchSnackbar({ type: "open", severity: "error", message: error }),
       );
   };
 
@@ -348,7 +342,7 @@ function AddTransferDrawer({
         handleCloseForm();
       })
       .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
+        dispatchSnackbar({ type: "open", severity: "error", message: error }),
       );
   };
 
@@ -408,14 +402,14 @@ function AddTransferDrawer({
             onChange={(to) => setForm({ ...form, to })}
             filter={(accounts) => {
               const from = accounts.find(
-                (account) => account.id.id.String === form.from?.id.id.String
+                (account) => account.id.id.String === form.from?.id.id.String,
               );
 
               return from
                 ? accounts.filter(
                     (account) =>
                       account.currency === from.currency &&
-                      account.id.id.String !== from.id.id.String
+                      account.id.id.String !== from.id.id.String,
                   )
                 : [];
             }}
@@ -447,74 +441,12 @@ export function EditTagsTable(props: GridRenderEditCellParams<any, Tag[]>) {
   const handleChange = (newTags: Tag[]) => {
     // FIXME: only add new tags.
     addTags(newTags).catch((error) =>
-      dispatchSnackbar({ type: "open", severity: "error", message: error })
+      dispatchSnackbar({ type: "open", severity: "error", message: error }),
     );
     apiRef.current.setEditCellValue({ id, field, value: newTags });
   };
 
   return <EditTags value={value} handleChange={handleChange} />;
-}
-
-function SingleTransaction({
-  transactions,
-  account,
-  categories,
-  onClick,
-  index,
-  style,
-}: RowComponentProps<{
-  transactions: TransactionWithId[];
-  account: Account;
-  categories: Map<string, CategoryWithId>;
-  onClick: (transaction: TransactionWithId) => void;
-}>) {
-  const transaction = transactions[index];
-
-  return (
-    <ListItemButton
-      style={style}
-      onClick={() => onClick(transaction)}
-      key={transaction.id.id.String}
-    >
-      <ListItem
-        secondaryAction={
-          transaction.amount > 0 ? (
-            <Typography variant="body1" color="success">
-              {`+ ${transaction.amount} ${account.currency}`}
-            </Typography>
-          ) : (
-            <Typography variant="body1">
-              {`- ${transaction.amount * -1} ${account.currency}`}
-            </Typography>
-          )
-        }
-      >
-        <ListItemAvatar>
-          {categories &&
-            categoryIconToMuiIcon(
-              categories.get(transaction.category.id.String)!
-            )}
-        </ListItemAvatar>
-        <ListItemText
-          primary={transaction.description}
-          secondary={dayjs(transaction.date).format("DD MMMM YYYY")}
-        />
-        <ListItemText
-          primary={
-            <Stack direction="row" spacing={1}>
-              {transaction.tags.map((tag) => (
-                <Chip
-                  key={tag.label}
-                  label={tag.label}
-                  sx={{ backgroundColor: tag.color }}
-                />
-              ))}
-            </Stack>
-          }
-        />
-      </ListItem>
-    </ListItemButton>
-  );
 }
 
 export default function Transactions({ account }: { account: Account }) {
@@ -531,11 +463,12 @@ export default function Transactions({ account }: { account: Account }) {
   const [addTransfer, setAddTransfer] = useState(false);
 
   const transactions = useTransactionStore((state) =>
-    state.transactions.get(account.id.id.String)
+    state.transactions.get(account.id.id.String),
   );
   const storeAccount = useAccountStore(
-    (state) => state.accounts.get(account.id.id.String)!
+    (state) => state.accounts.get(account.id.id.String)!,
   );
+  const accounts = useAccountStore((state) => state.accounts);
   const updateAccount = useAccountStore((state) => state.update);
   const commitAccount = useAccountStore((state) => state.commit);
   const syncTransactions = useTransactionStore((state) => state.sync);
@@ -563,12 +496,12 @@ export default function Transactions({ account }: { account: Account }) {
       .then((categories) =>
         setCategories(
           new Map(
-            categories.map((category) => [category.id.id.String, category])
-          )
-        )
+            categories.map((category) => [category.id.id.String, category]),
+          ),
+        ),
       )
       .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
+        dispatchSnackbar({ type: "open", severity: "error", message: error }),
       );
   }, [dispatchSnackbar]);
 
@@ -651,7 +584,7 @@ export default function Transactions({ account }: { account: Account }) {
                 ...storeAccount,
                 filter: {
                   ...storeAccount.filter,
-                  category: category?.id,
+                  category: category?.id.id.String,
                 },
               };
               await commitAccount(copy);
@@ -661,19 +594,13 @@ export default function Transactions({ account }: { account: Account }) {
           />
         </Stack>
         {transactions && categories ? (
-          <List
-            rowComponent={SingleTransaction}
-            rowCount={transactions.length}
-            rowHeight={75}
-            rowProps={{
-              transactions,
-              categories,
-              account,
-              onClick: (transaction) => setSelectedTransaction(transaction),
-            }}
-            style={{
-              flexGrow: 1,
-            }}
+          <ListTransactionsByCategory
+            accounts={accounts}
+            transactions={transactions}
+            categories={categories}
+            onClickTransaction={(transaction) =>
+              setSelectedTransaction(transaction)
+            }
           />
         ) : (
           <>

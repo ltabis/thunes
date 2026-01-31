@@ -32,7 +32,7 @@ pub async fn list_accounts_with_details(
         .await
         .map_err(|error| {
             tracing::error!(%error, "database error");
-            "failed to list accounts".to_string()
+            "failed to list accounts with details".to_string()
         })
 }
 

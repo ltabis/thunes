@@ -1,10 +1,8 @@
 use crate::budget::partition::Partition;
-use crate::budget::Budget;
+use crate::budget::{reset_datetime_hms, Budget, ExpensesPeriod};
 use crate::transaction::category::CategoryWithId;
 use crate::transaction::TransactionWithId;
-use crate::{ChronoLocalResultError, Error};
-use chrono::offset::LocalResult;
-use chrono::Datelike;
+use crate::Error;
 use surrealdb::engine::local::Db;
 use surrealdb::{RecordId, Surreal};
 
@@ -57,15 +55,6 @@ pub struct ReadExpensesResult {
 
 #[derive(ts_rs::TS)]
 #[ts(export)]
-#[derive(Debug, Clone, serde::Deserialize)]
-pub enum ExpensesPeriod {
-    Monthly,
-    Trimestrial,
-    Yearly,
-}
-
-#[derive(ts_rs::TS)]
-#[ts(export)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AllocationGroup {
     pub total: f64,
@@ -90,39 +79,11 @@ pub async fn read(
 ) -> Result<ReadExpensesResult, Error> {
     // Not using surrealdb time functions here because there is no way (right now)
     // to add a month to a datetime object.
-    let start = match options.start_date.with_time(
-        chrono::NaiveTime::from_hms_opt(0, 0, 0)
-            .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?,
-    ) {
-        LocalResult::Single(start) => start,
-        error => return Err(Error::Time(ChronoLocalResultError::from(error))),
-    };
-
-    let (start, end) = match options.period {
-        ExpensesPeriod::Monthly => {
-            let end = start
-                .checked_add_months(chrono::Months::new(1))
-                .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
-
-            (start, end)
-        }
-        ExpensesPeriod::Trimestrial => {
-            let end = start
-                .checked_add_months(chrono::Months::new(3))
-                .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
-
-            (start, end)
-        }
-        ExpensesPeriod::Yearly => {
-            let end = start
-                .with_year(start.year() + 1)
-                .ok_or_else(|| Error::Time(ChronoLocalResultError::None))?;
-
-            (start, end)
-        }
-    };
+    let start = reset_datetime_hms(options.start_date)?;
+    let (start, end) = options.period.into_datetime(start)?;
 
     let mut response = db
+        // FIXME: Queries that big should be placed in surql files
         .query(
             r#"LET $budget = (SELECT * FROM ONLY $budget_id FETCH accounts);
         RETURN $budget;

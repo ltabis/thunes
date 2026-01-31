@@ -2,7 +2,7 @@ import { Chip, Stack } from "@mui/material";
 import { useState } from "react";
 import CategorySelector from "./form/CategorySelector";
 import { CategoryWithId } from "../../../cli/bindings/CategoryWithId";
-import { EMPTY_RECORD_ID, RecordId } from "../api";
+import { EMPTY_RECORD_ID } from "../api";
 import { useCategoryStore } from "../stores/category";
 import { getMuiIcon } from "../utils/icons";
 
@@ -11,12 +11,13 @@ export default function ({
   onChange,
 }: // TODO: chipProps
 {
-  category?: RecordId;
+  // FIXME: should be using a record id here. See ReadTransactionOptions definition.
+  category?: string;
   onChange?: (value: CategoryWithId | undefined) => void;
 }) {
   const [open, setOpen] = useState(false);
   const categories = useCategoryStore((state) => state.categories);
-  const value = category ? categories.get(category.id.String)! : undefined;
+  const value = category ? categories.get(category)! : undefined;
 
   return (
     // FIXME: Should respect the text length

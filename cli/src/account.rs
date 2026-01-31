@@ -92,15 +92,7 @@ pub async fn delete(db: &Surreal<Db>, account_id: RecordId) -> Result<(), surrea
 }
 
 pub async fn list_accounts(db: &Surreal<Db>) -> Result<Vec<AccountIdentifiers>, surrealdb::Error> {
-    let accounts: Vec<Account> = db.select("account").await?;
-
-    Ok(accounts
-        .into_iter()
-        .map(|account| AccountIdentifiers {
-            name: account.data.name,
-            id: account.id,
-        })
-        .collect())
+    db.query("SELECT name, id FROM account").await?.take(0)
 }
 
 pub async fn list_accounts_with_details(
