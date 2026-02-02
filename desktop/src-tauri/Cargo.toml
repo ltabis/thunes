@@ -22,29 +22,29 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
-tauri-plugin-shell = { version = "2" }
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = { version = "1.0.140" }
-time = { version = "0.3.41", features = [
+tauri = { version = "2.9.5", features = [] }
+tauri-plugin-shell = { version = "2.3.4" }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.149" }
+time = { version = "0.3.46", features = [
     "std",
     "parsing",
     "formatting",
     "serde",
 ] }
-time-macros = { version = "0.2.22", features = ["parsing"] }
+time-macros = { version = "0.2.26", features = ["parsing"] }
 thunes-cli = { path = "../../cli" }
-surrealdb = { version = "2.2.2", features = ["kv-rocksdb"] }
-tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread"] }
-tracing = { version = "0.1.41" }
-tracing-subscriber = { version = "0.3.19" }
-tauri-plugin-dialog = { version = "2.2.1" }
-chrono = { version = "0.4.40" }
+surrealdb = { version = "2.6.0", features = ["kv-rocksdb"] }
+tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
+tracing = { version = "0.1.44" }
+tracing-subscriber = { version = "0.3.22" }
+tauri-plugin-dialog = { version = "2.6.0" }
+chrono = { version = "0.4.43" }
 
 [dev-dependencies]
-tauri = { version = "2", features = ["test"] }
-tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread", "rt"] }
-surrealdb = { version = "2.2.2", features = ["kv-mem"] }
+tauri = { version = "2.9.5", features = ["test"] }
+tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread", "rt"] }
+surrealdb = { version = "2.6.0", features = ["kv-mem"] }
 
 [profile.release]
 incremental = false

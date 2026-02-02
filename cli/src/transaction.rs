@@ -24,10 +24,10 @@ pub struct TransactionWithId {
     pub inner: Transaction,
     #[ts(type = "{ tb: string, id: { String: string }}")]
     pub id: RecordId,
-    #[ts(skip)]
+    #[ts(type = "{ tb: string, id: { String: string }}")]
     pub account: RecordId,
     #[ts(type = "{ tb: string, id: { String: string }}")]
-    pub category: surrealdb::RecordId,
+    pub category: RecordId,
 }
 
 #[derive(ts_rs::TS)]
@@ -133,8 +133,10 @@ pub async fn create_transaction_transfer(
 pub struct ReadTransactionOptions {
     #[ts(as = "Option<String>", optional)]
     pub search: Option<String>,
-    #[ts(type = "{ tb: string, id: { String: string }}", optional)]
-    pub category: Option<surrealdb::RecordId>,
+    // FIXME: Cannot store a record id here because of serde. Using the id string directly.
+    //        See https://github.com/surrealdb/surrealdb/issues/4844
+    #[ts(as = "Option<String>", optional)]
+    pub category: Option<String>,
     #[ts(as = "Option<String>", optional)]
     pub start: Option<surrealdb::Datetime>,
     #[ts(as = "Option<String>", optional)]
@@ -169,7 +171,7 @@ pub async fn read(
     }
 
     if filter.category.is_some() {
-        query.push_str(" AND category = $category");
+        query.push_str(" AND category = type::thing('category', $category)");
     }
 
     if filter.last_x_days.is_some() {
@@ -196,10 +198,7 @@ pub async fn read(
                 .unwrap_or_default(),
         ))
         .bind(("search", filter.search.unwrap_or_default()))
-        .bind((
-            "category",
-            filter.category.unwrap_or(("category", "other").into()),
-        ))
+        .bind(("category", filter.category.unwrap_or("other".into())))
         .bind(("start", filter.start.unwrap_or_default()))
         .bind(("end", filter.end.unwrap_or_default()))
         .bind(("account_id", account_id))

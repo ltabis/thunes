@@ -24,6 +24,8 @@ import { Currency } from "../../../cli/bindings/Currency";
 import { WriteTileOptions } from "../../../cli/bindings/WriteTileOptions";
 import { PortfolioTile } from "../../../cli/bindings/PortfolioTile";
 import { ReadTransactionOptions } from "../../../cli/bindings/ReadTransactionOptions";
+import { ReadCategoryOptions } from "../../../cli/bindings/ReadCategoryOptions";
+import { ReadCategoryResult } from "../../../cli/bindings/ReadCategoryResult";
 
 // TODO: could this be automated ?
 
@@ -36,26 +38,26 @@ export const getCurrencyFromAccount = (accountId: RecordId): Promise<string> =>
   invoke("get_currency_from_account", { accountId });
 export const getBalance = (
   accountId: RecordId,
-  options?: BalanceOptions
+  options?: BalanceOptions,
 ): Promise<number> => invoke("get_balance", { accountId, options });
 export const getAllBalance = (): Promise<CurrencyBalance[]> =>
   invoke("get_all_balance");
 export const getTransactions = (
   accountId: RecordId,
-  filter?: ReadTransactionOptions
+  filter?: ReadTransactionOptions,
 ): Promise<TransactionWithId[]> =>
   invoke("get_transactions", { accountId, filter });
 export const addTransaction = (
   accountId: RecordId,
-  options: AddTransactionOptions
+  options: AddTransactionOptions,
 ): Promise<TransactionWithId> =>
   invoke("add_transaction", { accountId, options });
 export const addTransactionTransfer = (
-  options: AddTransactionTransferOptions
+  options: AddTransactionTransferOptions,
 ): Promise<TransactionWithId> =>
   invoke("add_transaction_transfer", { options });
 export const updateTransaction = (
-  transaction: TransactionWithId
+  transaction: TransactionWithId,
 ): Promise<void> => invoke("update_transaction", { transaction });
 export const deleteTransaction = (transaction: RecordId): Promise<void> =>
   invoke("delete_transaction", { transaction });
@@ -95,12 +97,17 @@ export const deleteBudget = (budgetId: RecordId): Promise<void> =>
   invoke("delete_budget", { budgetId });
 export const getBudgetExpenses = (
   budgetId: RecordId,
-  options: ReadExpensesOptions
+  options: ReadExpensesOptions,
 ): Promise<ReadExpensesResult> =>
   invoke("get_budget_expenses", { budgetId, options });
+export const getTransactionsByCategory = (
+  budgetId: RecordId,
+  options: ReadCategoryOptions,
+): Promise<ReadCategoryResult> =>
+  invoke("get_transactions_by_category", { budgetId, options });
 export const addBudgetPartition = (
   budgetId: RecordId,
-  options: CreatePartitionOptions
+  options: CreatePartitionOptions,
 ): Promise<Partition> =>
   invoke("create_budget_partition", { budgetId, options });
 export const updateBudgetPartition = (options: Partition): Promise<Partition> =>
@@ -110,13 +117,13 @@ export const deleteBudgetPartition = (partition: RecordId): Promise<void> =>
 export const getBudgetPartitions = (budgetId: RecordId): Promise<Partition[]> =>
   invoke("get_budget_partitions", { budgetId });
 export const addBudgetAllocation = (
-  options: CreateAllocationOptions
+  options: CreateAllocationOptions,
 ): Promise<Budget> => invoke("create_budget_allocation", { options });
 export const getBudgetAllocations = (
-  partitions: RecordId[]
+  partitions: RecordId[],
 ): Promise<Allocation[]> => invoke("get_budget_allocations", { partitions });
 export const updateBudgetAllocation = (
-  options: UpdateAllocationOptions
+  options: UpdateAllocationOptions,
 ): Promise<Allocation> => invoke("update_budget_allocation", { options });
 export const deleteBudgetAllocation = (allocation: RecordId): Promise<void> =>
   invoke("delete_budget_allocation", { allocation });

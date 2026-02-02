@@ -123,6 +123,7 @@ pub fn run() {
             commands::transaction::add_transaction,
             commands::transaction::add_transaction_transfer,
             commands::transaction::get_transactions,
+            commands::transaction::get_transactions_by_category,
             commands::transaction::update_transaction,
             commands::transaction::delete_transaction,
             commands::budget::list_budgets,

@@ -34,7 +34,7 @@ export type Parameters = Omit<ReadExpensesOptions, "start_date"> & {
 const PIE_OPTION_OFFSET = 10;
 
 function computeBudgetPieSeries(
-  expenses: ExpensesBudget
+  expenses: ExpensesBudget,
 ): PieSeriesType<PieValueTypeBudget>[] {
   const options = expenses.inner.view;
   const basePartitions = expenses.partitions.map((partition) => ({
@@ -62,7 +62,7 @@ function computeBudgetPieSeries(
               value: allocation.allocations_total,
               color: allocation.category.color,
               label: allocation.category.name,
-            }))
+            })),
           )
           .flat(),
         {
@@ -86,7 +86,6 @@ function computeBudgetPieSeries(
       paddingAngle: 1,
       cornerRadius: 5,
       valueFormatter: (item: PieValueTypeBudget) => {
-        // FIXME: must be returned by the backend.
         return item.exceeded
           ? `WARNING: exceeded budget of ${item.exceeded.toFixed(2)} (by ${(
               item.exceeded - item.value
@@ -98,7 +97,7 @@ function computeBudgetPieSeries(
           .map((partition) => {
             const total = partition.transactions_total * -1;
             const max = basePartitions.find(
-              (p) => p.partitionId.id.String === partition.inner.id.id.String
+              (p) => p.partitionId.id.String === partition.inner.id.id.String,
             )!.value;
 
             return [
@@ -191,7 +190,7 @@ export default function ({
     })
       .then((expenses) => setExpenses(expenses))
       .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error })
+        dispatchSnackbar({ type: "open", severity: "error", message: error }),
       );
   }, [budget, parameters, dispatchSnackbar]);
 
@@ -232,7 +231,7 @@ export default function ({
                       type: "open",
                       severity: "error",
                       message: error,
-                    })
+                    }),
                   );
 
                   return newValue;
