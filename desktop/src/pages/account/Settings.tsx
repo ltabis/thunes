@@ -10,8 +10,6 @@ import {
 } from "@mui/material";
 import { Account } from "../../../../cli/bindings/Account";
 import { useState } from "react";
-import { deleteAccount } from "../../api";
-import { useDispatchSnackbar } from "../../contexts/Snackbar";
 import { useAccountNavigate } from "../../hooks/accounts";
 import { useAccountStore } from "../../stores/account";
 
@@ -23,17 +21,12 @@ function DeleteAccountDialog({
   onClose: () => void;
 }) {
   const navigate = useAccountNavigate();
-  const dispatchSnackbar = useDispatchSnackbar()!;
+  const deleteAccount = useAccountStore((state) => state.delete);
 
   const handleDeleteAccount = async () => {
-    deleteAccount(account.id)
-      .then(() => {
-        onClose();
-        navigate();
-      })
-      .catch((error) =>
-        dispatchSnackbar({ type: "open", severity: "error", message: error }),
-      );
+    await deleteAccount(account);
+    onClose();
+    navigate();
   };
 
   return (

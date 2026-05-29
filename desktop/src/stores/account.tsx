@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { addAccount, updateAccount } from "../api";
+import { addAccount, updateAccount, deleteAccount } from "../api";
 import { Account } from "../../../cli/bindings/Account";
 import { AddAccountOptions } from "../../../cli/bindings/AddAccountOptions";
 
@@ -8,6 +8,7 @@ interface AccountState {
   create: (account: AddAccountOptions) => Promise<Account>;
   update: (account: Account) => void;
   commit: (account: Account) => Promise<void>;
+  delete: (account: Account) => Promise<void>;
   getCurrencies: () => string[];
   filterByCurrency: (currency: string) => Account[];
 }
@@ -21,7 +22,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
     set((state) => ({
       accounts: new Map(state.accounts).set(
         newAccount.id.id.String,
-        newAccount
+        newAccount,
       ),
     }));
     return newAccount;
@@ -32,21 +33,33 @@ export const useAccountStore = create<AccountState>((set, get) => ({
     }));
   },
   commit: async (account: Account) => await updateAccount(account),
+  delete: async (account: Account) => {
+    await deleteAccount(account.id);
+
+    set((state) => {
+      const map = new Map(state.accounts);
+      map.delete(account.id.id.String);
+
+      return {
+        accounts: map,
+      };
+    });
+  },
   // FIXME: real dirty.
   getCurrencies: () => {
     const accounts = get().accounts;
 
     return Array.from(
       new Set(
-        Array.from(accounts.values()).map((account) => account.currency)
-      ).values()
+        Array.from(accounts.values()).map((account) => account.currency),
+      ).values(),
     );
   },
   filterByCurrency: (currency) => {
     const accounts = get().accounts;
 
     return Array.from(accounts.values()).filter(
-      (account) => account.currency === currency
+      (account) => account.currency === currency,
     );
   },
 }));

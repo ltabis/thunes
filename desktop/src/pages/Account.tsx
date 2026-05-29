@@ -159,7 +159,7 @@ export default function () {
       toolbarStart={
         <CustomSelector
           selected={
-            id
+            id && accountStore.accounts.has(id)
               ? ({
                   name: accountStore.accounts.get(id)!.name,
                   value: id,
@@ -178,7 +178,12 @@ export default function () {
           onCreate={() => setOpenAddDialog(true)}
         />
       }
-      toolbarEnd={id && <Summary account={accountStore.accounts.get(id)!} />}
+      toolbarEnd={
+        id &&
+        accountStore.accounts.has(id) && (
+          <Summary account={accountStore.accounts.get(id)!} />
+        )
+      }
       actions={[
         {
           name: "Settings",
@@ -188,7 +193,9 @@ export default function () {
         },
       ]}
     >
-      {id && <Transactions account={accountStore.accounts.get(id)!} />}
+      {id && accountStore.accounts.has(id) && (
+        <Transactions account={accountStore.accounts.get(id)!} />
+      )}
 
       <Snackbar
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
