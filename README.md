@@ -1,5 +1,10 @@
 # Thunes
 
+> [!WARNING]
+> This repository is now archived. I moved on to other projects and am now using the [sure](https://github.com/we-promise/sure) open source app instead.
+> I felt like the interesting parts of it are now done, and that I was no longer learning stuff. You can still download the latest release and use it,
+> But I will no longer updating the code.
+
 Thunes is a simple desktop app that you can use to manage your expenses and budgets.
 Thunes does not synchronise your bank accounts, you provide every transaction manually.
 
